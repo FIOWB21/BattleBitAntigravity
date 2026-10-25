@@ -1,7 +1,7 @@
 # PROGRESS
 
-Текущий шаг: 1.4
-Последний завершённый: 1.3
+Текущий шаг: 1.5
+Последний завершённый: 1.4
 
 | Шаг | Статус | Дата | Заметки |
 |---|---|---|---|
@@ -14,7 +14,7 @@
 | 1.1 | DONE | 2026-10-25 | Созданы шейдер разметки 1 м `src/maps/testbed/grid_1m.gdshader`, генератор `tools/gen_testbed.gd`, сцена полигона `src/maps/testbed/testbed.tscn` (пол 200×200 м, рампы 15°/30°/45°, лестница 0.2 м, стены 1.0/1.5/2.0/3.0 м, коридор 0.8 м, туннель 1.0 м, стрельбище 10/25/50/100/200 м, `WorldEnvironment`, `DirectionalLight3D`, `PlayerSpawn`) и тесты `tests/unit/test_testbed.gd` |
 | 1.2 | DONE | 2026-10-25 | Созданы `PlayerInput` (`src/player/player_input.gd`), `MovementConfig` (`src/player/movement_config.gd`) + `src/player/default_movement.tres`, `PlayerMotor` (`src/player/player_motor.gd`), `LocalInputReader` (`src/player/local_input_reader.gd`), `Player` (`src/player/player.gd`, `src/player/player.tscn`, генератор `tools/gen_player.gd`) и тесты `tests/unit/test_player_motor.gd` |
 | 1.3 | DONE | 2026-10-25 | Реализованы обзор мышью в `LocalInputReader` (накопление `yaw`, кламп `pitch` ±89°, `sensitivity` и `invert_y` из `Settings`), `Camera3D` на `Head` с `FOV` 60–120 (дефолт 90), захват курсора и освобождение по `Esc` (`pause_menu`), физическая интерполяция `physics/common/physics_interpolation=true` со сглаживанием через `get_global_transform_interpolated()`, визуальный узел `CameraEffects` (`src/player/camera_effects.gd`) и тесты `tests/unit/test_player_camera.gd` |
-| 1.4 | TODO | | |
+| 1.4 | DONE | 2026-10-25 | Созданы `PlayerStance` (`src/player/player_stance.gd`) и `StanceController` (`src/player/stance_controller.gd`): стойки `STAND`/`CROUCH`/`PRONE` с высотой капсулы `1.8`/`1.2`/`0.5` м и камеры `1.65`/`1.05`/`0.35` м, плавные переходы без смещения ступней, проверка потолка (`test_move`), подъём из `PRONE` в `STAND` через `CROUCH` за `0.6` с, запрет прыжка лёжа, наклоны `±15°` и `±0.4` м с проверкой стены и тесты `tests/unit/test_player_stance.gd` |
 | 1.5 | TODO | | |
 | 1.6 | TODO | | |
 | 1.7 | TODO | | |

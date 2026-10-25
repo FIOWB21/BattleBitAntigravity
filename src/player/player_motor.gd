@@ -20,13 +20,23 @@ func simulate(
 		body.global_transform.basis if body.is_inside_tree() else body.transform.basis
 	)
 	var wish: Vector3 = body_basis * local
-	var sprint: bool = inp.pressed(PlayerInput.BTN_SPRINT) and clamped_move.y > 0.0
+	var can_sprint: bool = (
+		stance == PlayerStance.STAND
+		and not inp.pressed(PlayerInput.BTN_CROUCH)
+		and not inp.pressed(PlayerInput.BTN_PRONE)
+	)
+	var sprint: bool = can_sprint and inp.pressed(PlayerInput.BTN_SPRINT) and clamped_move.y > 0.0
 	var target: Vector3 = wish * cfg.speed_for(stance, sprint)
 	var v: Vector3 = body.velocity
 	if body.is_on_floor():
 		v.x = move_toward(v.x, target.x, cfg.accel_ground * delta)
 		v.z = move_toward(v.z, target.z, cfg.accel_ground * delta)
-		if inp.pressed(PlayerInput.BTN_JUMP) and stance == MovementConfig.STANCE_STAND:
+		var can_jump: bool = (
+			stance == PlayerStance.STAND
+			and not inp.pressed(PlayerInput.BTN_CROUCH)
+			and not inp.pressed(PlayerInput.BTN_PRONE)
+		)
+		if inp.pressed(PlayerInput.BTN_JUMP) and can_jump:
 			v.y = cfg.jump_velocity
 	else:
 		v.x = move_toward(v.x, target.x, cfg.accel_air * delta)

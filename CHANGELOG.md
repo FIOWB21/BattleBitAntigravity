@@ -2,6 +2,22 @@
 
 Все заметные изменения проекта документируются в этом файле по шагам плана (`docs/STEPS.md`).
 
+## [step-1.4] — 2026-10-25
+
+### Добавлено
+- Класс перечисления стоек `PlayerStance` (`src/player/player_stance.gd`) со значениями `STAND = 0`, `CROUCH = 1`, `PRONE = 2`.
+- Компонент управления стойками и наклонами `StanceController` (`src/player/stance_controller.gd`):
+  - плавное изменение высоты капсулы (`1.8` / `1.2` / `0.5` м) и высоты `Head` (`1.65` / `1.05` / `0.35` м) с фиксацией нижней точки капсулы на уровне ступней (`CollisionShape3D.position.y = height * 0.5`) и клонированием `CapsuleShape3D` на экземпляр игрока;
+  - проверка препятствий над головой перед подъёмом в более высокую стойку через `CharacterBody3D.test_move(...)` и вертикальный луч;
+  - двухэтапный подъём из положения лёжа в положение стоя (`PRONE -> CROUCH -> STAND`) за `0.6` с (`0.3` с до `CROUCH` + `0.3` с до `STAND`);
+  - наклоны влево/вправо (`BTN_LEAN_L` / `BTN_LEAN_R`) на `±15°` и смещение головы `±0.4` м с проверкой стены через переиспользуемый `PhysicsRayQueryParameters3D`.
+- Модульные тесты `tests/unit/test_player_stance.gd` (неизменность высоты ступней при смене стоек, запрет прыжка лёжа, подъём `PRONE -> CROUCH -> STAND` за `0.6` с, блокировка подъёма под низким потолком, проползание в туннеле `1.0` м на `testbed.tscn` с блокировкой подъёма внутри, наклоны `±15°`/`±0.4` м и ограничение у стены).
+
+### Изменено
+- В `MovementConfig` (`src/player/movement_config.gd`) и `src/player/default_movement.tres` добавлены параметры высот капсулы и камеры по стойкам, длительности переходов (`stance_step_time = 0.2`, `prone_to_stand_time = 0.6`) и наклонов (`lean_angle_deg = 15.0`, `lean_offset = 0.4`, `lean_speed = 10.0`, `lean_wall_margin = 0.25`).
+- В `PlayerMotor` (`src/player/player_motor.gd`) запрещены прыжок и спринт при активных кнопках приседа/лёжа или вне стойки `PlayerStance.STAND`.
+- В `Player` (`src/player/player.gd`), `tools/gen_player.gd` и `src/player/player.tscn` интегрирован узел `StanceController`, высота `Head` в стойке стоя обновлена до `1.65` м, а в `update_camera_visuals` учтены локальное смещение `Head` и крен `Head.rotation.z`.
+
 ## [step-1.3] — 2026-10-25
 
 ### Добавлено

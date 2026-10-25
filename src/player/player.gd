@@ -1,4 +1,4 @@
-# Узел игрока (CharacterBody3D), связывающий LocalInputReader, PlayerMotor и камеру.
+# Узел игрока (CharacterBody3D), связывающий LocalInputReader, StanceController, PlayerMotor и камеру.
 class_name Player
 extends CharacterBody3D
 
@@ -6,21 +6,33 @@ const DEFAULT_MOVEMENT_PATH: String = "res://src/player/default_movement.tres"
 
 @export var movement_config: MovementConfig = preload(DEFAULT_MOVEMENT_PATH)
 @export var is_local_player: bool = true
-@export var stance: int = MovementConfig.STANCE_STAND
+@export var stance: int = PlayerStance.STAND:
+	set(value):
+		stance = clampi(value, PlayerStance.STAND, PlayerStance.PRONE)
+		if stance_controller != null and stance_controller.current_stance != stance:
+			stance_controller.set_stance_immediate(stance)
 
+var lean: float = 0.0
 var motor: PlayerMotor = PlayerMotor.new()
 var input_reader: LocalInputReader = LocalInputReader.new()
 var _mouse_captured: bool = false
 
+@onready var collision_shape: CollisionShape3D = $CollisionShape3D
 @onready var head: Node3D = $Head
 @onready var camera: Camera3D = $Head/Camera3D
 @onready var camera_effects: CameraEffects = $Head/CameraEffects
+@onready var stance_controller: StanceController = get_node_or_null("StanceController") as StanceController
 
 
 func _ready() -> void:
 	if movement_config == null:
 		movement_config = load(DEFAULT_MOVEMENT_PATH) as MovementConfig
 	floor_max_angle = deg_to_rad(movement_config.max_slope_angle) + PlayerMotor.SLOPE_EPSILON_RAD
+	if stance_controller == null:
+		stance_controller = StanceController.new()
+		stance_controller.name = "StanceController"
+		add_child(stance_controller)
+	stance_controller.setup(self, collision_shape, head, movement_config, stance)
 	input_reader.yaw = rotation.y
 	if head != null:
 		input_reader.pitch = clampf(
@@ -100,6 +112,11 @@ func _process(delta: float) -> void:
 
 
 func step_simulation(inp: PlayerInput, delta: float) -> void:
+	rotation.y = inp.yaw
+	if stance_controller != null:
+		stance_controller.step(inp, delta)
+		stance = stance_controller.current_stance
+		lean = stance_controller.current_lean
 	motor.simulate(self, inp, movement_config, stance, delta)
 	if head != null:
 		head.rotation.x = clampf(
@@ -120,11 +137,12 @@ func update_camera_visuals(delta: float) -> void:
 	if camera == null or head == null:
 		return
 	if is_inside_tree():
-		var base_origin: Vector3 = get_global_transform_interpolated().origin + head.position
+		var body_xform: Transform3D = get_global_transform_interpolated()
+		var base_origin: Vector3 = body_xform * head.position
 		var look_euler: Vector3 = Vector3(
 			input_reader.pitch + eff_rot.x,
 			input_reader.yaw + eff_rot.y,
-			eff_rot.z
+			head.rotation.z + eff_rot.z
 		)
 		var look_basis: Basis = Basis.from_euler(look_euler)
 		camera.global_transform = Transform3D(look_basis, base_origin + look_basis * eff_offset)
