@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MovementConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/player/movement_config.gd" id="1_movcfg"]
+
+[resource]
+script = ExtResource("1_movcfg")
+walk_speed = 4.0
+sprint_speed = 6.5
+crouch_speed = 2.0
+prone_speed = 0.8
+accel_ground = 40.0
+accel_air = 10.0
+jump_height = 1.1
+gravity = 15.0
+max_slope_angle = 45.0

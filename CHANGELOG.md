@@ -2,6 +2,16 @@
 
 Все заметные изменения проекта документируются в этом файле по шагам плана (`docs/STEPS.md`).
 
+## [step-1.2] — 2026-10-25
+
+### Добавлено
+- Структура ввода одного физического тика `PlayerInput` (`src/player/player_input.gd`) с флагами кнопок (`BTN_JUMP` … `BTN_LEAN_R`), полями `tick`, `move`, `yaw`, `pitch`, `buttons` и методом `pressed(btn)`.
+- Ресурс конфигурации параметров передвижения `MovementConfig` (`src/player/movement_config.gd`) и базовый профиль `src/player/default_movement.tres` (ходьба 4.0 м/с, бег 6.5 м/с, присед 2.0 м/с, лёжа 0.8 м/с, ускорение на земле 40.0 м/с² и в воздухе 10.0 м/с², высота прыжка 1.1 м, гравитация 15.0 м/с², максимальный угол склона 45°).
+- Чистый мотор симуляции перемещения `PlayerMotor` (`src/player/player_motor.gd`, метод `simulate(...)`), зависящий только от состояния тела, `PlayerInput`, `MovementConfig`, `stance` и `delta`.
+- Сборщик клиентского ввода `LocalInputReader` (`src/player/local_input_reader.gd`) на базе `InputActions`.
+- Скрипт `Player` (`src/player/player.gd`), генератор `tools/gen_player.gd` и сцена `src/player/player.tscn` (`CharacterBody3D`, капсула 1.8 м × 0.35 м, `Head`, `Camera3D`, слой `players` = 2, маска `world` = 1).
+- Модульные тесты `tests/unit/test_player_motor.gd` (проверка торможения до 0, разгона до целевой скорости за 1 с, высоты прыжка ±5% и прохождения склона 45° на полигоне).
+
 ## [step-1.1] — 2026-10-25
 
 ### Добавлено

@@ -54,8 +54,8 @@
 
 ## Поток данных: ввод → симуляция → представление
 
-1. **Ввод (`PlayerInput`)** — структура ввода за один физический тик (направления, углы взгляда, битовая маска кнопок, номер тика). Все 33 действия `InputMap` объявлены в `project.godot` и обращаются в коде исключительно через `StringName`-константы класса `InputActions` (`res://src/core/input_actions.gd`).
-2. **Симуляция** — детерминированный расчёт движения и игровой логики по `PlayerInput` и `delta` (60 Гц). Игровая логика (урон, смерть, захват, боезапас) авторитетна на сервере.
+1. **Ввод (`PlayerInput`, `LocalInputReader`)** — структура ввода за один физический тик (`res://src/player/player_input.gd`: направления `move`, углы взгляда `yaw`/`pitch`, битовая маска кнопок `buttons`, номер тика `tick`). На клиенте-владельце `LocalInputReader` (`res://src/player/local_input_reader.gd`) собирает `PlayerInput` из глобального `Input` исключительно через `StringName`-константы `InputActions` (`res://src/core/input_actions.gd`).
+2. **Симуляция (`PlayerMotor`, `MovementConfig`, `Player`)** — детерминированный расчёт движения в `PlayerMotor.simulate(body, inp, cfg, stance, delta)` (`res://src/player/player_motor.gd`) по `PlayerInput`, ресурсу параметров `MovementConfig` (`res://src/player/movement_config.gd`, `res://src/player/default_movement.tres`) и `delta` (60 Гц) без прямых обращений к `Input.*`. Сцена игрока `res://src/player/player.tscn` (`Player`, генератор `res://tools/gen_player.gd`) представляет `CharacterBody3D` на слое `players` (`2`) с маской `world` (`1`), капсулой `1.8 × 0.35` м и узлами `Head`/`Camera3D`. Игровая логика (урон, смерть, захват, боезапас) авторитетна на сервере.
 3. **Представление** — интерполяция визуала, камера, анимации, звуки и частицы (только косметика, не влияет на симуляцию).
 
 ## Сетевая модель
