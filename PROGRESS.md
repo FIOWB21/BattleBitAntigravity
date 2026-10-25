@@ -1,7 +1,7 @@
 # PROGRESS
 
-Текущий шаг: 1.1
-Последний завершённый: 0.6
+Текущий шаг: 1.2
+Последний завершённый: 1.1
 
 | Шаг | Статус | Дата | Заметки |
 |---|---|---|---|
@@ -11,7 +11,7 @@
 | 0.4 | DONE | 2026-10-25 | Созданы и зарегистрированы автолоады `Events`, `Game`, `Log`, `Settings`, `Net` и модульные тесты `tests/unit/test_autoloads.gd` |
 | 0.5 | DONE | 2026-10-25 | Объявлены 33 действия `InputMap` в `project.godot`, создан класс констант `InputActions` (`src/core/input_actions.gd`) и тест `tests/unit/test_input_actions.gd` |
 | 0.6 | DONE | 2026-10-25 | Созданы сцена `src/ui/debug_overlay.tscn` (`DebugOverlay`, F3), консоль (`KEY_QUOTELEFT`) и парсер/реестр команд `DebugConsole` (`src/ui/debug_console.gd`), словарь `Game.debug` и тесты `tests/unit/test_debug_overlay.gd` |
-| 1.1 | TODO | | |
+| 1.1 | DONE | 2026-10-25 | Созданы шейдер разметки 1 м `src/maps/testbed/grid_1m.gdshader`, генератор `tools/gen_testbed.gd`, сцена полигона `src/maps/testbed/testbed.tscn` (пол 200×200 м, рампы 15°/30°/45°, лестница 0.2 м, стены 1.0/1.5/2.0/3.0 м, коридор 0.8 м, туннель 1.0 м, стрельбище 10/25/50/100/200 м, `WorldEnvironment`, `DirectionalLight3D`, `PlayerSpawn`) и тесты `tests/unit/test_testbed.gd` |
 | 1.2 | TODO | | |
 | 1.3 | TODO | | |
 | 1.4 | TODO | | |

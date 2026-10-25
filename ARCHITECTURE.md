@@ -47,6 +47,11 @@
 - **`DebugOverlay` (`res://src/ui/debug_overlay.tscn`, `res://src/ui/debug_overlay.gd`)** — слой `CanvasLayer` с панелью телеметрии `StatsPanel` (FPS, кадр в мс, память в MiB, число узлов, позиция локального игрока и пинг из `Game.debug`, переключение по `F3`) и панелью консоли `ConsolePanel` (переключение по `` ` `` / `KEY_QUOTELEFT`).
 - **`DebugConsole` (`res://src/ui/debug_console.gd`)** — `RefCounted`-реестр и парсер команд (`commands: Dictionary` вида `name -> Callable`), предоставляющий встроенные команды `help`, `fps <n>`, `net_sim <ping_ms> <loss_%>`, `god`, `noclip`.
 
+## Генерация сцен и полигон (`Testbed`)
+
+- **Генераторы сцен (`tools/gen_*.gd`)** — сцены создаются воспроизводимыми headless-скриптами (`PackedScene.pack()` + `ResourceSaver.save()`).
+- **Тестовый полигон (`res://src/maps/testbed/testbed.tscn`, генератор `res://tools/gen_testbed.gd`)** — уровень 200×200 м с процедурным шейдером метровой сетки (`res://src/maps/testbed/grid_1m.gdshader`), окружением `WorldEnvironment`, солнцем `DirectionalLight3D`, точкой спавна `PlayerSpawn`, препятствиями для тестирования передвижения (стены 1.0–3.0 м, рампы 15°/30°/45°, лестница 0.2 м, коридор 0.8 м, туннель 1.0 м) и стрельбищем (`ShootingRange`, мишени на 10/25/50/100/200 м). Все коллайдеры находятся на физическом слое `world` (`1`).
+
 ## Поток данных: ввод → симуляция → представление
 
 1. **Ввод (`PlayerInput`)** — структура ввода за один физический тик (направления, углы взгляда, битовая маска кнопок, номер тика). Все 33 действия `InputMap` объявлены в `project.godot` и обращаются в коде исключительно через `StringName`-константы класса `InputActions` (`res://src/core/input_actions.gd`).
