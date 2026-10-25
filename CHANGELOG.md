@@ -2,6 +2,16 @@
 
 Все заметные изменения проекта документируются в этом файле по шагам плана (`docs/STEPS.md`).
 
+## [step-0.5] — 2026-10-25
+
+### Добавлено
+- Класс `InputActions` (`src/core/input_actions.gd`) с 33 `StringName`-константами для всех действий игрока и списком `ALL_ACTIONS`.
+- Модульный тест `tests/unit/test_input_actions.gd`, проверяющий наличие всех 33 констант `InputActions` в `InputMap` и привязку событий ввода.
+
+### Изменено
+- В `project.godot` (секция `[input]`) зарегистрированы 33 действия игрока (`move_forward`, `move_back`, `move_left`, `move_right`, `jump`, `sprint`, `crouch`, `prone`, `lean_left`, `lean_right`, `fire`, `aim`, `reload`, `switch_weapon_next`, `switch_weapon_prev`, `slot_1`…`slot_5`, `use_gadget`, `interact`, `melee`, `throw_grenade`, `scoreboard`, `chat`, `voice`, `map`, `pause_menu`, `squad_menu`, `spot`, `vehicle_seat_next`, `vehicle_exit`).
+- В `ARCHITECTURE.md` отражено использование `InputActions` (`res://src/core/input_actions.gd`) для обращения к `InputMap`.
+
 ## [step-0.4] — 2026-10-25
 
 ### Добавлено

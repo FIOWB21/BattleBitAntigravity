@@ -1,7 +1,7 @@
 # PROGRESS
 
-Текущий шаг: 0.5
-Последний завершённый: 0.4
+Текущий шаг: 0.6
+Последний завершённый: 0.5
 
 | Шаг | Статус | Дата | Заметки |
 |---|---|---|---|
@@ -9,7 +9,7 @@
 | 0.2 | DONE | 2026-10-25 | Созданы ASSETS.md и BLOCKERS.md, заполнена таблица всех 138 шагов в PROGRESS.md, проверены AGENTS.md, ARCHITECTURE.md, docs/STEPS.md и обновлён CHANGELOG.md |
 | 0.3 | DONE | 2026-10-25 | Созданы мини-раннер `tools/run_tests.gd`, базовый класс `GutTest` (`addons/gut/test.gd`), `addons/gut/gut_cmdln.gd`, `tools/scene_smoke.gd`, `tools/check.sh`, `tools/check.ps1` и тест `tests/unit/test_sanity.gd` |
 | 0.4 | DONE | 2026-10-25 | Созданы и зарегистрированы автолоады `Events`, `Game`, `Log`, `Settings`, `Net` и модульные тесты `tests/unit/test_autoloads.gd` |
-| 0.5 | TODO | | |
+| 0.5 | DONE | 2026-10-25 | Объявлены 33 действия `InputMap` в `project.godot`, создан класс констант `InputActions` (`src/core/input_actions.gd`) и тест `tests/unit/test_input_actions.gd` |
 | 0.6 | TODO | | |
 | 1.1 | TODO | | |
 | 1.2 | TODO | | |
