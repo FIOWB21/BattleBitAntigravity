@@ -1,0 +1,2024 @@
+## ЧАСТЬ B — ПОШАГОВЫЙ ПЛАН
+
+### Формат каждого шага
+
+**Цель** — зачем шаг. **Зависит от** — какие шаги должны быть DONE. **Задачи** — что сделать. **Файлы** — что создаётся. **Приёмка** — проверяемые критерии. **Не делай** — защита от «забегания вперёд».
+
+### Карта фаз
+
+|Фаза|Содержание|Результат|
+|-|-|-|
+|0|Подготовка проекта, инструменты, автолоады|Пустой, но проверяемый проект|
+|1|Игрок (офлайн, но «сетево-готовый»)|Бегаем по серому уровню|
+|2|Оружие и бой|Стреляем в мишени|
+|3|Классы и снаряжение|5 классов с гаджетами|
+|4|Сеть|Выделенный сервер, 2+ клиента|
+|5|Игровой режим|Conquest: точки, билеты, отряды|
+|6|Карты|Первая играбельная карта|
+|7|Модели, анимации, звук|Нормальный визуал вместо серых коробок|
+|8|Техника|Джип, танк, вертолёт|
+|9|Разрушаемость и физика|Ломаемые стены, рэгдолл|
+|10|Боты|Заполнение серверов, офлайн-тренировка|
+|11|UI/UX|Меню, лодаут, миникарта|
+|12|Прогрессия|Опыт, звания, разблокировки|
+|13|Оптимизация|64 игрока, стабильные FPS|
+|14|Безопасность и администрирование|Античит-база, админ-команды|
+|15|QA, сборка, деплой, релиз|Готовые билды, Docker-сервер|
+
+\---
+
+## ФАЗА 0. ПОДГОТОВКА
+
+### Шаг 0.1. Создание проекта и базовые настройки
+
+**Цель:** пустой проект Godot 4.7 с правильными настройками. **Зависит от:** —
+
+**Задачи:**
+
+1. Проверь, что `godot --version` (или путь из переменной `GODOT`) отдаёт 4.7.x. Запиши точную версию в ARCHITECTURE.md. Если Godot не найден — BLOCKERS.md и стоп.
+2. Создай `project.godot` (через `godot --headless --path . --quit` на пустой папке или вручную): название `Frontline` (рабочее), окно 1920×1080, `stretch mode = canvas\_items`, рендерер Forward+, физический движок Jolt, `physics\_ticks\_per\_second = 60`, `max\_fps = 0` (VSync задаётся в настройках).
+3. Назови слои физики 3D по таблице из раздела 2 (`layer\_names/3d\_physics/layer\_1 … layer\_8`).
+4. Создай `.gitignore` (`.godot/`, `builds/`, `\*.import` оставить в репозитории не нужно — в Godot 4 их нет, но `.godot/` игнорировать обязательно), `.gitattributes` (текст — LF; бинарные: png, glb, ogg, wav — через Git LFS при наличии), `.editorconfig` (табы для .gd, LF).
+5. Создай пустые каталоги по структуре из раздела 3 (с файлами `.gdkeep`).
+
+**Приёмка:** `godot --headless --path . --quit` завершается с кодом 0 без ошибок; слои физики названы; репозиторий содержит первый коммит.
+
+**Не делай:** никаких сцен и скриптов игры.
+
+### Шаг 0.2. Документы проекта
+
+**Цель:** агент и человек имеют единый источник правды. **Зависит от:** 0.1
+
+**Задачи:** создай `AGENTS.md` (Часть A дословно), `PROGRESS.md` (таблица всех шагов из `docs/STEPS.md` со статусом TODO; текущий шаг помечен), `ARCHITECTURE.md` (по 5.3), `ASSETS.md` (таблица: файл | источник | автор | лицензия | дата), `BLOCKERS.md`, `CHANGELOG.md`. Положи план в `docs/STEPS.md`.
+
+**Приёмка:** все файлы существуют; в PROGRESS.md ровно столько строк, сколько шагов в STEPS.md; 0.1 и 0.2 отмечены DONE.
+
+### Шаг 0.3. Тестовая инфраструктура и скрипт проверки
+
+**Цель:** одна команда проверяет весь проект. **Зависит от:** 0.2
+
+**Задачи:**
+
+1. Установи GUT в `addons/gut` (если версия не совместима с 4.7 — попробуй gdUnit4; если оба не работают — напиши мини-раннер `tools/run\_tests.gd`, который находит `tests/unit/test\_\*.gd`, вызывает методы `test\_\*` и считает `assert`-ы; запиши решение в ARCHITECTURE.md).
+2. Создай `tools/scene\_smoke.gd`: загружает и инстанцирует каждую `.tscn` из `src/` и `tests/`, ловит ошибки загрузки, возвращает ненулевой код при сбое.
+3. Создай `tools/check.sh` (и `check.ps1` для Windows).
+4. Напиши один тривиальный тест `tests/unit/test\_sanity.gd`.
+
+```gdscript
+# tools/scene\_smoke.gd
+extends SceneTree
+
+func \_init() -> void:
+    var failed: int = 0
+    for path in \_find\_scenes('res://src'):
+        var res: Resource = load(path)
+        if res == null or not (res is PackedScene):
+            printerr('SMOKE FAIL load: ', path)
+            failed += 1
+            continue
+        var inst: Node = (res as PackedScene).instantiate()
+        if inst == null:
+            printerr('SMOKE FAIL instantiate: ', path)
+            failed += 1
+        else:
+            inst.free()
+    print('SMOKE done, failed=', failed)
+    quit(1 if failed > 0 else 0)
+
+func \_find\_scenes(dir\_path: String) -> Array\[String]:
+    var out: Array\[String] = \[]
+    var da := DirAccess.open(dir\_path)
+    if da == null:
+        return out
+    for d in da.get\_directories():
+        out.append\_array(\_find\_scenes(dir\_path + '/' + d))
+    for f in da.get\_files():
+        if f.ends\_with('.tscn'):
+            out.append(dir\_path + '/' + f)
+    return out
+```
+
+```bash
+#!/usr/bin/env bash
+# tools/check.sh
+set -e
+GODOT=${GODOT:-godot}
+$GODOT --headless --path . --import
+$GODOT --headless --path . -s res://tools/scene\_smoke.gd
+$GODOT --headless --path . -s addons/gut/gut\_cmdln.gd -gdir=res://tests -ginclude\_subdirs -gexit
+echo CHECK OK
+```
+
+**Приёмка:** `tools/check.sh` проходит и печатает `CHECK OK`; специально сломанный тест (проверь и верни обратно) приводит к ненулевому коду.
+
+### Шаг 0.4. Автолоады-каркас
+
+**Цель:** минимальный глобальный каркас. **Зависит от:** 0.3
+
+**Задачи:** создай и зарегистрируй автолоады: `Log` (уровни debug/info/warn/error, префикс времени и роли `\[SERVER]/\[CLIENT]`), `Events` (шина сигналов), `Settings` (ConfigFile в `user://settings.cfg`: чувствительность, FOV, громкость, графика — геттеры с дефолтами), `Game` (состояние приложения: меню/в игре; флаги `is\_server`, `is\_dedicated` определяются по `OS.has\_feature('dedicated\_server')` и аргументам `--server`). `Net` пока пустая заглушка с TODO.
+
+```gdscript
+# src/autoload/events.gd
+extends Node
+# Глобальная шина. Добавляем сигналы только когда они реально нужны шагам.
+signal player\_spawned(peer\_id: int)
+signal player\_died(victim\_id: int, killer\_id: int, weapon\_id: StringName)
+signal settings\_changed()
+```
+
+```gdscript
+# src/autoload/log.gd
+extends Node
+enum Level { DEBUG, INFO, WARN, ERROR }
+var min\_level: Level = Level.DEBUG
+
+func d(msg: String) -> void: \_out(Level.DEBUG, msg)
+func i(msg: String) -> void: \_out(Level.INFO, msg)
+func w(msg: String) -> void: \_out(Level.WARN, msg)
+func e(msg: String) -> void: \_out(Level.ERROR, msg)
+
+func \_out(level: Level, msg: String) -> void:
+    if level < min\_level:
+        return
+    var line := '\[%s]\[%s] %s' % \[Time.get\_time\_string\_from\_system(), Level.keys()\[level], msg]
+    if level == Level.ERROR:
+        push\_error(line)
+    else:
+        print(line)
+```
+
+**Приёмка:** тест на `Settings` (запись/чтение, дефолты); `Log.i('test')` печатает строку; check.sh зелёный.
+
+### Шаг 0.5. Карта ввода (InputMap)
+
+**Цель:** все действия игрока объявлены один раз. **Зависит от:** 0.4
+
+**Задачи:** в `project.godot` объяви действия: `move\_forward, move\_back, move\_left, move\_right, jump, sprint, crouch, prone, lean\_left, lean\_right, fire, aim, reload, switch\_weapon\_next, switch\_weapon\_prev, slot\_1…slot\_5, use\_gadget, interact, melee, throw\_grenade, scoreboard, chat, voice, map, pause\_menu, squad\_menu, spot, vehicle\_seat\_next, vehicle\_exit`. Создай `src/core/input\_actions.gd` с константами `StringName` для каждого действия (чтобы не писать строки по коду). Создай тест, проверяющий, что каждая константа есть в `InputMap`.
+
+**Приёмка:** тест проходит; названия в коде используются только через константы.
+
+### Шаг 0.6. Отладочный оверлей и консоль
+
+**Цель:** видеть FPS, позицию, сеть. **Зависит от:** 0.5
+
+**Задачи:** сцена `src/ui/debug\_overlay.tscn` (CanvasLayer): FPS, кадр (ms), память, число узлов, позиция локального игрока (пока заглушка), пинг (заглушка). Переключение по F3. Простая консоль по ``` с командами: `help`, `fps <n>`, `net\_sim <ping\_ms> <loss\_%>` (пока сохраняет значения в `Game.debug`), `god`, `noclip` (хуки, реализуются позже). Регистрация команд через словарь `name -> Callable`.
+
+**Приёмка:** оверлей включается/выключается; команда `help` печатает список; тест парсера команд.
+
+**Конец фазы 0:** тег `phase-0-done`. Остановись и жди следующую команду.
+
+\---
+
+## ФАЗА 1. ИГРОК (офлайн, но «сетево-готовый»)
+
+> \*\*Важное правило для всей фазы (и далее):\*\* агент не пользуется GUI-редактором. Сцены создаются либо вручную как текстовые `.tscn`, либо (предпочтительно) \*\*скриптами-генераторами\*\* `tools/gen\_\*.gd`, которые собирают дерево узлов через код и сохраняют через `PackedScene.pack()` + `ResourceSaver.save()`. Генератор коммитится вместе с результатом, чтобы сцену можно было пересобрать. Запуск: `godot --headless --path . -s res://tools/gen\_xxx.gd`.
+
+### Шаг 1.1. Серый полигон (testbed)
+
+**Цель:** полигон для проверки движения и стрельбы. **Зависит от:** 0.6
+
+**Задачи:**
+
+1. Генератор `tools/gen\_testbed.gd` → `src/maps/testbed/testbed.tscn`: пол 200×200 м, разметка каждые 1 м (текстура-сетка или шейдер), рампы 15°/30°/45°, лестница (ступени 0.2 м), стены 1.0/1.5/2.0/3.0 м (для проверки присяда, прыжка, залезания), коридор шириной 0.8 м, туннель высотой 1.0 м (для положения лёжа), площадка со стрельбищем: мишени на 10/25/50/100/200 м.
+2. `WorldEnvironment` (простое небо, ambient), `DirectionalLight3D` с тенями, все коллайдеры на слое `world`.
+3. Корневой узел с маркером `PlayerSpawn` (Marker3D).
+
+**Приёмка:** сцена загружается в smoke-тесте; в сцене есть узлы `PlayerSpawn` и минимум 10 препятствий разной высоты.
+
+**Не делай:** игрока, оружие, UI.
+
+### Шаг 1.2. Ввод и «чистая» симуляция движения
+
+**Цель:** движение, которое можно будет воспроизвести на сервере и при реконсиляции. **Зависит от:** 1.1
+
+**Идея:** игрок = `CharacterBody3D`. Логика движения вынесена из узла в `PlayerMotor` и зависит только от (состояние тела, `PlayerInput`, `MovementConfig`, `delta`). Никаких обращений к `Input.\*` внутри мотора — только из `PlayerInput`.
+
+**Задачи:**
+
+1. `src/player/player\_input.gd` — структура ввода одного тика.
+2. `src/player/movement\_config.gd` (Resource) + `src/player/default\_movement.tres`: скорости (ходьба 4.0, бег 6.5, присед 2.0, лёжа 0.8 м/с — стартовые значения), ускорение на земле/в воздухе, высота прыжка, гравитация, угол склона.
+3. `src/player/player\_motor.gd` — `simulate(...)`.
+4. `src/player/local\_input\_reader.gd` — собирает `PlayerInput` из `Input` (на клиенте-владельце).
+5. `src/player/player.tscn` — `CharacterBody3D` + `CollisionShape3D` (капсула 1.8 м, радиус 0.35) + `Head` (Node3D) + `Camera3D`. Слой `players`, маска `world`.
+6. Юнит-тесты мотора: при пустом вводе скорость → 0; при `move=(0,1)` через 1 с скорость ≈ целевой; прыжок поднимает на ожидаемую высоту ±5%.
+
+```gdscript
+# src/player/player\_input.gd
+class\_name PlayerInput
+extends RefCounted
+
+const BTN\_JUMP := 1 << 0
+const BTN\_SPRINT := 1 << 1
+const BTN\_CROUCH := 1 << 2
+const BTN\_PRONE := 1 << 3
+const BTN\_FIRE := 1 << 4
+const BTN\_AIM := 1 << 5
+const BTN\_RELOAD := 1 << 6
+const BTN\_LEAN\_L := 1 << 7
+const BTN\_LEAN\_R := 1 << 8
+
+var tick: int = 0
+var move: Vector2 = Vector2.ZERO  # x: вправо, y: вперёд, длина <= 1
+var yaw: float = 0.0
+var pitch: float = 0.0
+var buttons: int = 0
+
+func pressed(btn: int) -> bool:
+    return (buttons \& btn) != 0
+```
+
+```gdscript
+# src/player/player\_motor.gd
+class\_name PlayerMotor
+extends RefCounted
+
+func simulate(body: CharacterBody3D, inp: PlayerInput, cfg: MovementConfig, stance: int, delta: float) -> void:
+    body.rotation.y = inp.yaw
+    var local := Vector3(inp.move.x, 0.0, -inp.move.y)
+    var wish: Vector3 = body.global\_transform.basis \* local
+    var sprint: bool = inp.pressed(PlayerInput.BTN\_SPRINT) and inp.move.y > 0.0
+    var target: Vector3 = wish \* cfg.speed\_for(stance, sprint)
+    var v: Vector3 = body.velocity
+    if body.is\_on\_floor():
+        v.x = move\_toward(v.x, target.x, cfg.accel\_ground \* delta)
+        v.z = move\_toward(v.z, target.z, cfg.accel\_ground \* delta)
+        if inp.pressed(PlayerInput.BTN\_JUMP) and stance == 0:
+            v.y = cfg.jump\_velocity
+    else:
+        v.x = move\_toward(v.x, target.x, cfg.accel\_air \* delta)
+        v.z = move\_toward(v.z, target.z, cfg.accel\_air \* delta)
+        v.y -= cfg.gravity \* delta
+    body.velocity = v
+    body.move\_and\_slide()
+```
+
+**Приёмка:** тесты мотора проходят; игрока можно временно поставить на полигон тестовой сценой и пройти по нему (🧑 проверить: нет залипания на стыках пола, склоны до заданного угла проходимы).
+
+**Не делай:** присед/лёжа (1.4), оружие, сеть.
+
+### Шаг 1.3. Камера, мышь, FOV
+
+**Зависит от:** 1.2
+
+**Задачи:**
+
+1. Обзор мышью: yaw накапливается в `LocalInputReader` (не в самом теле), pitch ограничен ±89°. Чувствительность из `Settings`, инверсия оси опционально.
+2. `Camera3D` на `Head`; FOV из `Settings` (по умолчанию 90, диапазон 60–120). Захват курсора (`Input.mouse\_mode = MOUSE\_MODE\_CAPTURED`), Esc освобождает.
+3. Сглаживание визуала: включить физическую интерполяцию (проверить настройку `physics/common/physics\_interpolation` и API в 4.7), чтобы камера не дрожала при 60 Гц физики и высоком FPS. Если интерполяция конфликтует — решение записать в ARCHITECTURE.md.
+4. Head bob и дыхание — **только визуал**, отдельным узлом `CameraEffects`, выключается настройкой.
+5. Тест: `LocalInputReader` при заданных дельтах мыши даёт ожидаемый yaw/pitch и не выходит за предел.
+
+**Приёмка:** взгляд плавный на 60 и 144 FPS (🧑), pitch не переворачивается, пауза возвращает курсор.
+
+### Шаг 1.4. Стойки: стоя / присед / лёжа / наклоны
+
+**Зависит от:** 1.3
+
+**Задачи:**
+
+1. `PlayerStance` (enum STAND, CROUCH, PRONE) и компонент `StanceController`: высота капсулы 1.8 / 1.2 / 0.5 м, высота камеры 1.65 / 1.05 / 0.35 м, плавный переход.
+2. Подъём в более высокую стойку только если над головой нет препятствия (`test\_move` или `ShapeCast3D`).
+3. Лёжа нельзя прыгать; переход из лёжа в стоя — через присед или за 0.6 с.
+4. Наклоны (lean) ±15° и смещение головы ±0.4 м с проверкой стены. Это входит в состояние игрока → попадает в `PlayerInput` как кнопки.
+5. Тесты: смена стойки не меняет положение ног (ступни остаются на полу), блокировка подъёма под низким потолком.
+
+**Приёмка:** в туннеле 1.0 м можно ползти и нельзя встать; нет проваливания в пол при смене стойки.
+
+### Шаг 1.5. Бег, прыжок, ступеньки, падение
+
+**Зависит от:** 1.4
+
+**Задачи:** спринт только вперёд, нельзя спринтить лёжа и в присяде; выносливость (опционально через конфиг, по умолчанию бесконечный спринт); автоподъём на ступени до 0.35 м (step-up через `test\_move` вверх → вперёд → вниз); урон от падения при скорости ниже −12 м/с по формуле из конфига (урон применяется через `HealthComponent`, пока локально); coyote time 0.1 с (конфиг).
+
+**Приёмка:** лестница на полигоне проходится бегом без подпрыгиваний; падение с 2 м безвредно, с 8 м наносит урон; все значения вынесены в `MovementConfig`.
+
+### Шаг 1.6. HealthComponent
+
+**Зависит от:** 1.2
+
+```gdscript
+# src/core/health\_component.gd
+class\_name HealthComponent
+extends Node
+
+signal health\_changed(current: float, max\_value: float)
+signal damaged(amount: float, source\_id: int, zone: int)
+signal died(killer\_id: int)
+
+@export var max\_health: float = 100.0
+var current: float = 0.0
+var is\_dead: bool = false
+
+func \_ready() -> void:
+    current = max\_health
+
+func apply\_damage(amount: float, source\_id: int = 0, zone: int = 0) -> void:
+    if is\_dead or amount <= 0.0:
+        return
+    current = maxf(current - amount, 0.0)
+    damaged.emit(amount, source\_id, zone)
+    health\_changed.emit(current, max\_health)
+    if current <= 0.0:
+        is\_dead = true
+        died.emit(source\_id)
+
+func heal(amount: float) -> void:
+    if is\_dead:
+        return
+    current = minf(current + amount, max\_health)
+    health\_changed.emit(current, max\_health)
+```
+
+**Задачи:** компонент выше; опциональная регенерация (`regen\_delay`, `regen\_rate`) отключённая по умолчанию; `reset()` для респавна. Юнит-тесты: урон, смерть ровно один раз, лечение не выше максимума, урон мёртвому игнорируется.
+
+**Приёмка:** тесты зелёные.
+
+### Шаг 1.7. Хитбоксы
+
+**Зависит от:** 1.6
+
+**Задачи:** `HitboxZone` (Area3D, слой `hitboxes`, `monitoring=false`): поля `zone` (HEAD, TORSO, ARMS, LEGS), `damage\_mult` (из конфига), ссылка на владельца-`HealthComponent`. `PlayerHitboxes` — набор зон по размеру капсулы (голова — сфера, торс — капсула/бокс, руки/ноги — боксы), подгоняемых под текущую стойку. Метод `HitscanQuery.cast(from, to, exclude) -> HitResult` в `src/weapons/hitscan\_query.gd`: луч с `collide\_with\_areas = true`, `collide\_with\_bodies = true`, маска `world + hitboxes`; возвращает точку, нормаль, зону, цель. Тесты на полигоне: попадание в голову/торс/ногу даёт нужную зону.
+
+**Приёмка:** юнит/интеграционный тест лучей по зонам проходит; хитбоксы не мешают движению (они не на слое `players`).
+
+### Шаг 1.8. Тренировочные цели и базовый HUD
+
+**Зависит от:** 1.7
+
+**Задачи:** сцена `target\_dummy.tscn` (стоячая и двигающаяся по пути, с `HealthComponent`, респавн через 3 с). HUD (`src/ui/hud/hud.tscn`): полоска здоровья, прицел-точка, индикатор стойки, заглушки под патроны. Подписка на сигналы `HealthComponent`, а не опрос в `\_process`.
+
+**Приёмка:** на полигоне стоят 5 мишеней; HUD показывает здоровье (можно вызвать `apply\_damage` консольной командой `damage <n>`).
+
+**Конец фазы 1:** `phase-1-done`. 🧑 Пробежать полигон 5 минут, записать замечания в PROGRESS.md.
+
+\---
+
+## ФАЗА 2. ОРУЖИЕ И БОЙ
+
+### Шаг 2.1. Ресурс WeaponData
+
+**Цель:** всё оружие описывается данными. **Зависит от:** 1.8
+
+```gdscript
+# src/weapons/weapon\_data.gd
+class\_name WeaponData
+extends Resource
+
+enum FireMode { SEMI, AUTO, BURST }
+enum Category { AR, SMG, LMG, DMR, SNIPER, SHOTGUN, PISTOL, LAUNCHER }
+
+@export var id: StringName
+@export var display\_name: String
+@export var category: Category = Category.AR
+@export var fire\_modes: Array\[FireMode] = \[FireMode.AUTO, FireMode.SEMI]
+@export var rpm: float = 700.0
+@export var burst\_count: int = 3
+@export\_group('Damage')
+@export var damage\_near: float = 30.0
+@export var damage\_far: float = 18.0
+@export var range\_near: float = 25.0
+@export var range\_far: float = 80.0
+@export var headshot\_mult: float = 1.8
+@export var limb\_mult: float = 0.8
+@export var pellets: int = 1
+@export var penetration: float = 0.0
+@export\_group('Ammo')
+@export var mag\_size: int = 30
+@export var reserve\_mags: int = 5
+@export var reload\_time: float = 2.2
+@export var reload\_empty\_time: float = 2.8
+@export\_group('Handling')
+@export var draw\_time: float = 0.5
+@export var ads\_time: float = 0.2
+@export var ads\_fov\_mult: float = 0.75
+@export var move\_speed\_mult: float = 1.0
+@export var spread\_hip\_deg: float = 2.0
+@export var spread\_ads\_deg: float = 0.3
+@export var recoil\_pattern: Array\[Vector2] = \[]
+@export\_group('Presentation')
+@export var viewmodel\_scene: PackedScene
+@export var worldmodel\_scene: PackedScene
+@export var fire\_sound: AudioStream
+
+func cooldown() -> float:
+    return 60.0 / rpm
+
+func damage\_at(distance: float) -> float:
+    var t: float = clampf(inverse\_lerp(range\_near, range\_far, distance), 0.0, 1.0)
+    return lerpf(damage\_near, damage\_far, t)
+```
+
+**Задачи:** файл выше; по одному примеру `.tres` на категорию — **временные** значения, финальный баланс в 2.12; тесты `damage\_at` (граничные дистанции) и `cooldown`.
+
+**Приёмка:** ресурсы загружаются, тесты проходят.
+
+### Шаг 2.2. Машина состояний оружия
+
+**Зависит от:** 2.1
+
+**Задачи:** `Weapon` (Node3D) с состояниями IDLE, FIRING, RELOADING, SWITCHING\_IN, SWITCHING\_OUT, BLOCKED (спринт/на лестнице/падение). Время считается **тиками симуляции** (а не `Timer`), чтобы сервер и клиент давали одинаковый результат: `next\_fire\_tick`, `reload\_end\_tick`. Режимы огня: полуавто (кнопку нужно отпустить), авто, очередь. Переключение режима. Сигналы `fired`, `reload\_started`, `reload\_finished`, `ammo\_changed`. Юнит-тесты на таймингах: при 600 RPM за 1 с (60 тиков) — ровно 10 выстрелов; очередь по 3; нельзя стрелять во время перезарядки.
+
+**Приёмка:** тесты таймингов зелёные; оружие без стрельбы по лучам пока выдаёт сигнал `fired`.
+
+### Шаг 2.3. Хитскан-стрельба и урон
+
+**Зависит от:** 2.2, 1.7
+
+**Задачи:** при `fired` — луч из камеры (центр экрана) по направлению с разбросом; для дробовика — `pellets` лучей. Результат → `DamageEvent` (RefCounted: атакующий, цель, зона, урон, оружие, дистанция, точка). Урон = `damage\_at(dist) × zone\_mult`. Для 2.3 урон применяется локально к `HealthComponent` мишени. Реализовать функции как чистые (`DamageCalc.compute(weapon, distance, zone)`) и покрыть тестами. Пробитие тонких поверхностей (опционально, если `penetration > 0`): повторный луч за преградой с понижением урона.
+
+**Приёмка:** на полигоне мишени умирают за ожидаемое число попаданий (тест: AR на 10 м — N попаданий в торс, голова — меньше); тест на дробовик (сумма пуль).
+
+### Шаг 2.4. Отдача и разброс
+
+**Зависит от:** 2.3
+
+**Задачи:** два слоя: (а) **отдача** — смещение камеры по паттерну (`recoil\_pattern\[i]`, затем случайный шум), с восстановлением после паузы; (б) **разброс** — конус вокруг направления, растёт от стрельбы и движения, уменьшается в присяде/лёжа/ADS. Детерминированный `RandomNumberGenerator` с сидом из тика (чтобы сервер мог воспроизвести). Тесты: распределение разброса не выходит за конус; паттерн повторяется при одинаковом сиде.
+
+**Приёмка:** 🧑 ощущения отдачи — «читаемая, управляемая»; значения вынесены в `.tres`.
+
+### Шаг 2.5. Патроны и перезарядка
+
+**Зависит от:** 2.2
+
+**Задачи:** магазин + запас; тактическая перезарядка (+1 патрон в патроннике) и «пустая»; прерывание перезарядки сменой оружия/спринтом (по настройке); пустой магазин → щелчок; подбор патронов из ящика (интерфейс `AmmoReceiver.add\_ammo(fraction)`). HUD показывает `30 / 150`.
+
+**Приёмка:** тесты на арифметику патронов (включая крайние случаи, запас меньше магазина).
+
+### Шаг 2.6. Прицеливание (ADS) и оптика
+
+**Зависит от:** 2.4
+
+**Задачи:** по `BTN\_AIM` — плавное изменение FOV (`ads\_fov\_mult`), снижение чувствительности пропорционально zoom, замедление; смещение viewmodel к центру. Оптика: сначала упрощённо — FOV-зум + 2D-оверлей прицела; PIP-прицел на `SubViewport` — только отдельным шагом позже (дорого по FPS).
+
+**Приёмка:** ADS длится `ads\_time`; чувствительность в ADS пересчитывается (тест формулы); нет скачка FOV.
+
+### Шаг 2.7. Инвентарь и смена оружия
+
+**Зависит от:** 2.5
+
+**Задачи:** слоты: 1 основное, 2 дополнительное, 3 гаджет, 4 гаджет, 5 граната/нож. `Loadout` (Resource) → `Inventory` (Node). Переключение клавишами и колесом; время `draw\_time`; нельзя стрелять до конца подъёма; последнее оружие — быстрый переключатель.
+
+**Приёмка:** тесты на последовательность смен; состояние патронов каждого оружия сохраняется при смене.
+
+### Шаг 2.8. Viewmodel (оружие от первого лица)
+
+**Зависит от:** 2.7
+
+**Задачи:** отдельный `ViewmodelRig` под камерой. Проблема «оружие проходит сквозь стену» и разный FOV: проверить, есть ли в 4.7 `use\_fov\_override` у `BaseMaterial3D`; если да — использовать; иначе — `SubViewport`-оверлей или отдельный слой визуала. Процедурная анимация кодом (пружины): sway от мыши, bob от движения, kick при выстреле, наклон при беге, анимация перезарядки (смещение/поворот по кривым). Модели — временные примитивы (см. Фазу 7).
+
+**Приёмка:** 🧑 оружие не клиппится через стены на полигоне; пружины стабильны при низком/высоком FPS (зависят от delta).
+
+### Шаг 2.9. Эффекты стрельбы
+
+**Зависит от:** 2.8
+
+**Задачи:** пулы объектов (`ObjectPool`): вспышка (GPUParticles3D + 1-кадровый OmniLight), трассеры (тонкий меш, 1 из N пуль), гильзы, импакты по поверхности (бетон, земля, металл, дерево, плоть, вода) — тип поверхности берётся из метаданных коллайдера (`surface\_type`), декали отверстий (`Decal` кольцевым буфером на 256 штук), звук выстрела (`AudioStreamPlayer3D`, пул 32), хит-маркер и звук попадания, пуля-проходит-рядом (whiz). Все эффекты — только косметика, не влияют на симуляцию.
+
+**Приёмка:** никаких `instantiate()`/`queue\_free()` на каждый выстрел (проверить профайлером/счётчиком узлов); при 30 с непрерывной стрельбы число узлов в сцене постоянно.
+
+### Шаг 2.10. Гранаты и снаряды
+
+**Зависит от:** 2.3
+
+**Задачи:** `Projectile` — собственная баллистика (гравитация, сопротивление, `PhysicsRayQueryParameters3D` по сегменту за тик): детерминирована и дёшева, лучше `RigidBody3D` для сетевой игры. Осколочная граната: запал 3 с, отскок, взрыв (урон по радиусу с затуханием и проверкой линии видимости до игрока), оглушение/звон в ушах (косметика). Дым и светошумовая — по тому же шаблону. Реактивный снаряд (РПГ/подствольник) использует тот же `Projectile`.
+
+**Приёмка:** тест на формулу урона взрыва (центр/край/за стеной); граната отскакивает от стены и падает по параболе (интеграционный тест на полигоне).
+
+### Шаг 2.11. Ближний бой
+
+**Зависит от:** 2.3
+
+**Задачи:** нож: короткий луч/сфера-каст 1.5 м, урон со спины = убийство, задержка удара, анимация. **Приёмка:** тест на попадание в спину/в лицо.
+
+### Шаг 2.12. Контент оружия и баланс
+
+**Зависит от:** 2.4–2.11
+
+**Задачи:** создать `.tres` для 12–16 единиц: 3 штурмовые винтовки, 2 ПП, 2 ЛПК, 2 марксманские, 2 снайперские, 2 дробовика, 3 пистолета, подствольный гранатомёт. Файл `docs/BALANCE.md` с таблицей TTK (время убийства) по дистанциям — генерируется скриптом `tools/ttk\_report.gd` из `.tres`. Целевые ориентиры: ТТК штурмовой винтовки на средней дистанции 0.25–0.4 с (BattleBit-подобная скорость), снайпер — убийство с одного попадания в голову, ПП сильнее вблизи, ЛПК — на подавлении и стойке.
+
+**Приёмка:** отчёт TTK сгенерирован; 🧑 человек проверяет «ощущение» каждого оружия и правит `.tres`.
+
+### Шаг 2.13. Обвесы
+
+**Зависит от:** 2.12
+
+**Задачи:** `AttachmentData` (Resource): слот (прицел, дуло, ствол, рукоять, магазин), список модификаторов (`stat`, `op` = add/mul, `value`). `WeaponStats.resolve(weapon, attachments)` возвращает итоговые значения. Модели обвесов — как дочерние сцены в точках `Muzzle`, `Sight`, `Grip`. Тесты: порядок применения модификаторов, лимит на один обвес в слоте.
+
+**Приёмка:** тесты резолва зелёные; из меню лодаута можно (пока тестовой командой) надеть обвес и увидеть изменение разброса.
+
+**Конец фазы 2:** `phase-2-done`. 🧑 10 минут на стрельбище.
+
+\---
+
+## ФАЗА 3. КЛАССЫ И СНАРЯЖЕНИЕ
+
+### Шаг 3.1. ClassData и лодаут
+
+**Зависит от:** 2.13
+
+**Задачи:** `ClassData` (Resource): `id`, название, здоровье, множитель скорости, разрешённые категории основного/дополнительного оружия, слоты гаджетов, список пассивных перков. Пять классов: **Assault** (штурмовик: подствольник, быстрый), **Medic** (аптечки, реанимация), **Support** (ящики патронов, ЛПК, подавление), **Engineer** (ремонт, ПТ-оружие, мины), **Recon** (снайперка, засветка целей, маяк возрождения). Класс «командир отряда» добавится в 5.6. `LoadoutValidator.validate(class, loadout) -> Array\[String]` возвращает список ошибок (запрещённое оружие, дубликаты гаджетов).
+
+**Приёмка:** тесты валидатора; `.tres` для 5 классов.
+
+### Шаг 3.2. Базовый гаджет
+
+**Зависит от:** 3.1
+
+**Задачи:** `Gadget` (Node): `use(ctx)`, заряды, перезарядка/кулдаун, `can\_use()`; состояние в тиках. Интерфейс `Deployable` (ящик, мина, маяк) — объект, который сервер создаёт и реплицирует. Пока всё работает локально, но методы вызываются «как на сервере» (проверка `Game.is\_server\_or\_offline()`).
+
+**Приёмка:** тесты зарядов и кулдауна.
+
+### Шаг 3.3. Ранение и реанимация
+
+**Зависит от:** 3.2
+
+**Задачи:** при смерти игрок переходит в состояние `DOWNED` на 20 с (конфиг): лежит, не может стрелять, истекает кровью (таймер). Медик подходит и удерживает `interact` 3 с → игрок встаёт с 30% здоровья. Если время вышло или добит — окончательная смерть и экран выбора респавна. Режим можно выключить флагом правил матча. Автомат состояний игрока: ALIVE → DOWNED → DEAD → SPAWN\_SELECT.
+
+**Приёмка:** тесты автомата; реанимация отменяется, если медик отошёл или был убит.
+
+### Шаг 3.4. Гаджеты классов
+
+**Зависит от:** 3.3
+
+Один шаг = один набор. Каждый подшаг заканчивается тестом и коммитом.
+
+|Подшаг|Класс|Гаджет|Поведение|
+|-|-|-|-|
+|3.4a|Medic|Аптечка-сумка|Деплой на землю, лечит всех в радиусе 4 м по X HP/с, 20 с|
+|3.4b|Support|Ящик боеприпасов|Деплой, пополняет патроны/гранаты, лимит 1 на игрока|
+|3.4c|Engineer|Ремонтный инструмент|Луч на технику, ремонт X HP/с, перегрев|
+|3.4d|Engineer|Противотанковая мина + C4|Детонация по команде, урон технике ×3, по людям — по радиусу|
+|3.4e|Recon|Засветка (spot)|Метка на 8 с у союзников, видна сквозь стены на HUD|
+|3.4f|Recon|Маяк возрождения|Отряд может возродиться рядом; уничтожается уроном|
+|3.4g|Assault|Подствольник|Использует `Projectile` из 2.10|
+
+**Приёмка каждого:** юнит-тест логики, сцена с примитивной моделью, запись в BALANCE.md.
+
+**Конец фазы 3:** `phase-3-done`.
+
+\---
+
+## ФАЗА 4. СЕТЬ
+
+> Это самая рискованная фаза. Правила: (1) сервер авторитетен, (2) клиент никогда не сообщает «я попал» — только «я нажал огонь», (3) любое сообщение клиента проверяется сервером на допустимость, (4) каждый шаг проверяется интеграционным тестом с \*\*настоящим\*\* сервером и клиентами в отдельных процессах.
+
+### Архитектурные решения сети (внести в ARCHITECTURE.md на шаге 4.1)
+
+|Тема|Решение|
+|-|-|
+|Транспорт|`ENetMultiplayerPeer`, порт 7777 UDP, каналы: 0 — надёжные события, 1 — ввод, 2 — снапшоты, 3 — чат/прочее|
+|Тик|Симуляция 60 Гц (`physics\_ticks\_per\_second`), снапшоты клиентам 30 Гц|
+|Репликация сущностей|Появление/исчезновение — надёжно (`MultiplayerSpawner` с `spawn\_function`). Состояние — **свои компактные снапшоты** (а не `MultiplayerSynchronizer` на каждое свойство), чтобы контролировать трафик для 64 игроков|
+|Ввод|Клиент шлёт последние 4–8 вводов каждый тик (избыточность вместо надёжной доставки)|
+|Предсказание|Только для своего игрока: предсказание + реконсиляция по подтверждённому тику|
+|Чужие игроки|Интерполяция с задержкой 100 мс (≈ 3 снапшота), экстраполяция не более 100 мс|
+|Стрельба|Сервер перематывает хитбоксы на время клиента (лаг-компенсация, не более 250 мс)|
+|Квантование|Позиция — 16 бит на ось в пределах карты, углы — 16 бит, здоровье — 8 бит|
+
+### Шаг 4.1. Каркас сети: хост, клиент, рукопожатие
+
+**Зависит от:** 3.4g (фаза 3 завершена)
+
+**Задачи:**
+
+1. Расширь автолоад `Net`: `start\_server(port, max\_clients)`, `join(address, port)`, `disconnect\_all()`, сигналы `peer\_joined`, `peer\_left`, `connected\_to\_server`, `connection\_failed`. Серверный тик `Net.tick` растёт в `\_physics\_process`.
+2. Рукопожатие: клиент после подключения шлёт надёжный RPC `hello(protocol\_version, nickname)`; сервер проверяет версию, ник (длина, символы, уникальность), пароль сервера; при несовпадении — `kick(reason)` и отключение.
+3. Аргументы командной строки для сервера: `--server --port=7777 --max=32 --map=<id> --password=<x>` (парсер в `Game`, тест парсера).
+4. Простое главное меню-заглушка: поля адрес/порт/ник, кнопки Host (listen-server для отладки) и Join.
+
+```gdscript
+# src/autoload/net.gd (фрагмент)
+extends Node
+
+signal peer\_joined(id: int, nickname: String)
+signal peer\_left(id: int)
+signal connected\_to\_server()
+signal connection\_failed()
+
+const PROTOCOL\_VERSION := 1
+const DEFAULT\_PORT := 7777
+
+var tick: int = 0
+var nicknames: Dictionary = {}  # peer\_id -> String
+
+func \_physics\_process(\_delta: float) -> void:
+    tick += 1
+
+func start\_server(port: int, max\_clients: int) -> Error:
+    var peer := ENetMultiplayerPeer.new()
+    var err: Error = peer.create\_server(port, max\_clients)
+    if err != OK:
+        return err
+    multiplayer.multiplayer\_peer = peer
+    multiplayer.peer\_connected.connect(\_on\_peer\_connected)
+    multiplayer.peer\_disconnected.connect(\_on\_peer\_disconnected)
+    return OK
+
+func join(address: String, port: int) -> Error:
+    var peer := ENetMultiplayerPeer.new()
+    var err: Error = peer.create\_client(address, port)
+    if err != OK:
+        return err
+    multiplayer.multiplayer\_peer = peer
+    multiplayer.connected\_to\_server.connect(func(): connected\_to\_server.emit())
+    multiplayer.connection\_failed.connect(func(): connection\_failed.emit())
+    return OK
+
+@rpc('any\_peer', 'call\_remote', 'reliable', 0)
+func hello(version: int, nickname: String) -> void:
+    if not multiplayer.is\_server():
+        return
+    var id: int = multiplayer.get\_remote\_sender\_id()
+    if version != PROTOCOL\_VERSION or not \_valid\_nick(nickname):
+        \_kick(id, 'bad\_hello')
+        return
+    nicknames\[id] = nickname
+    peer\_joined.emit(id, nickname)
+```
+
+**Приёмка:** интеграционный тест `tests/integration/test\_handshake.gd` запускает сервер и клиента **отдельными процессами** (`OS.create\_process`) и проверяет по логам: клиент принят; клиент с неверной версией отклонён. Скрипт `tools/net\_test.sh` для ручного запуска сервера + 2 клиентов.
+
+**Не делай:** игроков в сети (4.3).
+
+### Шаг 4.2. Часы, тики и пинг
+
+**Зависит от:** 4.1
+
+**Задачи:** клиент каждые 0.5 с шлёт `ping(client\_time)`, сервер отвечает `pong(client\_time, server\_tick)`. Клиент считает RTT (сглаживание), оценивает серверный тик и подстраивает локальный `Net.tick` так, чтобы его ввод приходил на сервер **заранее** на \~RTT/2 + 1–2 тика (буфер джиттера). Показ пинга в debug-overlay. Юнит-тест формулы сглаживания и подстройки.
+
+**Приёмка:** при `net\_sim 100 0` пинг показывается ≈100 мс (±15); клиентский тик опережает серверный на ожидаемую величину.
+
+### Шаг 4.3. Загрузка карты и спавн игроков
+
+**Зависит от:** 4.2
+
+**Задачи:** сервер загружает карту (`MapLoader`), клиент после рукопожатия получает `map\_id` и грузит ту же сцену; `MultiplayerSpawner` с `spawn\_function` создаёт `player.tscn` на всех машинах (владелец-клиент = `set\_multiplayer\_authority` для **ввода**, но состояние решает сервер). Различие в сцене игрока: `LocalPlayerController` (только у владельца: камера, HUD, ввод), `RemotePlayerView` (интерполяция), `ServerPlayerSim` (только на сервере). Автоспавн в точке `PlayerSpawn`.
+
+**Приёмка:** сервер + 2 клиента: каждый видит двух других как капсулы; отключение удаляет капсулу.
+
+### Шаг 4.4. Ввод на сервер и серверная симуляция
+
+**Зависит от:** 4.3
+
+**Задачи:** упаковка `PlayerInput` в `PackedByteArray` (move — 2×int8, yaw/pitch — 2×uint16, buttons — uint16, tick — uint32); клиент каждый тик шлёт пакет из последних N вводов (`@rpc('any\_peer','call\_remote','unreliable\_ordered',1)`); сервер хранит очередь на игрока, берёт **ровно один ввод на тик**; при пустой очереди повторяет последний (не более 5 тиков, затем стоп); отбрасывает вводы из будущего более чем на 1 с и слишком старые; проверяет `move.length() <= 1.01` (защита от «спидхака»). Тесты упаковки/распаковки (round-trip с допуском квантования), очереди (потеря/дубликаты/порядок).
+
+**Приёмка:** серверная позиция игрока совпадает с позицией при локальном прогоне тех же вводов (детерминированный тест мотора).
+
+### Шаг 4.5. Снапшоты и интерполяция чужих игроков
+
+**Зависит от:** 4.4
+
+**Задачи:** сервер раз в 2 тика собирает снапшот: для каждого игрока (позиция, скорость в квантованном виде, yaw, pitch, стойка/флаги, id оружия в руках, `last\_processed\_input\_tick` для владельца) и шлёт каждому клиенту `unreliable\_ordered`. Клиент складывает в буфер и рендерит чужих игроков с задержкой 100 мс интерполяцией; при нехватке данных — короткая экстраполяция, затем заморозка. Сглаживание поворота (кватернионы/`lerp\_angle`).
+
+```gdscript
+# src/net/remote\_interpolator.gd (фрагмент)
+class\_name RemoteInterpolator
+extends RefCounted
+
+const INTERP\_DELAY\_TICKS := 6  # 100 мс при 60 Гц
+var \_buf: Array\[Dictionary] = \[]  # {tick:int, pos:Vector3, yaw:float, pitch:float, flags:int}
+
+func push(s: Dictionary) -> void:
+    \_buf.append(s)
+    while \_buf.size() > 32:
+        \_buf.pop\_front()
+
+func sample(render\_tick: float) -> Dictionary:
+    var t: float = render\_tick - INTERP\_DELAY\_TICKS
+    for i in range(\_buf.size() - 1):
+        var a: Dictionary = \_buf\[i]
+        var b: Dictionary = \_buf\[i + 1]
+        if t >= a.tick and t <= b.tick:
+            var k: float = inverse\_lerp(a.tick, b.tick, t)
+            return {
+                'pos': (a.pos as Vector3).lerp(b.pos, k),
+                'yaw': lerp\_angle(a.yaw, b.yaw, k),
+                'pitch': lerpf(a.pitch, b.pitch, k),
+                'flags': a.flags,
+            }
+    return \_buf.back() if not \_buf.is\_empty() else {}
+```
+
+**Приёмка:** юнит-тест интерполятора (дыры в данных, перескок через границу ±π); трафик на клиента при 8 игроках измерен и записан в ARCHITECTURE.md (ожидание < 20 КБ/с).
+
+### Шаг 4.6. Предсказание и реконсиляция своего игрока
+
+**Зависит от:** 4.5
+
+**Идея:** клиент сразу применяет свой ввод (нет задержки управления), а когда приходит снапшот с `last\_processed\_input\_tick = N`, сравнивает серверное состояние на тик N с тем, что он предсказал; при расхождении откатывается к серверному состоянию и **заново проигрывает** все неподтверждённые вводы N+1…текущий.
+
+```gdscript
+# src/net/prediction.gd (на клиенте-владельце)
+class\_name Prediction
+extends RefCounted
+
+const BUF := 128
+const EPSILON := 0.02  # метры
+var inputs: Array = \[]   # PlayerInput
+var states: Array = \[]   # PredState
+
+func \_init() -> void:
+    inputs.resize(BUF)
+    states.resize(BUF)
+
+func record(tick: int, inp: PlayerInput, st: PredState) -> void:
+    inputs\[tick % BUF] = inp
+    states\[tick % BUF] = st
+
+# Возвращает величину визуальной ошибки (для сглаживания камеры)
+func reconcile(body: CharacterBody3D, motor: PlayerMotor, cfg: MovementConfig,
+        server: PredState, ack\_tick: int, now\_tick: int, delta: float) -> Vector3:
+    var mine: PredState = states\[ack\_tick % BUF]
+    if mine == null or mine.position.distance\_to(server.position) < EPSILON:
+        return Vector3.ZERO
+    var before: Vector3 = body.global\_position
+    server.apply\_to(body)
+    for t in range(ack\_tick + 1, now\_tick + 1):
+        var inp: PlayerInput = inputs\[t % BUF]
+        if inp == null:
+            continue
+        motor.simulate(body, inp, cfg, server.stance, delta)
+        states\[t % BUF] = PredState.capture(body)
+    return before - body.global\_position
+```
+
+**Задачи:** `PredState` (позиция, скорость, стойка, флаги on\_floor); код выше; сглаживание визуальной ошибки (камера догоняет за 100 мс, а не телепортируется); при большой ошибке (> 2 м) — жёсткая телепортация. Включить `net\_sim` в тестах. Юнит-тест: при идеальной сети реконсиляций ноль; при искусственно изменённом серверном состоянии клиент приходит к серверной траектории.
+
+**Приёмка:** при `net\_sim 120 2` управление отзывчивое (🧑), число реконсиляций на тестовом маршруте — в разумных пределах (метрика в overlay), нет «резинки» при ровном беге.
+
+### Шаг 4.7. Сетевая стрельба (сервер решает)
+
+**Зависит от:** 4.6
+
+**Задачи:**
+
+1. Клиент при выстреле шлёт `fire(tick, seed)` (направление берётся сервером из **серверного** `yaw/pitch` на этот тик + разброс по сиду). Локально клиент сразу показывает вспышку/трассер/звук (предсказание косметики), но урон не считает.
+2. Сервер: проверяет `can\_fire` по **своему** состоянию оружия (патроны, кулдаун в тиках, смена оружия), считает выстрел, формирует `DamageEvent`, применяет к `HealthComponent`.
+3. `fire` ограничен по частоте (не чаще, чем позволяет RPM + допуск).
+4. Серверные патроны — истина; владельцу шлётся `ammo\_sync` для HUD.
+
+**Приёмка:** клиент, меняющий локальные патроны/кулдаун, не получает преимущества (интеграционный тест «читерского» клиента); урон происходит только от серверных решений.
+
+### Шаг 4.8. Лаг-компенсация
+
+**Зависит от:** 4.7
+
+**Задачи:** `LagCompensator` на сервере хранит историю позиций/ориентации/стоек всех игроков за последние 60 тиков. Выстрел клиента несёт `view\_tick` (серверное время, которое видел клиент = его оценка серверного тика минус задержка интерполяции). Сервер ограничивает перемотку до 250 мс, переносит хитбоксы на `view\_tick`, делает луч, возвращает хитбоксы назад. Перемотка выполняется в одном кадре симуляции, до перемотки и после сохраняются текущие трансформы.
+
+```gdscript
+# src/net/lag\_compensator.gd (фрагмент)
+class\_name LagCompensator
+extends Node
+
+const HISTORY := 60
+const MAX\_REWIND\_TICKS := 15  # 250 мс
+var \_frames: Array\[Dictionary] = \[]  # {tick:int, data:{peer\_id:{pos,yaw,stance}}}
+var \_saved: Dictionary = {}
+
+func record(tick: int, players: Dictionary) -> void:
+    var data: Dictionary = {}
+    for id in players:
+        var p: Node3D = players\[id]
+        data\[id] = {'pos': p.global\_position, 'yaw': p.rotation.y, 'stance': p.stance}
+    \_frames.append({'tick': tick, 'data': data})
+    while \_frames.size() > HISTORY:
+        \_frames.pop\_front()
+
+func rewind(players: Dictionary, now\_tick: int, view\_tick: int, shooter\_id: int) -> void:
+    var t: int = maxi(view\_tick, now\_tick - MAX\_REWIND\_TICKS)
+    var frame: Dictionary = \_find(t)
+    if frame.is\_empty():
+        return
+    \_saved.clear()
+    for id in players:
+        if id == shooter\_id or not frame.data.has(id):
+            continue
+        var p: Node3D = players\[id]
+        \_saved\[id] = p.global\_transform
+        p.global\_position = frame.data\[id].pos
+        p.rotation.y = frame.data\[id].yaw
+
+func restore(players: Dictionary) -> void:
+    for id in \_saved:
+        (players\[id] as Node3D).global\_transform = \_saved\[id]
+    \_saved.clear()
+```
+
+**Приёмка:** тест: цель бежит поперёк; клиент с пингом 150 мс целится в видимую цель — попадание засчитывается; при подделанном `view\_tick` из далёкого прошлого — ограничение 250 мс срабатывает.
+
+### Шаг 4.9. События боя: урон, смерть, респавн, килфид
+
+**Зависит от:** 4.8
+
+**Задачи:** надёжные RPC от сервера: `hit\_confirm(zone, killed)` стрелку, `damage\_indicator(direction)` жертве, `player\_died(victim, killer, weapon, headshot)` всем, `player\_spawned(...)`. `Events` на клиенте пробрасывает это в UI. Серверный `RespawnService`: таймер, выбор точки, начальное состояние, неуязвимость 2 с. Мёртвый игрок: камера смотрит на убийцу (killcam 3 с — опционально).
+
+**Приёмка:** в игре на 3 машинах килфид совпадает у всех; респавн не создаёт дублей игроков.
+
+### Шаг 4.10. Состояние оружия и анимаций у других игроков
+
+**Зависит от:** 4.9
+
+**Задачи:** другим игрокам реплицируется: id оружия в руках, `is\_firing` (событием для вспышки и звука, ненадёжным каналом), `is\_reloading`, стойка, `aim`. Звуки выстрелов проигрываются в 3D с дальнего расстояния (тоже по событию). Приватные данные (патроны) — только владельцу.
+
+**Приёмка:** видно, как чужой игрок стреляет, перезаряжается, приседает; на экране нет лишних данных чужого инвентаря.
+
+### Шаг 4.11. Чат и команды
+
+**Зависит от:** 4.1
+
+**Задачи:** текстовый чат (все/команда), ограничение длины и частоты (антиспам), санитайзинг (удалить управляющие символы, ограничить BBCode), серверные команды администратора (`/kick`, `/map`, `/say`) — требуют пароля админа (`--admin-password`).
+
+**Приёмка:** тесты санитайзера и лимита частоты; сообщение команды не видно врагам.
+
+### Шаг 4.12. Симулятор плохой сети
+
+**Зависит от:** 4.6
+
+**Задачи:** своя оболочка отправки (`NetSim`): задержка, джиттер, потеря, дублирование, перестановка — применяется на исходящих ненадёжных пакетах (консольная команда `net\_sim`). Скрипт `tools/net\_matrix.sh` гоняет интеграционные тесты при пингах 30/100/200 мс и потерях 0/2/5%.
+
+**Приёмка:** отчёт `docs/NET\_REPORT.md` с метриками: число реконсиляций, средняя ошибка, процент отклонённых выстрелов.
+
+### Шаг 4.13. Отключения, таймауты, выбивание
+
+**Зависит от:** 4.9
+
+**Задачи:** тайм-аут клиента 10 с без пакетов; корректное удаление игрока; повторное подключение с тем же ником возвращает в команду; кик/бан по IP на время сессии; серверный пароль; чёрный список.
+
+**Приёмка:** интеграционный тест «клиент пропал → сервер освободил слот»; «двойное подключение с одним ником» отклонено.
+
+### Шаг 4.14. Бюджет трафика
+
+**Зависит от:** 4.13
+
+**Задачи:** замер трафика (байт/с на клиента) при 8, 32, 64 ботах-клиентах (headless-клиенты со скриптовым вводом: `tools/bot\_client.gd`). Таблица в `docs/NET\_REPORT.md`; цель — до 64 КБ/с на клиента при 64 игроках без интереса-менеджмента (дальше — Фаза 13).
+
+**Приёмка:** отчёт и график; список узких мест.
+
+**Конец фазы 4:** `phase-4-done`. 🧑 Сыграть вдвоём по сети на реальных машинах 10 минут.
+
+\---
+
+## ФАЗА 5. ИГРОВОЙ РЕЖИМ (CONQUEST)
+
+Вся логика режима живёт **только на сервере**. Клиентам реплицируются результаты: владельцы точек, прогресс, билеты, состояние матча, очки.
+
+### Шаг 5.1. Правила и автомат матча
+
+**Зависит от:** 4.14
+
+**Задачи:** `GameModeRules` (Resource): режим, билеты на команду, время респавна, друзья-огонь (вкл/выкл), реанимация (вкл/выкл), длительность раунда, минимум игроков для старта, множитель bleed. `MatchState` — автомат: `WAITING\_FOR\_PLAYERS → COUNTDOWN → LIVE → ROUND\_END → MAP\_VOTE → LOADING`. Переходы только на сервере, состояние реплицируется надёжным RPC при изменении. Юнит-тесты на переходы (например, при падении числа игроков ниже минимума в `COUNTDOWN` возврат в `WAITING\_FOR\_PLAYERS`).
+
+```gdscript
+# src/gamemodes/match\_state.gd (фрагмент)
+class\_name MatchState
+extends Node
+
+enum Phase { WAITING, COUNTDOWN, LIVE, ROUND\_END, MAP\_VOTE, LOADING }
+signal phase\_changed(new\_phase: Phase)
+
+var phase: Phase = Phase.WAITING
+var phase\_end\_tick: int = 0
+
+func set\_phase(p: Phase, duration\_sec: float = 0.0) -> void:
+    assert(multiplayer.is\_server())
+    phase = p
+    phase\_end\_tick = Net.tick + int(duration\_sec \* 60.0) if duration\_sec > 0.0 else 0
+    phase\_changed.emit(p)
+    \_broadcast.rpc(p, phase\_end\_tick)
+
+@rpc('authority', 'call\_remote', 'reliable', 0)
+func \_broadcast(p: int, end\_tick: int) -> void:
+    phase = p as Phase
+    phase\_end\_tick = end\_tick
+    phase\_changed.emit(phase)
+```
+
+**Приёмка:** тесты автомата; на сервере с двумя клиентами матч стартует по таймеру.
+
+### Шаг 5.2. Команды
+
+**Зависит от:** 5.1
+
+**Задачи:** две команды (0 и 1), цвета и названия во фракционном ресурсе `FactionData`; автобаланс при входе (в меньшую команду), запрет перекоса > 2 игрока; смена команды только в `WAITING` или по правилам; различение друг/враг (ники над головой — только у союзников, красные маркеры у засвеченных врагов). Тесты балансировщика.
+
+**Приёмка:** 10 условных подключений распределяются 5/5.
+
+### Шаг 5.3. Система возрождения
+
+**Зависит от:** 5.2
+
+**Задачи:** типы точек: база (всегда доступна), захваченный флаг, отряд (рядом с сокомандником), маяк. Сервер выбирает **безопасную позицию** в зоне точки через оценочную функцию; запрещает спавн, если враг ближе 15 м или видит точку; неуязвимость 2 с (снимается при стрельбе). UI выбора точки на карте (в 11.x), пока выбор — консольной командой `spawn <point\_id>`.
+
+```gdscript
+# src/gamemodes/spawn\_scoring.gd
+class\_name SpawnScoring
+extends RefCounted
+
+const MIN\_ENEMY\_DIST := 15.0
+
+static func score(pos: Vector3, friends: Array\[Vector3], enemies: Array\[Vector3]) -> float:
+    var nearest: float = INF
+    for e in enemies:
+        nearest = minf(nearest, pos.distance\_to(e))
+    if nearest < MIN\_ENEMY\_DIST:
+        return -INF
+    var s: float = minf(nearest, 80.0)
+    for f in friends:
+        if pos.distance\_to(f) < 40.0:
+            s += 5.0
+    return s
+```
+
+**Приёмка:** тесты оценщика (враг рядом → точка отвергнута); спавн никогда не происходит внутри геометрии (проверка пустоты капсулы через `test\_move`/`PhysicsShapeQueryParameters3D`).
+
+### Шаг 5.4. Точки захвата
+
+**Зависит от:** 5.3
+
+**Идея:** контроль точки — число `control` ∈ \[−1, +1]: +1 — полностью у команды 0, −1 — у команды 1. Перевес игроков двигает значение; при равенстве точка «оспаривается» и не меняется. Чужую точку сначала нейтрализуют (переход через 0), затем захватывают.
+
+```gdscript
+# src/gamemodes/conquest/capture\_point.gd
+class\_name CapturePoint
+extends Area3D
+
+signal owner\_changed(point\_id: StringName, new\_owner: int)
+
+@export var point\_id: StringName
+@export var capture\_time: float = 20.0
+@export var max\_rate\_players: int = 4
+
+var counts: Array\[int] = \[0, 0]
+var control: float = 0.0
+var owner\_team: int = -1  # -1 нейтральная
+
+func server\_tick(delta: float) -> void:
+    var diff: int = counts\[0] - counts\[1]
+    if diff == 0:
+        return
+    var rate: float = float(mini(absi(diff), max\_rate\_players)) / capture\_time
+    control = clampf(control + signf(diff) \* rate \* delta, -1.0, 1.0)
+    \_update\_owner()
+
+func \_update\_owner() -> void:
+    var new\_owner: int = owner\_team
+    if control >= 1.0:
+        new\_owner = 0
+    elif control <= -1.0:
+        new\_owner = 1
+    elif owner\_team == 0 and control <= 0.0:
+        new\_owner = -1
+    elif owner\_team == 1 and control >= 0.0:
+        new\_owner = -1
+    if new\_owner != owner\_team:
+        owner\_team = new\_owner
+        owner\_changed.emit(point\_id, owner\_team)
+```
+
+**Задачи:** код выше + подсчёт `counts` по живым игрокам в зоне (`body\_entered/exited` по слою `players`, мёртвые и DOWNED не считаются); репликация `control` и `owner\_team` клиентам (снапшот 5 Гц достаточно); визуал — флагшток/цвет/кольцо на земле. Тесты: 1 vs 0 — захват за `capture\_time`; 2 vs 2 — без изменений; чужая точка нейтрализуется до захвата.
+
+**Приёмка:** тесты зелёные; на тестовой сцене с 2 клиентами флаг переходит из рук в руки (🧑).
+
+### Шаг 5.5. Билеты и условия победы
+
+**Зависит от:** 5.4
+
+**Задачи:** у каждой команды N билетов (по умолчанию 300). Смерть игрока → −1 билет своей команды. **Bleed**: если команда А контролирует больше половины точек, команда Б теряет `bleed\_rate × (flags\_A − N/2)` билетов в секунду (`bleed\_rate` из правил, старт 0.5). Победа: у соперника 0 билетов, либо по истечении времени — у кого больше билетов. Ничья обрабатывается правилом «овертайм 60 с». `TicketService` — чистая логика, без узлов; юнит-тесты на формулы (5 точек: 3/2 → bleed; 5/0 → максимальный).
+
+**Приёмка:** тесты; при симуляции на 10 минут без игроков одна команда с 3 флагами выигрывает по bleed.
+
+### Шаг 5.6. Отряды
+
+**Зависит от:** 5.2
+
+**Задачи:** отряд до 4–6 человек, имя из списка (Alpha, Bravo…), лидер — первый вошедший, передача лидерства. Возрождение у отряда (если в отряде сокомандник жив и не в бою). Приватный чат отряда, маркеры членов отряда в HUD. Приказы лидера: «атаковать/защищать точку» (стрелка на карте). Команды: создать/войти/выйти/выгнать. Все изменения серверные, валидация прав.
+
+**Приёмка:** тесты на переходы состояний отряда, на лимит размера, на смену лидера при выходе.
+
+### Шаг 5.7. Очки, счёт, килфид
+
+**Зависит от:** 5.5
+
+**Задачи:** `ScoreService`: очки за убийство (100), помощь (50 при уроне ≥ 20), захват/нейтрализация точки (по таймеру присутствия), реанимацию (75), лечение (по HP), пополнение боеприпасов, уничтожение техники. Таблица `K/D/A + очки` по команде. Окно Tab. Килфид (последние 5 событий, значок оружия, значок хедшота). Репликация таблицы раз в 1 с (не каждый тик).
+
+**Приёмка:** тесты начислений; UI показывает строки после матча на нескольких клиентах (🧑).
+
+### Шаг 5.8. Конец раунда и смена карты
+
+**Зависит от:** 5.7
+
+**Задачи:** экран итогов (победитель, MVP, топ-3), голосование за следующую карту из ротации (`MapRotation` в конфиге сервера), загрузка новой карты без перезапуска процесса: освободить старую сцену, сбросить сервисы, подключённые клиенты ждут `LOADING`. Тест на утечки: после 5 смен карт число узлов/ресурсов возвращается к базовому (🧑 смотреть Monitors/`Performance`).
+
+**Приёмка:** сервер сыграл 3 матча подряд без перезапуска.
+
+### Шаг 5.9. Второй режим: Team Deathmatch
+
+**Зависит от:** 5.8
+
+**Задачи:** убедись, что режимы подключаются как плагины: интерфейс `GameMode` (`setup(ctx)`, `on\_player\_died`, `server\_tick`, `check\_win`). TDM: победа при X убийствах или по лимиту времени. Только база-спавн, без точек.
+
+**Приёмка:** режим выбирается параметром `--mode=tdm`; ядро `MatchState` не изменялось (или изменено минимально, с записью в отчёте).
+
+### Шаг 5.10. Наблюдатель
+
+**Зависит от:** 5.1
+
+**Задачи:** свободная камера и камера от лица сокомандника (переключение клавишами) для мёртвых, ожидающих и вошедших во время матча игроков; на сервере наблюдатели не создают капсулу и не получают снапшоты вражеской команды в точных координатах после смерти (защита от «призрачного» чита — этот пункт критичен для честной игры).
+
+**Приёмка:** мёртвый игрок видит только союзников.
+
+### Шаг 5.11. Конфигурация сервера
+
+**Зависит от:** 5.8
+
+**Задачи:** файл `server.cfg` (ConfigFile): имя, пароль, максимум игроков, ротация карт, режим, правила (`friendly\_fire`, `revive`, `tickets`, `bleed`), `tick\_rate`. Аргументы командной строки перекрывают файл. Валидатор конфига с понятными сообщениями; тесты.
+
+**Приёмка:** битые значения не роняют сервер, а заменяются дефолтами с предупреждением в логе.
+
+**Конец фазы 5:** `phase-5-done`. 🧑 Сыграть матч на сером полигоне в 3–4 человека.
+
+\---
+
+## ФАЗА 6. КАРТЫ
+
+### Принципы карт для BattleBit/Battlefield-подобной игры
+
+* Размер: 800–1500 м по большой стороне, 5–7 точек, две базы на противоположных краях.
+* Три «полосы» (левая — город/укрытия, центр — открытые дистанции/техника, правая — лес/холмы), 2–3 перехода между ними.
+* Укрытие каждые 10–15 м, дальность прямой видимости на открытых местах не более \~300 м.
+* На каждой точке: 1–2 здания для ближнего боя, 2 подхода, укрытия для снайпера на удалении 80–150 м.
+* Маршруты для техники шире 6 м, пешеходные обходы вокруг.
+* Все метры — реальные; геометрия на сером уровне проверяется 🧑 человеком до наполнения.
+
+### Шаг 6.1. MapData и загрузчик карт
+
+**Зависит от:** 5.11
+
+**Задачи:** `MapData` (Resource): `id`, название, путь к сцене, поддерживаемые режимы, число игроков (мин/рек/макс), размер, миникарта, список точек, границы. `MapLoader.load\_map(id)` загружает, проверяет наличие обязательных узлов (`SpawnPoints`, `CapturePoints`, `Bounds`, `NavRegion`) и выдаёт список ошибок. Тест на валидатор карты.
+
+**Приёмка:** тестовая карта (серый полигон) проходит валидацию.
+
+### Шаг 6.2. Ландшафт
+
+**Зависит от:** 6.1
+
+**Задачи:** собственный генератор рельефа `tools/gen\_terrain.gd`: карта высот (шум + ручные маски: ровные площадки под базы/точки, дороги, русла), экспорт в `.res`/`.png`. `TerrainChunk` — сетка 64×64 м, шаг 2 м, `ArrayMesh` + `HeightMapShape3D`/`ConcavePolygonShape3D` для коллизии, 3 уровня детализации с переключением по расстоянию, швы без дыр. Шейдер: смешивание 3–4 материалов по высоте/уклону (трава, грунт, камень, песок), triplanar по склонам. Если принято решение использовать Terrain3D (ADR) — вынести интеграцию в этот шаг и убедиться в совместимости с 4.7 и с выделенным сервером.
+
+**Приёмка:** карта 1000×1000 м генерируется скриптом headless за разумное время; игрок ходит по рельефу без проваливаний; тест на непрерывность высот на стыках чанков.
+
+### Шаг 6.3. Растительность и мелкие объекты
+
+**Зависит от:** 6.2
+
+**Задачи:** деревья, кусты, трава, камни — `MultiMeshInstance3D`, раскладка скриптом по маскам (плотность по биомам), `visibility\_range\_\*` и LOD, коллизия только у стволов (капсулы). Ветер — шейдером по вершинам, не физикой. Сервер не загружает визуальные MultiMesh (флаг `dedicated\_server`), загружает только коллизии.
+
+**Приёмка:** 50 000 экземпляров травы/кустов не роняют FPS ниже целевого (бюджет фиксируется в `docs/PERF.md`); на сервере нет визуальных узлов растительности.
+
+### Шаг 6.4. Модульные здания
+
+**Зависит от:** 6.2
+
+**Задачи:** генератор зданий `tools/gen\_buildings.gd` по `BuildingSpec` (размер, этажи, комнаты, окна, двери, крыша): стены, перекрытия, лестницы, окна как проёмы, крыша. Для каждого здания — меш (low-poly, flat-shaded, материалы из палитры), упрощённая коллизия, `NavigationRegion3D`-совместимая геометрия, метки внутренних точек для ботов. 6–8 типов: жилой дом, склад, ангар, офис 3 этажа, башня-вышка, бункер, магазин, гараж. Реализовать так, чтобы здания были **разрушаемыми** (см. Фазу 9) — стены как отдельные узлы.
+
+**Приёмка:** все 6 типов сгенерированы; проходимость внутри проверена автотестом (из двери можно дойти до каждой комнаты по навмешу).
+
+### Шаг 6.5. Реквизит и укрытия
+
+**Зависит от:** 6.4
+
+**Задачи:** ящики, мешки с песком, бетонные блоки, контейнеры, заборы, фонари, подбитые машины, бочки — процедурные меши с коллизией и `surface\_type` в метаданных (для звуков и импактов). Скрипт раскладки по маске плотности.
+
+**Приёмка:** набор из ≥ 15 видов реквизита; у всех есть `surface\_type`.
+
+### Шаг 6.6. Раскладка первой карты
+
+**Зависит от:** 6.5
+
+**Задачи:** документ `docs/maps/map01.md` (расположение баз, 5–7 точек, дороги, холмы, схема подходов в виде таблицы координат), затем скрипт-раскладчик `tools/build\_map01.gd` расставляет здания, дороги, укрытия, точки, спавн, границы. 🧑 Человек просматривает карту сверху и правит координаты в документе, агент пересобирает.
+
+**Приёмка:** карта проходит `MapLoader`-валидацию; от базы A до базы B есть как минимум 2 независимых маршрута (автотест по навмешу).
+
+### Шаг 6.7. Навигация
+
+**Зависит от:** 6.6
+
+**Задачи:** запечь навмеш скриптом (проверить актуальный API `NavigationServer3D`/`NavigationMeshGenerator` в 4.7), разные параметры для пехоты и техники (два региона/слоя навигации), `NavigationLink3D` для лестниц/окон/перепрыгиваемых препятствий. Автотест: проход с A на B ≠ пусто; не более N «островов».
+
+**Приёмка:** навмеш не содержит недостижимых флагов; размер файла навмеша записан в PERF.md.
+
+### Шаг 6.8. Свет и окружение
+
+**Зависит от:** 6.6
+
+**Задачи:** `WorldEnvironment` + процедурное небо, `DirectionalLight3D` с каскадными тенями (дальность теней настраивается графикой), туман по расстоянию, пресеты время суток (день/закат/ночь). Не использовать SDFGI/полный GI по умолчанию (дорого); опционально — `LightmapGI` для интерьеров; `ReflectionProbe` по ключевым зонам. Пресеты качества: Low/Medium/High/Ultra (тени, дальность прорисовки, MSAA/TAA, SSAO).
+
+**Приёмка:** 🧑 визуальная проверка; на пресете Low карта показывает ≥ 60 FPS на заведомо слабой конфигурации (результат записать).
+
+### Шаг 6.9. Границы карты и безопасные зоны
+
+**Зависит от:** 6.6
+
+**Задачи:** граница боя: за пределами — предупреждение и смерть через 10 с; базы с зонами, куда враг не может стрелять (по правилам режима, опционально); зоны запрета строить/ставить гаджеты. Тесты на таймер выхода за границу.
+
+**Приёмка:** таймер срабатывает и сбрасывается при возвращении.
+
+### Шаг 6.10. Вторая карта
+
+**Зависит от:** 6.9
+
+**Задачи:** повторить пайплайн для карты другого типа (пустыня/город/снег) через те же генераторы и новый `.md`-документ. Зафиксировать «шаблон новой карты» в `docs/MAP\_TEMPLATE.md`.
+
+**Приёмка:** вторая карта собрана ≤ 1 дня агентской работы по шаблону (признак зрелости пайплайна).
+
+**Конец фазы 6:** `phase-6-done`. 🧑 Сыграть матч на 8+ игроков на карте 1.
+
+\---
+
+## ФАЗА 7. МОДЕЛИ, АНИМАЦИИ, ЗВУК
+
+> До этой фазы везде использовались временные примитивы. Здесь они заменяются на «настоящий» low-poly стиль. \*\*Главная стратегия для ИИ-агента:\*\* модели строятся \*\*кодом\*\* из примитивов с вершинными цветами (один материал на весь проект — быстро, красиво в стиле BattleBit, легко батчится). Сложные органические модели (скинированный персонаж) — по запасному пути «импорт CC0-ассета, который принёс человек».
+
+### Шаг 7.1. Арт-библия и конвейер ассетов
+
+**Зависит от:** 6.10
+
+**Задачи:** создай `docs/ART\_BIBLE.md`:
+
+* Масштаб: 1 единица = 1 м, ось вперёд = −Z, пивоты у основания/центра массы (правила на тип объекта).
+* Бюджеты: персонаж ≤ 3 000 треугольников, оружие от первого лица ≤ 6 000, оружие мировое ≤ 1 500, обвес ≤ 600, техника 6 000–12 000, здание-модуль ≤ 2 000, реквизит ≤ 500.
+* Стиль: плоское затенение (flat), вершинные цвета, палитра из 24–32 цветов (константы в `src/fx/palette.gd`), без нормал-карт; команды различаются цветом на одежде/повязке.
+* Именование: `wpn\_ar01\_view.tscn`, `veh\_jeep01.tscn`, `bld\_house01.tscn`, `prop\_crate01.tscn`.
+* Единый материал `assets/materials/vertex\_color.tres` (`vertex\_color\_use\_as\_albedo = true`, без бликов или слабый спекуляр).
+* Скрипт-проверка `tools/audit\_assets.gd`: лимит треугольников, наличие записи в ASSETS.md, наличие коллизии у реквизита.
+
+**Приёмка:** документ создан, аудит-скрипт запускается и проходит на текущих ассетах.
+
+### Шаг 7.2. Библиотека процедурных мешей `MeshBuilder`
+
+**Зависит от:** 7.1
+
+**Задачи:** класс `MeshBuilder` (SurfaceTool): `add\_box`, `add\_bevel\_box` (фаска 2 мм–5 см), `add\_cylinder`, `add\_wedge`, `add\_cone`, `add\_extrude(polygon\_2d, height)`, `mirror\_x()`, `translate/rotate/scale` для частей, цвет на деталь, `build() -> ArrayMesh`, `build\_collision\_convex()`. Плоское затенение через `set\_smooth\_group(-1)`. **Обязательные тесты:** число вершин, габариты (AABB), нормали всех граней направлены наружу (для каждой грани куба скалярное произведение нормали и направления от центра > 0).
+
+```gdscript
+# src/fx/mesh\_builder.gd (ядро)
+class\_name MeshBuilder
+extends RefCounted
+
+# Индексы углов: bit0 = x, bit1 = y, bit2 = z (0 = минус, 1 = плюс)
+# Грани перечислены по часовой стрелке при взгляде снаружи (так в Godot задаётся лицевая сторона).
+const BOX\_FACES: Array = \[
+    \[4, 6, 7, 5],  # +Z
+    \[1, 3, 2, 0],  # -Z
+    \[5, 7, 3, 1],  # +X
+    \[0, 2, 6, 4],  # -X
+    \[2, 3, 7, 6],  # +Y
+    \[0, 4, 5, 1],  # -Y
+]
+
+var \_st := SurfaceTool.new()
+
+func \_init() -> void:
+    \_st.begin(Mesh.PRIMITIVE\_TRIANGLES)
+    \_st.set\_smooth\_group(-1)
+
+func add\_box(center: Vector3, size: Vector3, color: Color) -> void:
+    var h: Vector3 = size \* 0.5
+    var c: Array\[Vector3] = \[]
+    for i in 8:
+        c.append(center + Vector3(
+            h.x if (i \& 1) != 0 else -h.x,
+            h.y if (i \& 2) != 0 else -h.y,
+            h.z if (i \& 4) != 0 else -h.z))
+    for f in BOX\_FACES:
+        \_quad(c\[f\[0]], c\[f\[1]], c\[f\[2]], c\[f\[3]], color)
+
+func \_quad(a: Vector3, b: Vector3, c: Vector3, d: Vector3, color: Color) -> void:
+    for p in \[a, b, c, a, c, d]:
+        \_st.set\_color(color)
+        \_st.add\_vertex(p)
+
+func build() -> ArrayMesh:
+    \_st.generate\_normals()
+    return \_st.commit()
+```
+
+**Приёмка:** тесты нормалей и габаритов зелёные; тестовая сцена показывает куб, цилиндр, клин правильно освещёнными (скриншот или 🧑).
+
+### Шаг 7.3. Модели оружия (12–16 штук)
+
+**Зависит от:** 7.2, 2.12
+
+**Задачи:** генератор `tools/gen\_weapons.gd` строит для каждого `WeaponData` две сцены: `\*\_view` (детальнее) и `\*\_world` (проще). Обязательные точки (Marker3D): `Muzzle`, `Eject`, `Sight`, `Grip\_L` (куда ложится левая рука), `Grip\_R`, `Mag`. Силуэты должны различаться (винтовка, ПП, ЛПК с сошками и коробом, снайперка с длинным стволом, дробовик, пистолет, подствольник). Цветовая схема: металл/пластик/дерево из палитры. Привязка к `WeaponData.viewmodel\_scene/worldmodel\_scene`.
+
+**Приёмка:** `audit\_assets` проходит; на полигоне оружие каждого вида видно в руках, вспышка выходит из `Muzzle`; 🧑 силуэты различимы с 30 м (мировая модель).
+
+### Шаг 7.4. Руки от первого лица
+
+**Зависит от:** 7.3
+
+**Задачи:** простые low-poly руки (рукав + кисть из бокс-частей) как два узла, позиционируемых к `Grip\_R/Grip\_L` обратной кинематикой (двухзвенная IK по формуле, собственный тест: цель в досягаемости → кисть в цели ±1 см). Для перезарядки — скриптовые смещения левой руки (к магазину → вытянуть → вставить) по кривым из `WeaponData`/ресурса `ReloadAnim`.
+
+**Приёмка:** юнит-тест IK; 🧑 перезарядка выглядит читаемо у 3 разных оружий.
+
+### Шаг 7.5. Персонаж от третьего лица
+
+**Зависит от:** 7.2
+
+**Решение:** **План A** (гарантированный для агента) — «сегментный» персонаж: иерархия `Node3D` из частей (таз, торс, голова, плечо/предплечье/кисть ×2, бедро/голень/стопа ×2), каждая — отдельный меш из `MeshBuilder`; ≈ 1 500–2 500 треугольников. Анимация — ключевые кадры по трансформам частей. **План Б** — если человек положит скинированную модель с анимациями (CC0, лицензия записана) в `assets/models/characters/`, подключить через тот же интерфейс `CharacterView` (`set\_stance`, `set\_aim\_pitch`, `set\_move\_vector`, `play\_reload`, `play\_death`).
+
+**Задачи:** сцена `character\_view.tscn` по Плану A; материал-акцент команды (повязка/нашивка/каска); классовые отличия (ранец медика, кепка разведчика, жилет инженера); хитбоксы привязаны к частям (1.7) — сегментный персонаж идеально для этого подходит.
+
+**Приёмка:** три разных класса отличаются силуэтом с 20 м; хитбоксы двигаются вместе с анимацией (тест: поза «присед» смещает хитбокс головы на ожидаемую высоту).
+
+### Шаг 7.6. Анимации персонажа
+
+**Зависит от:** 7.5
+
+**Задачи:** генератор `tools/gen\_anims.gd` создаёт `Animation`-ресурсы через код (`Animation.add\_track(TYPE\_ROTATION\_3D / TYPE\_POSITION\_3D)`, `track\_insert\_key`) для: idle, walk, run, sprint, crouch\_idle, crouch\_walk, prone\_idle, prone\_crawl, jump, fall, land, aim\_idle (верх), fire (отдача верх), reload, melee, death\_1..3, downed, revive. Дерево: `AnimationTree` — `BlendSpace2D` для перемещения, слой для верхней части тела (оружие, прицеливание — угол наклона из `pitch`), переходы стоек. Проверить актуальный API `AnimationTree`/`AnimationNodeStateMachine` в 4.7. Чужие игроки: анимации воспроизводятся от реплицированных флагов и скорости, **не** реплицируются поключёвые кадры.
+
+**Приёмка:** все клипы проигрываются без ошибок в smoke-тесте; 🧑 ходьба не «скользит» (скорость анимации ≈ скорости движения: коэффициент в `MovementConfig`).
+
+### Шаг 7.7. Материалы, шейдеры, визуальные эффекты экрана
+
+**Зависит от:** 7.1
+
+**Задачи:** шейдер вершинных цветов с лёгким ambient occlusion по высоте, шейдер воды (простая волна + глубина), силуэт/метка союзников (outline только на союзниках через рендер-слой), эффекты: красная виньетка при уроне, размытие при оглушении, тряска камеры при взрыве, подавление (затемнение краёв под огнём), радиальный индикатор попадания. Все — с настройками «снизить эффекты» в `Settings`.
+
+**Приёмка:** эффекты управляются сигналами `Events`, не опросом; выключаются настройкой.
+
+### Шаг 7.8. Звук: шины, процедурные заглушки, настоящие звуки
+
+**Зависит от:** 2.9
+
+**Задачи:**
+
+1. Шины: `Master → SFX, Music, UI, Voice, Ambient`; громкости из `Settings`; reverb-шина с пресетами (открытая местность / помещение — переключается зоной `ReverbZone`).
+2. Процедурный генератор `tools/gen\_sfx.gd`: выстрелы (шум + низкочастотный удар), щелчки затвора/магазина, шаги по поверхностям (бетон/земля/металл/дерево/трава/вода), попадания (плоть, хедшот-«дзынь»), импакты, взрыв, гудок, UI-клики, двигатель (зацикленный, высота тона по скорости). Сохранение в `assets/audio/generated/\*.wav`.
+3. `SoundBank` (Resource): событие → массив вариантов, питч-диапазон, шина; `Audio.play\_3d(event, pos)` из пула.
+4. Дальние выстрелы: другой вариант звука (низкочастотный, с задержкой по скорости звука `дистанция/343` с) для дистанции > 120 м.
+5. Список CC0-источников в ASSETS.md для будущей замены (человек подкладывает файлы с теми же именами — код не меняется).
+
+```gdscript
+# tools/gen\_sfx.gd (фрагмент)
+static func noise\_burst(duration: float, decay: float, rate: int = 22050) -> AudioStreamWAV:
+    var n: int = int(duration \* rate)
+    var data := PackedByteArray()
+    data.resize(n \* 2)
+    var rng := RandomNumberGenerator.new()
+    rng.seed = 12345
+    for i in n:
+        var t: float = float(i) / rate
+        var amp: float = exp(-t \* decay)
+        var s: int = int(clampf(rng.randf\_range(-1.0, 1.0) \* amp, -1.0, 1.0) \* 32767.0)
+        data.encode\_s16(i \* 2, s)
+    var w := AudioStreamWAV.new()
+    w.format = AudioStreamWAV.FORMAT\_16\_BITS
+    w.mix\_rate = rate
+    w.stereo = false
+    w.data = data
+    return w
+```
+
+**Приёмка:** все события из списка имеют звук; пул 3D-звуков не превышает лимит (тест); 🧑 микс не клиппит (выстрел + взрыв + шаги одновременно).
+
+### Шаг 7.9. Шрифты, иконки, прицелы
+
+**Зависит от:** 7.1
+
+**Задачи:** шрифты с открытой лицензией (OFL; запись в ASSETS.md), набор иконок (оружие, гаджеты, классы, техника) генерируется из векторных путей в коде (`Polygon2D`/`\_draw`) либо берётся из CC0-набора. Прицелы (точка, перекрестие, красная точка, ACOG, снайперский) как ресурсы.
+
+**Приёмка:** все иконки из `WeaponData` существуют; нет «пустых» квадратов в HUD.
+
+**Конец фазы 7:** `phase-7-done`. 🧑 Пройти игру визуально, составить список «самых уродливых» объектов в `docs/ART\_TODO.md` — этот список приоритет для замены ассетов человеком/художником.
+
+\---
+
+## ФАЗА 8. ТЕХНИКА
+
+> Подход: \*\*аркадная\*\* физика (как в BattleBit): стабильная, дружелюбная к сети. Сервер симулирует технику, клиенты интерполируют; у водителя на первом этапе нет предсказания (задержка = пинг), сглаживается фильтром ввода. Предсказание водителя — отдельный необязательный шаг 8.10.
+
+### Шаг 8.1. Базовая техника, места, вход/выход
+
+**Зависит от:** 7.8
+
+**Задачи:** `BaseVehicle` (RigidBody3D): здоровье и зоны брони (корпус, двигатель, гусеницы/колёса), `VehicleData` (Resource): масса, скорости, места (`SeatData`: тип DRIVER/GUNNER/PASSENGER, позиция, оружие, можно ли стрелять), время респауна. Вход по `interact` в радиусе 3 м (ближайшее свободное место), выход по `vehicle\_exit` (безопасная точка выхода, проверка пустоты), смена места. Игрок «привязывается» к месту; его хитбоксы активны (если место открытое). Сеть: места реплицируются надёжно; ввод водителя — отдельным каналом.
+
+**Приёмка:** тесты логики мест (занято/свободно, выход при смерти техники); сервер не принимает ввод от не-водителя.
+
+### Шаг 8.2. Колёсный контроллер (джип)
+
+**Зависит от:** 8.1
+
+**Задачи:** аркадная подвеска на 4 лучах (`PhysicsRayQueryParameters3D` или `RayCast3D`) + пружина/демпфер, продольная тяга по газу, боковое трение (drift-коэффициент), руль зависит от скорости, ручной тормоз, стабилизация от переворота. Альтернатива — `VehicleBody3D` (проверить поведение с Jolt). Параметры в `VehicleData`.
+
+**Приёмка:** джип проезжает по рельефу и склону 30°, не переворачивается на ровной дороге; 🧑 управляется приятно (запись замечаний).
+
+### Шаг 8.3. Репликация техники
+
+**Зависит от:** 8.2
+
+**Задачи:** снапшоты техники (позиция, кватернион, линейная скорость, руль, газ, здоровье) 20–30 Гц, клиентская интерполяция, звук двигателя от скорости, пыль/следы. Таймаут и подгонка при разрыве (> 3 м → мягкий телепорт). Тест трафика: 8 единиц техники.
+
+**Приёмка:** на 2 клиентах джип двигается плавно; метрики записаны в NET\_REPORT.md.
+
+### Шаг 8.4. Установленное оружие и стрелок
+
+**Зависит от:** 8.3
+
+**Задачи:** место стрелка с турелью (вращение независимо от корпуса, ограничения углов), пулемёт на `Projectile`/хитскане, перегрев/боезапас, камера из-за турели. Угол стрелка реплицируется в снапшоте.
+
+**Приёмка:** джип с пулемётом: стрелок вращает, попадает по мишеням; водитель и стрелок — два разных клиента (интеграционный тест).
+
+### Шаг 8.5. Бронетехника (танк/БМП)
+
+**Зависит от:** 8.4
+
+**Задачи:** гусеничное управление (дифференциальное), башня независимая от корпуса, главное орудие (снаряд с баллистикой и взрывом по радиусу, перезарядка 4 с), спаренный пулемёт, зоны брони: попадание сбоку/сзади наносит больше урона (упрощённо через зоны, а не толщину), горение при низком HP, самопочинка отключена, ремонт — инженером. Камера: от третьего лица с приближением.
+
+**Приёмка:** танк уничтожается ожидаемым числом попаданий ПТ-ракет (таблица в BALANCE.md); тест урона по зонам.
+
+### Шаг 8.6. Вертолёт
+
+**Зависит от:** 8.4
+
+**Задачи:** аркадная модель: подъёмная сила (collective), наклон → горизонтальная тяга, рыскание, автостабилизация, вторичное место стрелка; предел высоты карты; уничтожается — падает с эффектом. Репликация как в 8.3.
+
+**Приёмка:** взлёт, посадка, зависание управляемы; 🧑 приемлемое «ощущение».
+
+### Шаг 8.7. Урон технике и ПТ-средства
+
+**Зависит от:** 8.5
+
+**Задачи:** типы урона (`BULLET`, `EXPLOSIVE`, `AT\_ROCKET`, `MINE`, `COLLISION`), множители `VehicleData.damage\_mults`; ПТ-ракета, мина, C4 прилипает к технике; гранатомёт для зениток (опционально наведение). Уничтожение: взрыв, обломки, экипаж погибает/выбрасывается.
+
+**Приёмка:** тесты таблицы множителей; сценарии «C4 на джипе», «мина под танком».
+
+### Шаг 8.8. Депо техники и интеграция в режим
+
+**Зависит от:** 8.7
+
+**Задачи:** `VehicleSpawner` у баз и флагов: зависит от владельца точки, кулдаун после уничтожения, лимит техники на команду, экран выбора техники при возрождении. ИИ/бот-водители — в Фазе 10.
+
+**Приёмка:** уничтоженный джип возрождается через заданное время; захват точки переключает депо на другую команду.
+
+### Шаг 8.9. Звук, эффекты, HUD техники
+
+**Зависит от:** 8.8
+
+**Задачи:** двигатель (зацикленный, питч по скорости), удары корпуса, взрыв, дым и огонь по HP; HUD: здоровье техники, скорость, боезапас орудия, места экипажа.
+
+**Приёмка:** HUD обновляется по сигналам.
+
+### Шаг 8.10 (опционально). Предсказание водителя
+
+**Зависит от:** 8.9
+
+**Задачи:** клиент-водитель предсказывает свою технику (ввод→симуляция) и реконсилирует по снапшоту, как в 4.6 (но с физикой RigidBody — только если стабильность подтверждена экспериментом; иначе оставить как есть). Решение записать в ARCHITECTURE.md.
+
+**Конец фазы 8:** `phase-8-done`. 🧑 Сессия на 4+ игроков с техникой.
+
+\---
+
+## ФАЗА 9. РАЗРУШАЕМОСТЬ И ФИЗИКА
+
+Честное ограничение: вокселей уровня BattleBit в Godot «из коробки» нет. План даёт **предфрактурное разрушение** стен/заборов/укрытий и кратеры-декали; воксельный ландшафт — вне рамок (отдельный большой проект).
+
+### Шаг 9.1. Компонент разрушаемости
+
+**Зависит от:** 8.9
+
+**Задачи:** `DestructibleComponent`: HP, состояния (целый → повреждён → разрушен), типы урона с множителями (пули почти не ломают бетон, взрывчатка ломает), `destroyed` сигнал. Сервер решает; клиентам уходит надёжное событие `destroyed(object\_id, seed, hit\_point, impulse)`. Новые игроки при подключении получают список уже разрушенных объектов.
+
+**Приёмка:** тесты уровней урона; позднее подключение видит те же разрушения.
+
+### Шаг 9.2. Разрушаемые стены и здания
+
+**Зависит от:** 9.1, 6.4
+
+**Задачи:** сегмент стены — отдельный узел с заранее нарезанными на N кусков мешами; при разрушении сегмент скрывается, коллизия отключается (проём!), клиент по `seed` создаёт обломки (RigidBody3D на слое `debris`, не сталкиваются с игроками), живут 8–12 с и возвращаются в пул, общий лимит 150–300. Опорные конструкции: потеря опоры → обрушение перекрытия (упрощённо: граф зависимостей сегментов, проверка на сервере). Пыль и звук.
+
+**Приёмка:** граната пробивает стену дома, игрок проходит в проём; лимит обломков соблюдается (тест на счётчик).
+
+### Шаг 9.3. Навигация и разрушения
+
+**Зависит от:** 9.2
+
+**Задачи:** после разрушения — обновление навмеша локально (динамические `NavigationObstacle3D`/`NavigationLink3D` для проёмов, либо повторный локальный запекание региона) — выбрать вариант по замерам. Боты не должны застревать в проёмах.
+
+**Приёмка:** автотест: после разрушения стены бот находит маршрут через проём или обходит.
+
+### Шаг 9.4. Кратеры и следы взрывов
+
+**Зависит от:** 2.10
+
+**Задачи:** декали обугливания и воронок (пул), дым, осколки в воздухе (частицы), снос растительности в радиусе (скрытие экземпляров MultiMesh по индексам, серверный список), встряска камеры с затуханием по расстоянию.
+
+**Приёмка:** FPS не падает ниже бюджета при серии из 10 взрывов за 5 с.
+
+### Шаг 9.5. Рэгдоллы
+
+**Зависит от:** 7.6
+
+**Задачи:** для сегментного персонажа — при смерти заменить части на `RigidBody3D` с `ConeTwistJoint3D`/`Generic6DOFJoint3D` (проверить поведение с Jolt), стартовый импульс от направления попадания и типа оружия, время жизни 8 с, не более 8 одновременных (самый старый исчезает), только клиент (сервер не симулирует). Реанимируемый (DOWNED) — не рэгдолл, а лежащая поза.
+
+**Приёмка:** на 3 клиентах рэгдоллы визуально отличаются, но не влияют на игру; лимит соблюдается.
+
+### Шаг 9.6. Физические предметы
+
+**Зависит от:** 9.1
+
+**Задачи:** чисто косметические двигаемые предметы (бочки, коробки) — клиентская физика, без репликации; важные (взрывоопасные бочки) — серверное событие.
+
+**Приёмка:** синхронизации нет, трафик не вырос.
+
+**Конец фазы 9:** `phase-9-done`.
+
+\---
+
+## ФАЗА 10. БОТЫ
+
+**Ключевая идея:** бот — это «клиент без сети». Его мозг каждый тик производит обычный `PlayerInput`, а дальше работают те же `PlayerMotor`, оружие и урон, что и у людей. Никаких отдельных «ботовских» правил боя. Боты живут только на сервере.
+
+### Шаг 10.1. Каркас бота
+
+**Зависит от:** 9.6
+
+**Задачи:** `BotBrain` (Node) с методом `think(delta) -> PlayerInput`; `BotController` создаёт серверную сущность игрока с отрицательным/служебным `peer\_id`, регистрирует её в командах, счёте, отрядах как обычного игрока (флаг `is\_bot`). Серверная очередь ввода заменяется вызовом мозга. Имена из списка, отображаются с пометкой \[BOT] (настройка).
+
+```gdscript
+# src/ai/bot\_brain.gd (каркас)
+class\_name BotBrain
+extends Node
+
+enum State { IDLE, MOVE\_TO\_OBJECTIVE, ENGAGE, TAKE\_COVER, RELOAD, HEAL\_REVIVE, RETREAT }
+
+var state: State = State.IDLE
+var difficulty: BotDifficulty  # Resource: reaction\_time, aim\_error\_deg, burst\_len, memory\_sec
+var target\_id: int = -1
+var \_think\_accum: float = 0.0
+var \_cached: PlayerInput = PlayerInput.new()
+
+func produce\_input(delta: float) -> PlayerInput:
+    \_think\_accum += delta
+    if \_think\_accum >= 0.1:  # мозг думает 10 раз/с, движение — каждый тик
+        \_think\_accum = 0.0
+        \_think()
+    return \_cached
+
+func \_think() -> void:
+    pass  # заполняется в шагах 10.2–10.5
+```
+
+**Приёмка:** бот появляется на сервере, стоит и отображается у клиентов как игрок; в списке игроков помечен.
+
+### Шаг 10.2. Передвижение по навмешу
+
+**Зависит от:** 10.1, 6.7
+
+**Задачи:** `NavigationAgent3D` → ближайшая точка пути → `move`-вектор и `yaw`. Детектор застревания (скорость < 0.3 м/с при активном пути > 2 с → прыжок/смена пути/перебор альтернатив). Бег/шаг по ситуации; переход в присед/лёжа на позиции огня; обход друг друга (avoidance). Прыжок/залезание по `NavigationLink3D`.
+
+**Приёмка:** бот проходит от базы A до точки в центре карты и до базы B без застреваний в 20 запусках (автотест с сидами).
+
+### Шаг 10.3. Восприятие
+
+**Зависит от:** 10.2
+
+**Задачи:** зрение (конус 110°, дальность по освещению/типу, проверка линии луча с бюджетом N лучей на тик — по кругу), слух (события выстрелов/взрывов/шагов с радиусом), память (последняя известная позиция врага, `memory\_sec`), приоритеты целей (близость, угроза, кто стреляет в бота). Используется спотирование (`spot`) союзников.
+
+**Приёмка:** бот замечает врага на открытой местности на ожидаемой дальности; не видит сквозь стены (тест); бюджет лучей не превышен.
+
+### Шаг 10.4. Бой
+
+**Зависит от:** 10.3
+
+**Задачи:** реакция (`reaction\_time`), наведение с ошибкой (`aim\_error\_deg`, уменьшается со временем фокуса, отдача учитывается), стрельба очередями по расстоянию, перезарядка в безопасный момент, использование гранат по укрытым целям, отступление при HP < 30%, укрытия: выбор точки укрытия по карте `CoverPoint` (Marker3D в сцене карты) либо по вычислению (отсутствие LOS до врага, близость). Уровни сложности: Рекрут / Солдат / Ветеран / Элита — ресурсы `.tres`.
+
+**Приёмка:** симуляция «бот vs бот» на полигоне: TTK и точность в диапазонах из `BotDifficulty` (тест статистики на 200 дуэлей).
+
+### Шаг 10.5. Цели режима и роли классов
+
+**Зависит от:** 10.4, 5.5
+
+**Задачи:** `BotCommander` на сервере распределяет ботов по точкам (ближайшая нейтральная/вражеская, оборона, балансировка 60/40 атака/защита); поведение по классам: Medic — лечит/реанимирует, Support — раскладывает ящики и подавляет, Engineer — чинит технику/ставит мины, Recon — занимает позиции и засвечивает, Assault — прорыв. Боты присоединяются к отрядам.
+
+**Приёмка:** на карте 1 боты захватывают и удерживают точки; один матч команда ботов против команды ботов доходит до конца за ≤ 20 минут.
+
+### Шаг 10.6. Боты и техника
+
+**Зависит от:** 10.5, 8.8
+
+**Задачи:** водитель по дорожному графу (`RoadPath` в карте) с торможением на поворотах, стрелок-бот атакует цели, пассажиры занимают места; ограничение: боты не водят вертолёт (опционально).
+
+**Приёмка:** джип с ботом-водителем и ботом-стрелком доезжает до точки и не переворачивается в 10 запусках из 10.
+
+### Шаг 10.7. Заполнение серверов
+
+**Зависит от:** 10.5
+
+**Задачи:** `BotFill`: целевое число игроков N; когда заходит человек — удаляется самый «лишний» бот; при выходе — добавляется; приоритет балансировки команд; CLI `--bots=<n>`, `--bot-difficulty=<id>`. Снижение стоимости: боты, не видимые игрокам и далеко от них, думают реже (до 2 Гц).
+
+**Приёмка:** при 8 людях + 24 ботах сервер держит бюджет тика (см. 13.1).
+
+### Шаг 10.8. Режим тренировки (офлайн)
+
+**Зависит от:** 10.7
+
+**Задачи:** кнопка «Тренировка»: запускает локальный сервер (listen) в том же процессе + ботов, без сети наружу (`bind 127.0.0.1`). Выбор карты, режима, сложности, числа ботов.
+
+**Приёмка:** новый игрок за 3 клика попадает в матч с ботами.
+
+### Шаг 10.9. Автоматические матчи ботов
+
+**Зависит от:** 10.8
+
+**Задачи:** `tools/bot\_match.gd` — headless матч «бот vs бот» на 10 игровых минут с отчётом: убийства, захваты, застревания (≥ 10 с без прогресса), среднее время тика, утечки узлов. Используется как ночная регрессия.
+
+**Приёмка:** 3 запуска подряд без падений; отчёт сохраняется в `docs/BOT\_REPORT.md`.
+
+**Конец фазы 10:** `phase-10-done`. 🧑 Поиграть против ботов 15 минут на каждой сложности.
+
+\---
+
+## ФАЗА 11. ИНТЕРФЕЙС И UX
+
+Все экраны строятся из сцен `Control` с общей темой `src/ui/theme/main\_theme.tres` (шрифты, цвета, стили кнопок). Размеры — относительные (якоря/контейнеры), проверка на 1280×720, 1920×1080, 2560×1440, 21:9.
+
+### Шаг 11.1. Тема и главное меню
+
+**Зависит от:** 10.9
+
+**Задачи:** тема; главное меню: Играть (поиск серверов), Тренировка, Лодаут, Настройки, Выход; фон — 3D-сцена с медленно вращающейся камерой над картой. Навигация клавиатурой/мышью. Стек экранов (`ScreenManager`: push/pop, анимации).
+
+**Приёмка:** переходы без ошибок в консоли; Esc возвращает назад.
+
+### Шаг 11.2. Настройки
+
+**Зависит от:** 11.1
+
+**Задачи:** вкладки: Графика (пресеты Low–Ultra, разрешение, полноэкранный, VSync, лимит FPS, дальность прорисовки, тени, MSAA/TAA/масштабирование 3D), Управление (чувствительность, ADS-множитель, инверсия, **переназначение клавиш** с сохранением `InputMap` в `user://`, конфликты подсвечиваются), Звук (шины), Игра (FOV, показать FPS/пинг, цвета союзников/врагов для дальтоников, прицел: стиль/цвет/размер), Язык. Применение «на лету» + «отмена». Тесты сериализации биндингов.
+
+**Приёмка:** перезапуск сохраняет настройки; переназначение клавиши меняет реальное управление (тест через `InputMap`).
+
+### Шаг 11.3. Экран лодаута
+
+**Зависит от:** 11.1, 2.13, 3.1
+
+**Задачи:** выбор класса, оружия, обвесов, гаджетов; 3D-превью (`SubViewport` с вращаемой моделью), полоски характеристик (урон, скорострельность, точность, мобильность), сравнение «до/после» при смене обвеса, `LoadoutValidator` при применении. Сохранение пресетов (5 слотов).
+
+**Приёмка:** нельзя сохранить недопустимый набор; статы совпадают с `WeaponStats.resolve`.
+
+### Шаг 11.4. Экран развёртывания (deploy)
+
+**Зависит от:** 11.3, 5.3
+
+**Задачи:** карта на весь экран с точками возрождения (иконки владельцев), панель отряда, быстрый выбор класса/лодаута, список доступной техники, таймер возрождения, кнопка «Развернуться». Данные берутся с сервера (доступные точки и их состояние). Защита: сервер перепроверяет выбор.
+
+**Приёмка:** на 2 клиентах выбор разных точек работает; недоступная точка не выбирается.
+
+### Шаг 11.5. Полный HUD
+
+**Зависит от:** 11.4
+
+**Задачи:** здоровье, патроны (магазин/запас), тип огня, гаджеты и их заряды, индикатор стойки, компас-лента с метками, 3D-маркеры целей (точки захвата, приказы отряда, засвеченные враги) с дистанцией, список отряда с HP союзников, килфид, хитмаркеры (обычный/хедшот/убийство), индикаторы направления урона, подсказки взаимодействия («E — реанимировать»), прогресс захвата точки, билеты команд, таймер матча, чат, индикатор голоса, уведомления (очки/повышение). Все элементы подписаны на сигналы и умеют скрываться настройкой.
+
+**Приёмка:** нет `\_process`-опросов у HUD, кроме анимаций; снимок HUD в smoke-тесте без ошибок.
+
+### Шаг 11.6. Миникарта и большая карта
+
+**Зависит от:** 11.5, 6.6
+
+**Задачи:** при сборке карты генератор рендерит вид сверху (ортографическая камера в `SubViewport`) в текстуру `minimap.png` + метаданные границ; миникарта вращается за игроком (опция), значки: союзники, отряд, точки, спот-враги, техника; большая карта с зумом и приказами лидера. Враги видны только при спотировании/UAV (серверная проверка видимости — данные не уходят клиенту, если враг не засвечен).
+
+**Приёмка:** координаты иконок совпадают с реальными позициями (тест преобразования мира → карта); неспотированные враги отсутствуют в клиентских данных.
+
+### Шаг 11.7. Табло и экран итогов
+
+**Зависит от:** 11.5, 5.8
+
+**Задачи:** табло по Tab: две команды, отряды, K/D/A, очки, пинг; экран итогов с MVP, графиками, опытом, прогрессом ранга, голосованием за карту.
+
+**Приёмка:** данные совпадают с `ScoreService`; ничего не мерцает при обновлении раз в секунду.
+
+### Шаг 11.8. Браузер серверов
+
+**Зависит от:** 11.1, 5.11
+
+**Задачи:** прямое подключение (адрес:порт, пароль), недавние серверы, LAN-поиск (UDP broadcast: сервер отвечает JSON с именем/картой/числом игроков/версией), локальный список избранного; интерфейс `ServerListProvider`, чтобы позже подключить мастер-сервер без переписывания UI. Пинг измеряется ENet-пакетом/запросом.
+
+**Приёмка:** клиент находит сервер в локальной сети; несовместимая версия помечена серым.
+
+### Шаг 11.9. Локализация
+
+**Зависит от:** 11.2
+
+**Задачи:** `TranslationServer` + CSV (ru, en); ключи вместо строк везде в UI (`tr('HUD\_AMMO')`); шрифты с кириллицей; скрипт `tools/check\_i18n.gd` ищет литералы на русском/английском в `.tscn`/`.gd` UI, пропущенные ключи.
+
+**Приёмка:** переключение языка применяется сразу; проверка i18n зелёная.
+
+### Шаг 11.10. Полировка и доступность
+
+**Зависит от:** 11.9
+
+**Задачи:** звуки интерфейса, анимации кнопок, всплывающие подсказки, режим для дальтоников, субтитры для голосовых сообщений (если есть), масштаб UI 80–150%, сохранение состояния меню, экран загрузки с прогрессом (`ResourceLoader.load\_threaded\_request`).
+
+**Приёмка:** 🧑 проход всех экранов; список замечаний → `docs/UI\_TODO.md`.
+
+**Конец фазы 11:** `phase-11-done`.
+
+\---
+
+## ФАЗА 12. ПРОГРЕССИЯ
+
+### Шаг 12.1. Профиль игрока
+
+**Зависит от:** 11.7
+
+**Задачи:** `PlayerProfile` (Resource/JSON в `user://profile.json`): ник, UUID, XP, ранг, опыт по классам и оружию, статистика, сохранённые лодауты, настройки косметики. Версионирование схемы + миграции. Целостность: контрольная сумма от случайного локального секрета (защита от случайной порчи, не от читеров).
+
+**Приёмка:** тесты загрузки/миграции со старой версии; повреждённый файл не роняет игру (откат к дефолту с копией).
+
+### Шаг 12.2. Опыт и ранги
+
+**Зависит от:** 12.1, 5.7
+
+**Задачи:** формула уровня (`xp\_for\_level(n)`, кривая в `.tres`), начисление опыта из `ScoreService` по итогам матча и во время (всплывающие «+100»); опыт по классу и по оружию. Тесты на кривую (монотонность, отсутствие переполнения).
+
+**Приёмка:** после матча профиль обновляется и показывается на экране итогов.
+
+### Шаг 12.3. Разблокировки
+
+**Зависит от:** 12.2
+
+**Задачи:** дерево разблокировок (`UnlockTree` Resource): оружие, обвесы, гаджеты, косметика; требования (ранг/опыт класса/выполнение задания). Серверная проверка: клиент не может выбрать оружие, которое у него не открыто (в сообщении лодаута сервер сверяет с профилем, который хранится на сервере по UUID).
+
+**Приёмка:** новый профиль имеет базовый набор; попытка взять закрытое оружие отклоняется сервером (интеграционный тест).
+
+### Шаг 12.4. Серверное хранение профилей
+
+**Зависит от:** 12.3
+
+**Задачи:** сервер ведёт собственную базу (SQLite через GDExtension-плагин **или** JSON-файлы с атомарной записью; решение — ADR). Идентификация по UUID + секретному токену, выданному при первом входе. Предупреждение в документации: без центрального бэкенда профили привязаны к серверу. Интерфейс `ProfileStore` для будущей замены на веб-API.
+
+**Приёмка:** перезапуск сервера сохраняет прогресс; параллельная запись не портит файлы (тест).
+
+### Шаг 12.5. Задания и достижения (по желанию)
+
+**Зависит от:** 12.4
+
+**Задачи:** ежедневные задания и достижения как данные (`ChallengeData`), события подписываются на `Events`; награды — опыт/косметика.
+
+**Приёмка:** выполнение условий в тесте приводит к награде ровно один раз.
+
+**Конец фазы 12:** `phase-12-done`.
+
+\---
+
+## ФАЗА 13. ОПТИМИЗАЦИЯ И МАСШТАБ (32 → 64 → больше)
+
+> Правило: \*\*сначала измерить, потом оптимизировать\*\*. Любой шаг начинается с замера «до» и заканчивается замером «после» в `docs/PERF.md`. Оптимизация без цифр запрещена.
+
+### Бюджеты (фиксируются на шаге 13.1)
+
+|Метрика|Цель|
+|-|-|
+|Клиент, 1080p, пресет Medium, 64 игрока|≥ 60 FPS на средней видеокарте (класс GTX 1660 / RX 580)|
+|Сервер, 64 игрока|время одного тика симуляции ≤ 8 мс (запас до 16.7 мс)|
+|Трафик сервер → клиент|≤ 64 КБ/с на клиента|
+|Трафик клиент → сервер|≤ 8 КБ/с|
+|Память клиента|≤ 3 ГБ, сервера ≤ 1.5 ГБ|
+|Время загрузки карты|≤ 20 с на SSD|
+
+### Шаг 13.1. Бенчмарк и базовые замеры
+
+**Зависит от:** 12.5
+
+**Задачи:** `tools/bench.gd`: сервер с N ботами (8/32/64), скриптованные клиенты-наблюдатели; сбор `Performance.get\_monitor(...)` (кадр, физика, объекты, draw calls), время тика по подсистемам (собственные метки `Profiler.begin('lag\_comp')`), трафик. Результаты → `docs/PERF.md` таблицей; скрипт возвращает код ошибки, если бюджет превышен (будет использоваться в CI).
+
+**Приёмка:** первая таблица замеров на 8/32/64 ботах; узкие места названы по именам подсистем.
+
+### Шаг 13.2. Оптимизация сервера
+
+**Зависит от:** 13.1
+
+**Задачи (в порядке выгоды, каждая — отдельный коммит с замером):**
+
+1. Сервер использует **упрощённую позу**: хитбоксы по стойке и углу прицеливания без `AnimationTree` и визуальных узлов (визуал вообще не создаётся при `dedicated\_server`).
+2. Отключить `\_process` во всех узлах сервера, где он не нужен; логику вести в одном месте (`ServerTick`), порядок систем фиксирован.
+3. Пространственный хэш (сетка 32 м) для запросов «кто рядом» (захват точек, лечение, интерес, звуки).
+4. Лучи стрельбы — ограничить число одновременных за тик, кэшировать запрос параметров (`PhysicsRayQueryParameters3D` переиспользуется).
+5. Боты думают по расписанию (10.7), вне зоны видимости людей — реже.
+6. Сборка снапшотов в предвыделенные `PackedByteArray`, без создания словарей на каждый тик.
+7. Если после всего выше узкое место остаётся (сериализация/лаг-комп), вынести его в GDExtension (C++) — **только после** доказательства замером и с записью ADR.
+
+**Приёмка:** сервер на 64 игроках укладывается в бюджет тика (цифры в PERF.md).
+
+### Шаг 13.3. Оптимизация сети
+
+**Зависит от:** 13.2
+
+**Задачи:**
+
+1. **Интерес-менеджмент:** игрок получает полные данные об игроках в радиусе 150 м (30 Гц), 150–400 м — 10 Гц, дальше 400 м — не получает (кроме спотированных и членов отряда). Радиусы — в `server.cfg`.
+2. Дельта-сжатие: поле передаётся только при изменении по сравнению с последним подтверждённым клиентом снапшотом (бит-маска изменённых полей).
+3. Битовая упаковка (квантование + `BitWriter`), один пакет на клиента на снапшот; ограничение размера пакета (MTU ≈ 1200 байт) — большие данные дробятся по приоритету.
+4. Аккумулятор приоритетов: близкие/стреляющие/движущиеся быстро получают данные чаще; общий потолок байт/с на клиента.
+5. Проверить опции ENet-хоста (сжатие, лимиты каналов) в актуальном API 4.7.
+
+**Приёмка:** на 64 игроках трафик ≤ бюджета; визуально нет рывков у игроков на 200 м (🧑).
+
+### Шаг 13.4. Оптимизация рендеринга
+
+**Зависит от:** 13.1
+
+**Задачи:** запечённый occlusion culling (`OccluderInstance3D`) для зданий/холмов; `visibility\_range` + HLOD для зданий и техники; LOD мешей (автогенерация при импорте, либо собственные упрощённые версии из `MeshBuilder`); дальность и каскады теней; ограничение числа динамических источников света (вспышки — без теней); один материал = слияние вызовов отрисовки; сжатие текстур VRAM; MultiMesh для растительности и мелкого реквизита; лимиты частиц и декалей; масштабирование 3D-разрешения (FSR/масштаб в настройках). Таблица «что включает пресет» в PERF.md.
+
+**Приёмка:** draw calls и треугольники на сцене с видом на середину карты ниже бюджета; пресет Low ≥ 60 FPS на слабой конфигурации.
+
+### Шаг 13.5. Оптимизация клиента (CPU)
+
+**Зависит от:** 13.4
+
+**Задачи:** анимационный LOD (дальние игроки обновляются реже/без IK), отключение `process` у скрытых и дальних объектов, пулы эффектов (проверка), никаких аллокаций в горячих путях (профайлер GC/аллокаций), `Thread`-ы только там, где безопасно (загрузка ресурсов, запекание), строки как `StringName`.
+
+**Приёмка:** CPU-кадр клиента на 64 игроках ниже бюджета; в PERF.md есть топ-10 затрат.
+
+### Шаг 13.6. Загрузка и память
+
+**Зависит от:** 13.4
+
+**Задачи:** фоновая загрузка карт и ресурсов (`ResourceLoader.load\_threaded\_request`), экран загрузки с прогрессом, выгрузка при смене карты (проверка утечек: 5 смен подряд → память возвращается к базе ±5%), лимиты кеша.
+
+**Приёмка:** замер времени загрузки и памяти; тест смены карт проходит.
+
+### Шаг 13.7. Решение о масштабе 128/254
+
+**Зависит от:** 13.3
+
+**Задачи:** эксперимент (не реализация): сервер с 128 и 254 ботами; где ломается (тик, трафик, физика); варианты — C++ для горячих путей, упрощение физики для далёких игроков, тик 30 Гц, шардинг по зонам. Итог — ADR «Что делаем для >64» с цифрами; решение принимает человек 🧑.
+
+**Приёмка:** отчёт с цифрами и рекомендацией.
+
+### Шаг 13.8. Регрессия производительности
+
+**Зависит от:** 13.2
+
+**Задачи:** `tools/bench.sh` в CI/ночном запуске: падает, если время тика сервера, трафик или память превышают бюджет более чем на 15%.
+
+**Приёмка:** искусственная деградация (добавленный `OS.delay\_msec`) ловится бенчмарком.
+
+**Конец фазы 13:** `phase-13-done`.
+
+\---
+
+## ФАЗА 14. БЕЗОПАСНОСТЬ И АДМИНИСТРИРОВАНИЕ
+
+Честно: **полного античита на стороне клиента в Godot нет**. Стратегия — архитектурная: сервер авторитетен, клиенту не доверяется ничего, подозрительное логируется для администратора. Интеграция коммерческих античитов (EAC/BattlEye) — вне плана.
+
+### Шаг 14.1. Модель угроз
+
+**Зависит от:** 13.8
+
+**Задачи:** `docs/THREATS.md`: speedhack, teleport, aimbot, wallhack (информационный), rapid-fire, дублирование предметов, RPC-флуд, DoS, подмена владельца, чтение приватных данных, подбор пароля админа. Для каждой — механизм защиты и где проверяется.
+
+**Приёмка:** документ создан, каждому пункту сопоставлен тест в 14.3/14.8.
+
+### Шаг 14.2. Укрепление RPC
+
+**Зависит от:** 14.1
+
+**Задачи:** аудит скриптом `tools/audit\_rpc.gd` — список всех `@rpc`, режимы, проверки. Правила: любой `any\_peer` RPC (1) проверяет `multiplayer.get\_remote\_sender\_id()` и состояние отправителя (жив ли, есть ли право), (2) валидирует типы и диапазоны аргументов (NaN/Inf, длины строк и массивов), (3) имеет **лимит частоты** на пир (`RateLimiter` с токен-бакетом), (4) не меняет игровое состояние, а лишь создаёт запрос. При нарушении: счётчик подозрений → предупреждение → кик.
+
+**Приёмка:** аудит-скрипт показывает 100% RPC с проверками; тест на спам (1000 вызовов/с) — сервер не деградирует, нарушитель кикается.
+
+### Шаг 14.3. Серверные проверки правил
+
+**Зависит от:** 14.2
+
+**Задачи:** движение (макс. скорость × допуск; при превышении — коррекция + счётчик), «телепорт» (дельта позиции за тик), стрельба (скорострельность, патроны, смена оружия, угол/дальность), гаджеты (владение, заряды, дистанция установки), техника (только место водителя управляет), возрождение (только разрешённые точки), смена класса (только в безопасное время), реанимация (дистанция).
+
+**Приёмка:** набор «читерских» клиентов `tests/security/\*` (скриптами подменяющих ввод) не получает преимущества: каждый случай даёт отказ/коррекцию/кик.
+
+### Шаг 14.4. Скрытие информации
+
+**Зависит от:** 14.3, 13.3
+
+**Задачи:** мёртвым/наблюдателям не отправляются позиции вражеской команды; враги вне радиуса интереса не отправляются (13.3); приватные данные (патроны, лодаут чужих) не покидают сервер; позиции спотированных врагов отправляются на время засветки. Простая серверная проверка видимости для маркеров (луч от союзника до врага), с бюджетом.
+
+**Приёмка:** сетевой анализ: клиент не получает позиций неспотированных удалённых врагов (тест, перехватывающий снапшоты).
+
+### Шаг 14.5. Журналы и статистические флаги
+
+**Зависит от:** 14.3
+
+**Задачи:** `SuspicionLog`: аномальные метрики на игрока (процент хедшотов, скорость поворота прицела перед выстрелом, время реакции, точность в движении, число отказанных выстрелов). Записи в `logs/suspicion.jsonl` с метками времени — **без автоматического бана** (только пометка для администратора). Ротация логов.
+
+**Приёмка:** симулированный «аимбот» (идеальное наведение за 1 кадр) помечается; обычный бот сложности «Элита» — нет (тест порогов).
+
+### Шаг 14.6. Административный интерфейс
+
+**Зависит от:** 14.2
+
+**Задачи:** удалённая консоль (TCP/WebSocket только на `127.0.0.1` по умолчанию; наружу — с TLS/паролем): `status`, `players`, `kick`, `ban`, `unban`, `map`, `say`, `bots`, `restart\_round`, `reload\_config`. Бан-лист в файле (IP + UUID). Аутентификация — пароль из `server.cfg`, задержка при неверных попытках. Метрики в `logs/metrics.json` раз в 10 с (игроки, тик, трафик).
+
+**Приёмка:** тесты команд; неверный пароль 5 раз → временная блокировка адреса.
+
+### Шаг 14.7. Защита от перегрузки
+
+**Зависит от:** 14.2
+
+**Задачи:** лимит подключений с одного IP, тайм-аут рукопожатия (5 с), лимит размера пакетов и числа RPC в секунду, защита от «зомби-слотов», ограничение скорости загрузки данных новым игрокам. Документ `docs/HOSTING.md` с рекомендациями по фаерволу (UDP-порт), лимитам ОС и мониторингу.
+
+**Приёмка:** нагрузочный тест: 100 «пустых» подключений за секунду не мешают играющим.
+
+### Шаг 14.8. Фазз-тесты
+
+**Зависит от:** 14.7
+
+**Задачи:** `tests/security/fuzz\_rpc.gd` — случайные/экстремальные аргументы (NaN, огромные массивы, отрицательные индексы, пустые строки) во все RPC; сервер не падает и не зависает.
+
+**Приёмка:** 10 000 итераций без падения; утечек нет.
+
+**Конец фазы 14:** `phase-14-done`.
+
+\---
+
+## ФАЗА 15. QA, СБОРКА, ДЕПЛОЙ, РЕЛИЗ
+
+### Шаг 15.1. План тестирования
+
+**Зависит от:** 14.8
+
+**Задачи:** `docs/TESTING.md`: пирамида (юнит → интеграция в нескольких процессах → «замачивание» 2 часа с 64 ботами → ручной плейтест); матрица сети (пинг 30/100/200, потери 0/2/5%); матрица железа (слабая/средняя/сильная); чек-лист регрессии для каждого PR/шага; шаблон баг-репорта (версия, шаги, лог).
+
+**Приёмка:** `tools/full\_check.sh` запускает юнит + интеграцию + 10-минутный бот-матч + аудит ассетов/RPC/i18n.
+
+### Шаг 15.2. Экспорт
+
+**Зависит от:** 15.1
+
+**Задачи:** установить шаблоны экспорта нужной версии; `export\_presets.cfg`: **Windows Desktop**, **Linux/X11 клиент**, **Linux Dedicated Server** (режим экспорта «dedicated server» — вырезает визуальные ресурсы; проверить в 4.7); версия сборки из одного места (`Game.VERSION`, `PROTOCOL\_VERSION`). Скрипты:
+
+```bash
+# tools/build\_all.sh
+set -e
+GODOT=${GODOT:-godot}
+mkdir -p builds/win builds/linux builds/server
+$GODOT --headless --path . --export-release 'Windows Desktop' builds/win/frontline.exe
+$GODOT --headless --path . --export-release 'Linux Client' builds/linux/frontline.x86\_64
+$GODOT --headless --path . --export-release 'Linux Dedicated Server' builds/server/frontline\_server.x86\_64
+```
+
+(Имена пресетов должны совпадать с `export\_presets.cfg`.) Проверка: собранный сервер запускается без GPU и держит соединение с собранным клиентом.
+
+**Приёмка:** три сборки создаются командой; интеграционный тест на **собранных** бинарниках проходит (рукопожатие + матч 2 мин).
+
+### Шаг 15.3. Непрерывная интеграция
+
+**Зависит от:** 15.2
+
+**Задачи:** конфигурация CI (GitHub Actions/GitLab CI): установка Godot нужной версии (использовать проверенное действие, версии зафиксировать, **актуальность проверить**), кеш `.godot/`, запуск `tools/check.sh`, ночью — `full\_check.sh` и `bench.sh`, публикация артефактов сборок. Статус-бейдж в README.
+
+**Приёмка:** pull-request с намеренно сломанным тестом красный; исправленный — зелёный.
+
+### Шаг 15.4. Контейнер выделенного сервера
+
+**Зависит от:** 15.2
+
+```dockerfile
+FROM debian:bookworm-slim
+RUN apt-get update \&\& apt-get install -y --no-install-recommends ca-certificates libfontconfig1 \\
+    \&\& rm -rf /var/lib/apt/lists/\*
+WORKDIR /srv/frontline
+COPY builds/server/ /srv/frontline/
+RUN useradd -m game \&\& chown -R game /srv/frontline
+USER game
+EXPOSE 7777/udp
+ENTRYPOINT \["./frontline\_server.x86\_64", "--headless", "--server", "--port=7777"]
+```
+
+**Задачи:** образ (набор системных библиотек уточнить по фактическому экспорту), `docker-compose.yml` с примонтированными `server.cfg` и `logs/`, healthcheck (запрос статуса через админ-интерфейс), автоперезапуск, пример запуска нескольких серверов на разных портах, `docs/HOSTING.md` (облако/VPS, фаервол, ресурсы на 64 игрока).
+
+**Приёмка:** `docker run` поднимает сервер; клиент с другой машины подключается; логи пишутся в том.
+
+### Шаг 15.5. Плейтесты
+
+**Зависит от:** 15.4
+
+**Задачи:** сценарий плейтеста на 10+ человек (🧑 организует человек): запись телеметрии (локальные логи: FPS, пинг, потери пакетов, смерти по причинам, время жизни, использование классов/оружия), форма обратной связи; отчёт `docs/PLAYTEST\_N.md` с приоритетами. Правки баланса — только через `.tres` и запись в BALANCE.md.
+
+**Приёмка:** по результатам заведён бэклог правок, каждая — отдельным коротким шагом `P.N`.
+
+### Шаг 15.6. Юридическое и релизные материалы
+
+**Зависит от:** 15.5
+
+**Задачи:** аудит `ASSETS.md` скриптом (у каждого внешнего файла есть лицензия и источник; несовместимые — заменить); файл `LICENSES.md` (в т.ч. уведомление об использовании Godot — MIT, шрифты OFL, CC0-паки); EULA и политика конфиденциальности (шаблоны для юриста 🧑); иконка и название (проверка на чужие товарные знаки 🧑); логирование падений в `user://logs/` с кнопкой «открыть папку логов».
+
+**Приёмка:** аудит лицензий зелёный; в сборке есть файл с атрибуциями.
+
+### Шаг 15.7. Релиз-кандидат
+
+**Зависит от:** 15.6
+
+**Задачи:** заморозка функций; только багфиксы; версия `0.1.0-rc1`; чек-лист: чистая установка, первый запуск, настройки сохраняются, тренировка, подключение к серверу, смена карты, выход; публикация (itch.io/сайт/Steam — через GodotSteam как отдельный необязательный шаг 🧑); инструкции по запуску сервера для сообщества; `CHANGELOG.md`.
+
+**Приёмка:** чек-лист пройден на двух чистых машинах (🧑).
+
+**Конец фазы 15:** `release-0.1.0`.
+
+\---
+
+## ПРИЛОЖЕНИЕ A. Шаблоны запросов человека агенту
+
+**Старт шага**
+
+```
+Прочитай AGENTS.md, PROGRESS.md и ARCHITECTURE.md. Выполни ТОЛЬКО шаг 2.3 из docs/STEPS.md.
+Сначала выведи план (до 10 пунктов) и подожди моего «ок», если шаг помечен 🧑 или трогает сеть.
+После завершения — отчёт по шаблону и остановка.
+```
+
+**Продолжить**
+
+```
+Открой PROGRESS.md, найди первый шаг не в статусе DONE, выполни его по правилам AGENTS.md. Не начинай следующий.
+```
+
+**Исправить сломанное**
+
+```
+Шаг 3.2 помечен DONE, но tools/check.sh падает: <вставить вывод>. Найди корневую причину, исправь минимальным диффом,
+добавь регрессионный тест, закоммить как fix(3.2): ... Новые функции не добавляй.
+```
+
+**Ревью без правок**
+
+```
+Ничего не меняй. Проведи ревью шага 4.6 на соответствие критериям приёмки и правилам AGENTS.md.
+Выдай список проблем с файлами и строками и оценку риска каждой.
+```
+
+**Сжатие контекста между шагами** (если сессия слишком длинная)
+
+```
+Сожми состояние проекта: что сделано, ключевые решения, договорённости по именам, текущие проблемы — в 40 строк и запиши в
+ARCHITECTURE.md (раздел «Сводка»). Затем остановись. Следующую сессию начну с чистого контекста.
+```
+
+## ПРИЛОЖЕНИЕ B. Если агент ведёт себя неправильно
+
+|Симптом|Что делать|
+|-|-|
+|Использует несуществующие методы Godot|Потребуйте проверку по документации 4.7 и запуск скрипта в headless; запретите «из памяти» (Правило 5)|
+|Пишет сразу несколько шагов|Откатить на тег предыдущего шага (`git reset --hard step-N.M`), повторить с командой «только шаг N.M»|
+|Заявляет «готово» без тестов|Потребуйте вывод `tools/check.sh` и пункты приёмки с отметками (Правило 19)|
+|Раздувает файлы|Правило 9: разбить на компоненты, выполнить отдельным шагом-рефакторингом `R.N`|
+|Меняет архитектуру втихую|Любое такое изменение — только через запись в ARCHITECTURE.md и подтверждение человека|
+|Застрял на ошибке 3+ итерации|Остановка по Правилу 15: BLOCKERS.md с вариантами, решение за человеком|
+|Теряет контекст на длинной сессии|Приложение A «Сжатие контекста», новая сессия, чтение AGENTS.md/PROGRESS.md|
+|Добавляет внешние ассеты без лицензии|Откат файла; запись в ASSETS.md обязательна до коммита|
+
+## ПРИЛОЖЕНИЕ C. Реестр рисков
+
+|Риск|Вероятность|Влияние|Смягчение|
+|-|-|-|-|
+|API Godot 4.7 отличается от ожиданий агента|Высокая|Среднее|Правило 5, headless-проверки, маленькие шаги|
+|Сетевое предсказание нестабильно|Высокая|Высокое|Фаза 4 разбита на 14 шагов, интеграционные тесты, симулятор плохой сети|
+|«Ощущение» стрельбы/движения плохое|Высокая|Высокое|Метки 🧑, данные в `.tres`, циклы человеческой настройки|
+|Нехватка качественных ассетов|Высокая|Среднее|Процедурные модели + замена по спискам ART\_TODO.md|
+|Производительность на 64 игроках|Средняя|Высокое|Фаза 13, бюджеты, бенчмарк в CI, решение о C++ по цифрам|
+|Читеры|Высокая|Среднее|Серверная авторитетность, Фаза 14, журналы|
+|Разрушаемость слабее ожиданий|Высокая|Низкое|Честное ограничение в Фазе 9; воксели — отдельный проект|
+|Раздувание объёма|Высокая|Высокое|Путь MVP (приложение D), строгое «не делай» в шагах|
+|Лицензии ассетов|Средняя|Высокое|ASSETS.md + аудит в 15.6|
+
+## ПРИЛОЖЕНИЕ D. Минимальный маршрут (MVP) — что сделать в первую очередь
+
+Если цель — как можно быстрее получить играбельный мультиплеерный прототип, идите так, остальное откладывайте:
+
+1. **Фаза 0** целиком.
+2. **Фаза 1:** 1.1–1.4, 1.6–1.8 (спринт/ступени 1.5 — позже).
+3. **Фаза 2:** 2.1–2.5, 2.7–2.9, из 2.12 — 3 оружия (винтовка, ПП, снайперка).
+4. **Фаза 4:** 4.1–4.9 (чат, симулятор, трафик-отчёты — позже).
+5. **Фаза 5:** 5.1–5.5, 5.7 (отряды, наблюдатель, конфиг — позже).
+6. **Фаза 6:** 6.1, 6.2, 6.4 (3 типа зданий), 6.6, 6.7 — одна карта.
+7. **Фаза 7:** 7.1, 7.2, 7.3 (3 оружия), 7.5, 7.6 (idle/walk/run/fire), 7.8 (процедурные звуки).
+8. **Фаза 10:** 10.1–10.5, 10.7 — боты, чтобы тестировать без людей.
+9. **Фаза 11:** 11.1, 11.2 (минимум), 11.5, 11.7.
+10. **Фаза 15:** 15.2, 15.4 — сборка и сервер.
+
+После этого — классы/гаджеты (Фаза 3), техника (Фаза 8), разрушаемость (Фаза 9), прогрессия (Фаза 12), оптимизация/безопасность (13–14) в таком порядке, как подсказывают плейтесты.
+
+## ПРИЛОЖЕНИЕ E. Итоговый чек-лист «игра готова»
+
+* \[ ] Клиент и выделенный сервер собираются одной командой; сервер работает headless и в Docker.
+* \[ ] 64 игрока (люди + боты) на карте держат бюджеты FPS/тика/трафика.
+* \[ ] Две карты, режимы Conquest и TDM, отряды, 5 классов, не менее 12 видов оружия, 3 вида техники.
+* \[ ] Серверная авторитетность подтверждена тестами «читерских» клиентов.
+* \[ ] Все ассеты имеют записи лицензий; в сборке есть атрибуции.
+* \[ ] Документация: AGENTS.md, ARCHITECTURE.md, BALANCE.md, PERF.md, NET\_REPORT.md, THREATS.md, HOSTING.md, TESTING.md актуальны.
+* \[ ] Все шаги в PROGRESS.md — DONE, известные проблемы перечислены и приоритизированы.
+* \[ ] Проведён плейтест на 10+ человек и учтена обратная связь.
+
+*Конец документа. Для работы агенту выдаются только Часть A (AGENTS.md) и текст текущего шага; остальной план остаётся у человека в docs/STEPS.md.*
+

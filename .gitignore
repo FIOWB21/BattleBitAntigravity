@@ -1,0 +1,14 @@
+# Godot 4+ specific ignores
+.godot/
+.nomedia
+
+# Build outputs
+builds/
+
+# OS / Editor temporary files
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+*.swp
+*~
