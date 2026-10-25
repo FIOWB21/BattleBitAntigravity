@@ -12,12 +12,27 @@ const DEDICATED_FEATURE: String = "dedicated_server"
 var state: State = State.MENU
 var is_server: bool = false
 var is_dedicated: bool = false
+var debug: Dictionary = {}
 
 
 func _init() -> void:
+	reset_debug()
 	var args: PackedStringArray = OS.get_cmdline_args()
 	args.append_array(OS.get_cmdline_user_args())
 	detect_runtime_flags(args, OS.has_feature(DEDICATED_FEATURE))
+
+
+func reset_debug() -> void:
+	debug = {
+		"ping_ms": 0,
+		"loss_percent": 0.0,
+		"loss_pct": 0.0,
+		"loss": 0.0,
+		"god": false,
+		"noclip": false,
+		"player_position": Vector3.ZERO,
+		"max_fps": 0,
+	}
 
 
 func detect_runtime_flags(cmdline_args: PackedStringArray, has_dedicated_feature: bool) -> void:

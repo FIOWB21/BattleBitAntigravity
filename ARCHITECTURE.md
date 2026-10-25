@@ -37,10 +37,15 @@
 | Автолоад | Путь | Ответственность |
 | --- | --- | --- |
 | `Events` | `res://src/autoload/events.gd` | Глобальная шина событий (`player_spawned`, `player_died`, `settings_changed`) |
-| `Game` | `res://src/autoload/game.gd` | Глобальное состояние приложения (`State.MENU`, `State.IN_GAME`) и флаги роли (`is_server`, `is_dedicated` по `OS.has_feature("dedicated_server")` и `--server`) |
+| `Game` | `res://src/autoload/game.gd` | Глобальное состояние приложения (`State.MENU`, `State.IN_GAME`), флаги роли (`is_server`, `is_dedicated` по `OS.has_feature("dedicated_server")` и `--server`) и словарь отладочных параметров `debug` (`ping_ms`, `loss_percent`, `god`, `noclip`, `player_position`, `max_fps`) |
 | `Log` | `res://src/autoload/log.gd` | Глобальный логгер с уровнями `DEBUG`, `INFO`, `WARN`, `ERROR`, фильтрацией по `min_level` и префиксом времени и роли `[SERVER]/[CLIENT]` |
 | `Settings` | `res://src/autoload/settings.gd` | Хранение и загрузка пользовательских настроек в `user://settings.cfg` (`ConfigFile`: чувствительность, FOV, громкость, графика) с дефолтами и отправкой `Events.settings_changed` |
 | `Net` | `res://src/autoload/net.gd` | Каркас сетевого менеджера (заглушка с `TODO` до фазы 6) |
+
+## Отладочный оверлей и консоль
+
+- **`DebugOverlay` (`res://src/ui/debug_overlay.tscn`, `res://src/ui/debug_overlay.gd`)** — слой `CanvasLayer` с панелью телеметрии `StatsPanel` (FPS, кадр в мс, память в MiB, число узлов, позиция локального игрока и пинг из `Game.debug`, переключение по `F3`) и панелью консоли `ConsolePanel` (переключение по `` ` `` / `KEY_QUOTELEFT`).
+- **`DebugConsole` (`res://src/ui/debug_console.gd`)** — `RefCounted`-реестр и парсер команд (`commands: Dictionary` вида `name -> Callable`), предоставляющий встроенные команды `help`, `fps <n>`, `net_sim <ping_ms> <loss_%>`, `god`, `noclip`.
 
 ## Поток данных: ввод → симуляция → представление
 

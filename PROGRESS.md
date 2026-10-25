@@ -1,7 +1,7 @@
 # PROGRESS
 
-Текущий шаг: 0.6
-Последний завершённый: 0.5
+Текущий шаг: 1.1
+Последний завершённый: 0.6
 
 | Шаг | Статус | Дата | Заметки |
 |---|---|---|---|
@@ -10,7 +10,7 @@
 | 0.3 | DONE | 2026-10-25 | Созданы мини-раннер `tools/run_tests.gd`, базовый класс `GutTest` (`addons/gut/test.gd`), `addons/gut/gut_cmdln.gd`, `tools/scene_smoke.gd`, `tools/check.sh`, `tools/check.ps1` и тест `tests/unit/test_sanity.gd` |
 | 0.4 | DONE | 2026-10-25 | Созданы и зарегистрированы автолоады `Events`, `Game`, `Log`, `Settings`, `Net` и модульные тесты `tests/unit/test_autoloads.gd` |
 | 0.5 | DONE | 2026-10-25 | Объявлены 33 действия `InputMap` в `project.godot`, создан класс констант `InputActions` (`src/core/input_actions.gd`) и тест `tests/unit/test_input_actions.gd` |
-| 0.6 | TODO | | |
+| 0.6 | DONE | 2026-10-25 | Созданы сцена `src/ui/debug_overlay.tscn` (`DebugOverlay`, F3), консоль (`KEY_QUOTELEFT`) и парсер/реестр команд `DebugConsole` (`src/ui/debug_console.gd`), словарь `Game.debug` и тесты `tests/unit/test_debug_overlay.gd` |
 | 1.1 | TODO | | |
 | 1.2 | TODO | | |
 | 1.3 | TODO | | |

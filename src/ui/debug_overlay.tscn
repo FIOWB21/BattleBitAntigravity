@@ -1,0 +1,58 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/debug_overlay.gd" id="1_overlay"]
+
+[node name="DebugOverlay" type="CanvasLayer"]
+layer = 100
+visible = false
+script = ExtResource("1_overlay")
+
+[node name="StatsPanel" type="PanelContainer" parent="."]
+visible = false
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 260.0
+offset_bottom = 160.0
+
+[node name="MarginContainer" type="MarginContainer" parent="StatsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="StatsLabel" type="Label" parent="StatsPanel/MarginContainer"]
+layout_mode = 2
+text = "FPS: 0
+Frame: 0.00 ms
+Memory: 0.00 MiB
+Nodes: 0
+Pos: (0.0, 0.0, 0.0)
+Ping: 0 ms"
+
+[node name="ConsolePanel" type="PanelContainer" parent="."]
+visible = false
+offset_left = 12.0
+offset_top = 190.0
+offset_right = 652.0
+offset_bottom = 438.0
+
+[node name="MarginContainer" type="MarginContainer" parent="ConsolePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ConsolePanel/MarginContainer"]
+layout_mode = 2
+
+[node name="OutputLabel" type="RichTextLabel" parent="ConsolePanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(600, 180)
+layout_mode = 2
+size_flags_vertical = 3
+scroll_following = true
+
+[node name="InputLine" type="LineEdit" parent="ConsolePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+placeholder_text = "Enter command (type 'help')..."

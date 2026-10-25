@@ -17,7 +17,7 @@ class SmokeErrorTracker extends Logger:
 		error_count += 1
 
 
-func _init() -> void:
+func _initialize() -> void:
 	var tracker: SmokeErrorTracker = SmokeErrorTracker.new()
 	OS.add_logger(tracker)
 	var failed: int = 0
