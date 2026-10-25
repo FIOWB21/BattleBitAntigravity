@@ -34,7 +34,13 @@
 
 ## Автолоады и их ответственность
 
-*(Будет заполнено на шаге 0.4: `Events`, `Log`, `Game`, `Settings`, `Net`)*
+| Автолоад | Путь | Ответственность |
+| --- | --- | --- |
+| `Events` | `res://src/autoload/events.gd` | Глобальная шина событий (`player_spawned`, `player_died`, `settings_changed`) |
+| `Game` | `res://src/autoload/game.gd` | Глобальное состояние приложения (`State.MENU`, `State.IN_GAME`) и флаги роли (`is_server`, `is_dedicated` по `OS.has_feature("dedicated_server")` и `--server`) |
+| `Log` | `res://src/autoload/log.gd` | Глобальный логгер с уровнями `DEBUG`, `INFO`, `WARN`, `ERROR`, фильтрацией по `min_level` и префиксом времени и роли `[SERVER]/[CLIENT]` |
+| `Settings` | `res://src/autoload/settings.gd` | Хранение и загрузка пользовательских настроек в `user://settings.cfg` (`ConfigFile`: чувствительность, FOV, громкость, графика) с дефолтами и отправкой `Events.settings_changed` |
+| `Net` | `res://src/autoload/net.gd` | Каркас сетевого менеджера (заглушка с `TODO` до фазы 6) |
 
 ## Поток данных: ввод → симуляция → представление
 

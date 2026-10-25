@@ -14,6 +14,14 @@ config/name="Frontline"
 run/max_fps=0
 config/features=PackedStringArray("4.7", "Forward Plus")
 
+[autoload]
+
+Events="*res://src/autoload/events.gd"
+Game="*res://src/autoload/game.gd"
+Log="*res://src/autoload/log.gd"
+Settings="*res://src/autoload/settings.gd"
+Net="*res://src/autoload/net.gd"
+
 [display]
 
 window/size/viewport_width=1920

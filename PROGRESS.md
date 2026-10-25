@@ -1,14 +1,14 @@
 # PROGRESS
 
-Текущий шаг: 0.4
-Последний завершённый: 0.3
+Текущий шаг: 0.5
+Последний завершённый: 0.4
 
 | Шаг | Статус | Дата | Заметки |
 |---|---|---|---|
 | 0.1 | DONE | 2026-10-25 | Создан project.godot (Godot 4.7.2, Forward+, Jolt, 60 Гц, 8 слоёв физики), .gitignore, .gitattributes, .editorconfig, структура каталогов и ARCHITECTURE.md |
 | 0.2 | DONE | 2026-10-25 | Созданы ASSETS.md и BLOCKERS.md, заполнена таблица всех 138 шагов в PROGRESS.md, проверены AGENTS.md, ARCHITECTURE.md, docs/STEPS.md и обновлён CHANGELOG.md |
 | 0.3 | DONE | 2026-10-25 | Созданы мини-раннер `tools/run_tests.gd`, базовый класс `GutTest` (`addons/gut/test.gd`), `addons/gut/gut_cmdln.gd`, `tools/scene_smoke.gd`, `tools/check.sh`, `tools/check.ps1` и тест `tests/unit/test_sanity.gd` |
-| 0.4 | TODO | | |
+| 0.4 | DONE | 2026-10-25 | Созданы и зарегистрированы автолоады `Events`, `Game`, `Log`, `Settings`, `Net` и модульные тесты `tests/unit/test_autoloads.gd` |
 | 0.5 | TODO | | |
 | 0.6 | TODO | | |
 | 1.1 | TODO | | |

@@ -2,6 +2,20 @@
 
 Все заметные изменения проекта документируются в этом файле по шагам плана (`docs/STEPS.md`).
 
+## [step-0.4] — 2026-10-25
+
+### Добавлено
+- Автолоад `Events` (`src/autoload/events.gd`) — глобальная шина сигналов (`player_spawned`, `player_died`, `settings_changed`).
+- Автолоад `Game` (`src/autoload/game.gd`) — состояние приложения (`MENU`/`IN_GAME`) и автоопределение флагов `is_dedicated` и `is_server` по `OS.has_feature("dedicated_server")` и аргументу `--server`.
+- Автолоад `Log` (`src/autoload/log.gd`) — уровни `DEBUG`/`INFO`/`WARN`/`ERROR`, фильтрация `min_level`, префиксы времени и роли `[SERVER]/[CLIENT]`.
+- Автолоад `Settings` (`src/autoload/settings.gd`) — управление `ConfigFile` (`user://settings.cfg`), геттеры/сеттеры с дефолтами для чувствительности, FOV, громкости и графики.
+- Автолоад-заглушка `Net` (`src/autoload/net.gd`) с `TODO` для фазы 6.
+- Модульные тесты `tests/unit/test_autoloads.gd` для проверки `Settings`, `Log`, `Game`, `Events` и `Net`.
+
+### Изменено
+- Зарегистрированы автолоады `Events`, `Game`, `Log`, `Settings`, `Net` в `project.godot`.
+- Заполнена таблица автолоадов в `ARCHITECTURE.md`.
+
 ## [step-0.3] — 2026-10-25
 
 ### Добавлено
