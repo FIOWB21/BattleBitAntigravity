@@ -2,6 +2,19 @@
 
 Все заметные изменения проекта документируются в этом файле по шагам плана (`docs/STEPS.md`).
 
+## [step-1.3] — 2026-10-25
+
+### Добавлено
+- Обзор мышью в `LocalInputReader` (`src/player/local_input_reader.gd`): методы `apply_mouse_delta(...)` и `handle_input_event(...)`, накопление `yaw`, жёсткое ограничение `pitch` в пределах `±89°` (`MAX_PITCH_DEG = 89.0`), чтение чувствительности (`sensitivity`) и инверсии оси Y (`invert_y`) из `Settings`.
+- Новые настройки в `Settings` (`src/autoload/settings.gd`): `invert_y` (по умолчанию `false`), `camera_effects` (по умолчанию `true`) и ограничение `fov` диапазоном `60.0–120.0` (по умолчанию `90.0`).
+- Узел процедурных визуальных эффектов камеры `CameraEffects` (`src/player/camera_effects.gd`): расчёт дыхания в покое и покачивания головы (head bob) при движении по земле без влияния на физическую симуляцию, отключение через `Settings`.
+- Модульные тесты `tests/unit/test_player_camera.gd` (накопление `yaw`, кламп `pitch` в `±89°`, чувствительность и `invert_y`, диапазон `FOV` `60–120`, захват и освобождение курсора по `Esc`, физическая интерполяция и переключение `CameraEffects`).
+
+### Изменено
+- В `project.godot` включена физическая интерполяция `physics/common/physics_interpolation=true`.
+- В `Player` (`src/player/player.gd`), `tools/gen_player.gd` и `src/player/player.tscn` добавлен узел `Head/CameraEffects`, настроена синхронизация `Camera3D.fov` с `Settings`, захват курсора (`MOUSE_MODE_CAPTURED`) и освобождение по `InputActions.PAUSE_MENU` (`Esc`), а также сглаживание `Camera3D` (`PHYSICS_INTERPOLATION_MODE_OFF`) через `head.get_global_transform_interpolated().origin`.
+- В `tools/gen_testbed.gd` и `src/maps/testbed/testbed.tscn` добавлен спавн экземпляра `Player` в точке `PlayerSpawn`.
+
 ## [step-1.2] — 2026-10-25
 
 ### Добавлено

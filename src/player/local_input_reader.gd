@@ -2,9 +2,41 @@
 class_name LocalInputReader
 extends RefCounted
 
+const MAX_PITCH_DEG: float = 89.0
+const MAX_PITCH_RAD: float = deg_to_rad(MAX_PITCH_DEG)
+const FALLBACK_SENSITIVITY: float = 0.2
+
 var tick: int = 0
 var yaw: float = 0.0
 var pitch: float = 0.0
+
+
+func apply_mouse_delta(
+	relative: Vector2,
+	sensitivity: float = -1.0,
+	invert_y: Variant = null
+) -> void:
+	var sens: float = sensitivity
+	if sens < 0.0:
+		sens = Settings.get_sensitivity() if Settings != null else FALLBACK_SENSITIVITY
+	var inv_y: bool = (
+		bool(invert_y)
+		if invert_y != null
+		else (Settings.get_invert_y() if Settings != null else false)
+	)
+	yaw -= deg_to_rad(relative.x * sens)
+	var y_sign: float = 1.0 if inv_y else -1.0
+	pitch = clampf(
+		pitch + deg_to_rad(relative.y * sens * y_sign),
+		-MAX_PITCH_RAD,
+		MAX_PITCH_RAD
+	)
+
+
+func handle_input_event(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		var motion: InputEventMouseMotion = event as InputEventMouseMotion
+		apply_mouse_delta(motion.relative)
 
 
 func read_input() -> PlayerInput:
@@ -17,6 +49,7 @@ func read_input() -> PlayerInput:
 		InputActions.MOVE_BACK,
 		InputActions.MOVE_FORWARD
 	)
+	pitch = clampf(pitch, -MAX_PITCH_RAD, MAX_PITCH_RAD)
 	inp.yaw = yaw
 	inp.pitch = pitch
 	inp.buttons = _read_buttons()

@@ -2,6 +2,7 @@ extends SceneTree
 
 const OUTPUT_PATH: String = "res://src/maps/testbed/testbed.tscn"
 const GRID_SHADER_PATH: String = "res://src/maps/testbed/grid_1m.gdshader"
+const PLAYER_SCENE_PATH: String = "res://src/player/player.tscn"
 const WORLD_LAYER: int = 1
 
 const FLOOR_SIZE: Vector3 = Vector3(200.0, 1.0, 200.0)
@@ -103,10 +104,17 @@ func _add_player_spawn(root: Node3D) -> void:
 
 	var cam: Camera3D = Camera3D.new()
 	cam.name = "PreviewCamera"
-	cam.current = true
+	cam.current = false
 	cam.position = Vector3(-18.0, 12.0, 18.0)
 	cam.rotation_degrees = Vector3(-25.0, -35.0, 0.0)
 	root.add_child(cam)
+
+	var player_packed: PackedScene = load(PLAYER_SCENE_PATH) as PackedScene
+	if player_packed != null:
+		var player: Node3D = player_packed.instantiate() as Node3D
+		player.name = "Player"
+		player.position = spawn.position
+		root.add_child(player)
 
 
 func _add_floor(root: Node3D, mat: Material) -> void:
@@ -250,4 +258,5 @@ func _create_static_box(
 func _set_owner_recursive(node: Node, owner_node: Node) -> void:
 	for child: Node in node.get_children():
 		child.owner = owner_node
-		_set_owner_recursive(child, owner_node)
+		if child.scene_file_path.is_empty():
+			_set_owner_recursive(child, owner_node)

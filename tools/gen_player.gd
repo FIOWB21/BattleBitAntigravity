@@ -3,6 +3,7 @@ extends SceneTree
 
 const OUTPUT_PATH: String = "res://src/player/player.tscn"
 const PLAYER_SCRIPT_PATH: String = "res://src/player/player.gd"
+const CAMERA_EFFECTS_SCRIPT_PATH: String = "res://src/player/camera_effects.gd"
 const MOVEMENT_CONFIG_PATH: String = "res://src/player/default_movement.tres"
 
 const LAYER_WORLD: int = 1 << 0
@@ -11,6 +12,7 @@ const LAYER_PLAYERS: int = 1 << 1
 const CAPSULE_HEIGHT: float = 1.8
 const CAPSULE_RADIUS: float = 0.35
 const HEAD_HEIGHT: float = 1.6
+const DEFAULT_CAMERA_FOV: float = 90.0
 
 
 func _initialize() -> void:
@@ -59,7 +61,14 @@ func _build_player_scene() -> CharacterBody3D:
 	var cam: Camera3D = Camera3D.new()
 	cam.name = "Camera3D"
 	cam.current = true
+	cam.fov = DEFAULT_CAMERA_FOV
+	cam.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	head.add_child(cam)
+
+	var effects_script: GDScript = load(CAMERA_EFFECTS_SCRIPT_PATH) as GDScript
+	var cam_effects: Node3D = effects_script.new() as Node3D
+	cam_effects.name = "CameraEffects"
+	head.add_child(cam_effects)
 
 	return player
 
