@@ -46,6 +46,22 @@ func test_floor_dimensions_and_grid_material() -> void:
 	root.free()
 
 
+func test_floor_visual_matches_collision_and_surface_stays_at_ground_level() -> void:
+	var root: Node3D = _instantiate_testbed()
+	var floor_body: StaticBody3D = root.get_node("Floor") as StaticBody3D
+	var col: CollisionShape3D = floor_body.get_node("CollisionShape3D") as CollisionShape3D
+	var visual: MeshInstance3D = floor_body.get_node("MeshInstance3D") as MeshInstance3D
+	var shape: BoxShape3D = col.shape as BoxShape3D
+	var mesh: BoxMesh = visual.mesh as BoxMesh
+	assert_eq(visual.transform, col.transform, "Floor mesh must match its collision transform")
+	assert_eq(mesh.size, shape.size, "Floor mesh must match its collision size")
+	var collision_top: Vector3 = floor_body.transform * (col.transform * Vector3(0.0, shape.size.y * 0.5, 0.0))
+	var visual_top: Vector3 = floor_body.transform * (visual.transform * Vector3(0.0, mesh.size.y * 0.5, 0.0))
+	assert_almost_eq(collision_top.y, 0.0, 0.001, "Floor collision surface must stay at y=0")
+	assert_almost_eq(visual_top, collision_top, 0.001, "Visible floor surface must match collision")
+	root.free()
+
+
 func test_all_colliders_on_world_layer_and_min_10_obstacle_heights() -> void:
 	var root: Node3D = _instantiate_testbed()
 	var bodies: Array[StaticBody3D] = _collect_static_bodies(root)
