@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_data.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+id = &"sample_shotgun"
+display_name = "Temporary Shotgun"
+category = 5
+fire_modes = Array[int]([0])
+rpm = 90.0
+damage_near = 12.0
+damage_far = 4.0
+range_near = 8.0
+range_far = 30.0
+pellets = 8
+mag_size = 8
+reload_time = 3.0
+reload_empty_time = 4.0
+spread_hip_deg = 5.0
+spread_ads_deg = 3.0

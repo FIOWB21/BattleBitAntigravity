@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_data.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+id = &"sample_lmg"
+display_name = "Temporary LMG"
+category = 2
+fire_modes = Array[int]([1])
+rpm = 600.0
+damage_near = 32.0
+damage_far = 20.0
+range_near = 35.0
+range_far = 100.0
+mag_size = 100
+reserve_mags = 3
+reload_time = 5.0
+reload_empty_time = 6.0
+ads_time = 0.35
+move_speed_mult = 0.85

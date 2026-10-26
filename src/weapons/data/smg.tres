@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_data.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+id = &"sample_smg"
+display_name = "Temporary SMG"
+category = 1
+fire_modes = Array[int]([1, 0])
+rpm = 900.0
+damage_near = 24.0
+damage_far = 12.0
+range_near = 15.0
+range_far = 50.0
+mag_size = 32
+reload_time = 1.8
+reload_empty_time = 2.3
+ads_time = 0.15
+move_speed_mult = 1.05

@@ -23,6 +23,7 @@ var _right_arm_shape: BoxShape3D = null
 var _legs_shape: BoxShape3D = null
 var _zones: Array[HitboxZone] = []
 var _exclude_rids: Array[RID] = []
+var _zones_initialized: bool = false
 
 
 func _ready() -> void:
@@ -103,22 +104,26 @@ func get_exclude_rids() -> Array[RID]:
 
 
 func _ensure_zones() -> void:
+	# Поиск узлов и отделение форм от ресурсов сцены выполняются только один раз.
+	if _zones_initialized:
+		return
 	if hitbox_config == null:
 		hitbox_config = load(DEFAULT_HITBOX_CONFIG_PATH) as HitboxConfig
-	head_zone = _get_or_create_zone("HeadZone", HitboxZone.HEAD, true)
-	torso_zone = _get_or_create_zone("TorsoZone", HitboxZone.TORSO, false)
-	left_arm_zone = _get_or_create_zone("LeftArmZone", HitboxZone.ARMS, false)
-	right_arm_zone = _get_or_create_zone("RightArmZone", HitboxZone.ARMS, false)
-	legs_zone = _get_or_create_zone("LegsZone", HitboxZone.LEGS, false)
+	head_zone = _get_or_create_zone("HeadZone", HitboxZone.HEAD)
+	torso_zone = _get_or_create_zone("TorsoZone", HitboxZone.TORSO)
+	left_arm_zone = _get_or_create_zone("LeftArmZone", HitboxZone.ARMS)
+	right_arm_zone = _get_or_create_zone("RightArmZone", HitboxZone.ARMS)
+	legs_zone = _get_or_create_zone("LegsZone", HitboxZone.LEGS)
 	_head_shape = _ensure_sphere_shape(head_zone)
 	_torso_shape = _ensure_box_shape(torso_zone)
 	_left_arm_shape = _ensure_box_shape(left_arm_zone)
 	_right_arm_shape = _ensure_box_shape(right_arm_zone)
 	_legs_shape = _ensure_box_shape(legs_zone)
 	_zones = [head_zone, torso_zone, left_arm_zone, right_arm_zone, legs_zone]
+	_zones_initialized = true
 
 
-func _get_or_create_zone(zone_name: String, zone_type: int, is_sphere: bool) -> HitboxZone:
+func _get_or_create_zone(zone_name: String, zone_type: int) -> HitboxZone:
 	var z: HitboxZone = get_node_or_null(zone_name) as HitboxZone
 	if z == null:
 		z = HitboxZone.new()
@@ -128,7 +133,6 @@ func _get_or_create_zone(zone_name: String, zone_type: int, is_sphere: bool) -> 
 	if col == null:
 		col = CollisionShape3D.new()
 		col.name = "CollisionShape3D"
-		col.shape = SphereShape3D.new() if is_sphere else BoxShape3D.new()
 		z.add_child(col)
 	z.zone = zone_type
 	z.damage_mult = hitbox_config.multiplier_for(zone_type)

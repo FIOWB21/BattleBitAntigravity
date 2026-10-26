@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_data.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+id = &"sample_launcher"
+display_name = "Temporary Launcher"
+category = 7
+fire_modes = Array[int]([0])
+rpm = 30.0
+damage_near = 120.0
+damage_far = 120.0
+range_near = 0.0
+range_far = 200.0
+mag_size = 1
+reserve_mags = 4
+reload_time = 3.0
+reload_empty_time = 4.0
+draw_time = 0.8
+ads_time = 0.4
+move_speed_mult = 0.85

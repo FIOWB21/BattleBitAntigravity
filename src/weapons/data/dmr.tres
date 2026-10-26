@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_data.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+id = &"sample_dmr"
+display_name = "Temporary DMR"
+category = 3
+fire_modes = Array[int]([0])
+rpm = 300.0
+damage_near = 45.0
+damage_far = 32.0
+range_near = 40.0
+range_far = 140.0
+mag_size = 20
+ads_time = 0.3
+spread_ads_deg = 0.15

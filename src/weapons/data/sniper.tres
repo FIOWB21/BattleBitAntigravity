@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_data.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+id = &"sample_sniper"
+display_name = "Temporary Sniper"
+category = 4
+fire_modes = Array[int]([0])
+rpm = 60.0
+damage_near = 90.0
+damage_far = 70.0
+range_near = 60.0
+range_far = 250.0
+mag_size = 5
+reload_time = 3.0
+reload_empty_time = 3.8
+ads_time = 0.45
+ads_fov_mult = 0.4
+move_speed_mult = 0.9
+spread_ads_deg = 0.05
