@@ -1,7 +1,7 @@
 # PROGRESS
 
-Текущий шаг: 1.7
-Последний завершённый: 1.6
+Текущий шаг: 1.8
+Последний завершённый: 1.7
 
 | Шаг | Статус | Дата | Заметки |
 |---|---|---|---|
@@ -17,7 +17,7 @@
 | 1.4 | DONE | 2026-10-25 | Созданы `PlayerStance` (`src/player/player_stance.gd`) и `StanceController` (`src/player/stance_controller.gd`): стойки `STAND`/`CROUCH`/`PRONE` с высотой капсулы `1.8`/`1.2`/`0.5` м и камеры `1.65`/`1.05`/`0.35` м, плавные переходы без смещения ступней, проверка потолка (`test_move`), подъём из `PRONE` в `STAND` через `CROUCH` за `0.6` с, запрет прыжка лёжа, наклоны `±15°` и `±0.4` м с проверкой стены и тесты `tests/unit/test_player_stance.gd` |
 | 1.5 | DONE | 2026-10-26 | Реализованы спринт только вперёд (`sprint_min_forward_dot = 0.5`, запрет в `CROUCH`/`PRONE`), опциональная выносливость (`stamina_enabled = false` по умолчанию), `coyote_time = 0.1` с, автоподъём на ступени до `0.35` м (`test_move` вверх → вперёд → вниз без подпрыгиваний), расчёт и локальное применение урона от падения при скорости ниже `−12` м/с (`MovementConfig.calculate_fall_damage`, передача в `HealthComponent`) и тесты `tests/unit/test_player_step_fall_sprint.gd` |
 | 1.6 | DONE | 2026-10-26 | Создан `HealthComponent` (`src/core/health_component.gd`) с сигналами `health_changed`, `damaged`, `died`, методами `apply_damage`, `heal`, `reset`, опциональной регенерацией (`regen_delay`, `regen_rate`, отключена по умолчанию), интеграцией в `Player` (`src/player/player.tscn`) и тестами `tests/unit/test_health_component.gd` |
-| 1.7 | TODO | | |
+| 1.7 | DONE | 2026-10-26 | Созданы `HitboxConfig` (`src/player/hitbox_config.gd`, `src/player/default_hitboxes.tres`), `HitboxZone` (`src/player/hitbox_zone.gd`, `Area3D` на слое `hitboxes = 4`, `monitoring = false`, зоны `HEAD`/`TORSO`/`ARMS`/`LEGS`, `damage_mult`, ссылка на `HealthComponent`), `PlayerHitboxes` (`src/player/player_hitboxes.gd`, подстройка зон под стойку и наклон), `HitResult` (`src/weapons/hit_result.gd`) и `HitscanQuery.cast` (`src/weapons/hitscan_query.gd`, маска `world + hitboxes`), интеграция в `Player` (`src/player/player.tscn`) и тесты `tests/unit/test_hitboxes.gd` |
 | 1.8 | TODO | | |
 | 2.1 | TODO | | |
 | 2.2 | TODO | | |

@@ -1,36 +1,119 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://src/player/player.gd" id="1_244u8"]
-[ext_resource type="Script" path="res://src/player/camera_effects.gd" id="2_5f2sf"]
-[ext_resource type="Script" path="res://src/player/stance_controller.gd" id="3_jiejy"]
-[ext_resource type="Script" path="res://src/core/health_component.gd" id="4_o822w"]
+[ext_resource type="Script" path="res://src/player/player.gd" id="1_jiejy"]
+[ext_resource type="Script" path="res://src/player/camera_effects.gd" id="2_o822w"]
+[ext_resource type="Script" path="res://src/player/stance_controller.gd" id="3_x42xx"]
+[ext_resource type="Script" path="res://src/core/health_component.gd" id="4_l271a"]
+[ext_resource type="Script" path="res://src/player/player_hitboxes.gd" id="5_8ydov"]
+[ext_resource type="Script" path="res://src/player/hitbox_zone.gd" id="6_ylhto"]
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_x42xx"]
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_cwolq"]
 radius = 0.35
 height = 1.8
 
-[node name="Player" type="CharacterBody3D" unique_id=1537605927]
+[sub_resource type="SphereShape3D" id="SphereShape3D_2smqc"]
+radius = 0.15
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rl62b"]
+size = Vector3(0.32, 0.75, 0.28)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wlj80"]
+size = Vector3(0.14, 0.675, 0.24)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_6bm8s"]
+size = Vector3(0.14, 0.675, 0.24)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hrerp"]
+size = Vector3(0.36, 0.75, 0.28)
+
+[node name="Player" type="CharacterBody3D" unique_id=1478774154]
 collision_layer = 2
 floor_max_angle = 0.7863982
-script = ExtResource("1_244u8")
+script = ExtResource("1_jiejy")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=936374140]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=894735060]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-shape = SubResource("CapsuleShape3D_x42xx")
+shape = SubResource("CapsuleShape3D_cwolq")
 
-[node name="Head" type="Node3D" parent="." unique_id=251158102]
+[node name="Head" type="Node3D" parent="." unique_id=1525618279]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0)
 
-[node name="Camera3D" type="Camera3D" parent="Head" unique_id=427875339]
+[node name="Camera3D" type="Camera3D" parent="Head" unique_id=814497425]
 physics_interpolation_mode = 2
 current = true
 fov = 90.0
 
-[node name="CameraEffects" type="Node3D" parent="Head" unique_id=588520810]
-script = ExtResource("2_5f2sf")
+[node name="CameraEffects" type="Node3D" parent="Head" unique_id=187580085]
+script = ExtResource("2_o822w")
 
-[node name="StanceController" type="Node" parent="." unique_id=713508965]
-script = ExtResource("3_jiejy")
+[node name="StanceController" type="Node" parent="." unique_id=410938432]
+script = ExtResource("3_x42xx")
 
-[node name="HealthComponent" type="Node" parent="." unique_id=1855443452]
-script = ExtResource("4_o822w")
+[node name="HealthComponent" type="Node" parent="." unique_id=1635017744]
+script = ExtResource("4_l271a")
+
+[node name="Hitboxes" type="Node3D" parent="." unique_id=1756930405]
+script = ExtResource("5_8ydov")
+
+[node name="HeadZone" type="Area3D" parent="Hitboxes" unique_id=508707789 node_paths=PackedStringArray("health_component")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0)
+collision_layer = 4
+collision_mask = 0
+monitoring = false
+script = ExtResource("6_ylhto")
+damage_mult = 2.0
+health_component = NodePath("../../HealthComponent")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hitboxes/HeadZone" unique_id=710281852]
+shape = SubResource("SphereShape3D_2smqc")
+
+[node name="TorsoZone" type="Area3D" parent="Hitboxes" unique_id=840500054 node_paths=PackedStringArray("health_component")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.125, 0)
+collision_layer = 4
+collision_mask = 0
+monitoring = false
+script = ExtResource("6_ylhto")
+zone = 1
+health_component = NodePath("../../HealthComponent")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hitboxes/TorsoZone" unique_id=1883307035]
+shape = SubResource("BoxShape3D_rl62b")
+
+[node name="LeftArmZone" type="Area3D" parent="Hitboxes" unique_id=1071749755 node_paths=PackedStringArray("health_component")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.24, 1.125, 0)
+collision_layer = 4
+collision_mask = 0
+monitoring = false
+script = ExtResource("6_ylhto")
+zone = 2
+damage_mult = 0.8
+health_component = NodePath("../../HealthComponent")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hitboxes/LeftArmZone" unique_id=358651727]
+shape = SubResource("BoxShape3D_wlj80")
+
+[node name="RightArmZone" type="Area3D" parent="Hitboxes" unique_id=1010166535 node_paths=PackedStringArray("health_component")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 1.125, 0)
+collision_layer = 4
+collision_mask = 0
+monitoring = false
+script = ExtResource("6_ylhto")
+zone = 2
+damage_mult = 0.8
+health_component = NodePath("../../HealthComponent")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hitboxes/RightArmZone" unique_id=1868719116]
+shape = SubResource("BoxShape3D_6bm8s")
+
+[node name="LegsZone" type="Area3D" parent="Hitboxes" unique_id=1693847786 node_paths=PackedStringArray("health_component")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.375, 0)
+collision_layer = 4
+collision_mask = 0
+monitoring = false
+script = ExtResource("6_ylhto")
+zone = 3
+damage_mult = 0.75
+health_component = NodePath("../../HealthComponent")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hitboxes/LegsZone" unique_id=1593901662]
+shape = SubResource("BoxShape3D_hrerp")

@@ -5,14 +5,19 @@ extends CharacterBody3D
 signal fall_damaged(amount: float)
 
 const DEFAULT_MOVEMENT_PATH: String = "res://src/player/default_movement.tres"
+const DEFAULT_HITBOXES_PATH: String = "res://src/player/default_hitboxes.tres"
 
 @export var movement_config: MovementConfig = preload(DEFAULT_MOVEMENT_PATH)
+@export var hitbox_config: HitboxConfig = preload(DEFAULT_HITBOXES_PATH)
 @export var is_local_player: bool = true
 @export var stance: int = PlayerStance.STAND:
 	set(value):
 		stance = clampi(value, PlayerStance.STAND, PlayerStance.PRONE)
 		if stance_controller != null and stance_controller.current_stance != stance:
 			stance_controller.set_stance_immediate(stance)
+		if hitboxes != null:
+			var lean_off: float = stance_controller.current_lean_offset if stance_controller != null else 0.0
+			hitboxes.update_for_stance(stance, lean_off)
 
 var lean: float = 0.0
 var last_fall_damage: float = 0.0
@@ -26,21 +31,11 @@ var _mouse_captured: bool = false
 @onready var camera_effects: CameraEffects = $Head/CameraEffects
 @onready var stance_controller: StanceController = get_node_or_null("StanceController") as StanceController
 @onready var health_component: Node = get_node_or_null("HealthComponent")
+@onready var hitboxes: PlayerHitboxes = get_node_or_null("Hitboxes") as PlayerHitboxes
 
 
 func _ready() -> void:
-	if movement_config == null:
-		movement_config = load(DEFAULT_MOVEMENT_PATH) as MovementConfig
-	floor_max_angle = deg_to_rad(movement_config.max_slope_angle) + PlayerMotor.SLOPE_EPSILON_RAD
-	if stance_controller == null:
-		stance_controller = StanceController.new()
-		stance_controller.name = "StanceController"
-		add_child(stance_controller)
-	stance_controller.setup(self, collision_shape, head, movement_config, stance)
-	if health_component == null:
-		health_component = HealthComponent.new()
-		health_component.name = "HealthComponent"
-		add_child(health_component)
+	_setup_components()
 	input_reader.yaw = rotation.y
 	if head != null:
 		input_reader.pitch = clampf(
@@ -57,6 +52,28 @@ func _ready() -> void:
 	if is_local_player:
 		capture_mouse()
 		update_camera_visuals(0.0)
+
+
+func _setup_components() -> void:
+	if movement_config == null:
+		movement_config = load(DEFAULT_MOVEMENT_PATH) as MovementConfig
+	if hitbox_config == null:
+		hitbox_config = load(DEFAULT_HITBOXES_PATH) as HitboxConfig
+	floor_max_angle = deg_to_rad(movement_config.max_slope_angle) + PlayerMotor.SLOPE_EPSILON_RAD
+	if stance_controller == null:
+		stance_controller = StanceController.new()
+		stance_controller.name = "StanceController"
+		add_child(stance_controller)
+	stance_controller.setup(self, collision_shape, head, movement_config, stance)
+	if health_component == null:
+		health_component = HealthComponent.new()
+		health_component.name = "HealthComponent"
+		add_child(health_component)
+	if hitboxes == null:
+		hitboxes = PlayerHitboxes.new()
+		hitboxes.name = "Hitboxes"
+		add_child(hitboxes)
+	hitboxes.setup(self, health_component as HealthComponent, movement_config, hitbox_config, stance)
 
 
 func _exit_tree() -> void:
@@ -125,6 +142,12 @@ func step_simulation(inp: PlayerInput, delta: float) -> void:
 		stance_controller.step(inp, delta)
 		stance = stance_controller.current_stance
 		lean = stance_controller.current_lean
+		if hitboxes != null:
+			hitboxes.update_for_dimensions(
+				stance_controller.current_capsule_height,
+				stance_controller.current_head_height,
+				stance_controller.current_lean_offset
+			)
 	motor.simulate(self, inp, movement_config, stance, delta)
 	if motor.landed_this_tick:
 		last_fall_damage = motor.last_fall_damage
@@ -136,6 +159,12 @@ func step_simulation(inp: PlayerInput, delta: float) -> void:
 			-LocalInputReader.MAX_PITCH_RAD,
 			LocalInputReader.MAX_PITCH_RAD
 		)
+
+
+func get_hitscan_exclude_rids() -> Array[RID]:
+	if hitboxes != null:
+		return hitboxes.get_exclude_rids()
+	return [get_rid()]
 
 
 func apply_fall_damage(amount: float) -> void:

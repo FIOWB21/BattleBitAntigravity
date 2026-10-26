@@ -5,8 +5,10 @@ const OUTPUT_PATH: String = "res://src/player/player.tscn"
 const PLAYER_SCRIPT_PATH: String = "res://src/player/player.gd"
 const STANCE_CONTROLLER_SCRIPT_PATH: String = "res://src/player/stance_controller.gd"
 const HEALTH_COMPONENT_SCRIPT_PATH: String = "res://src/core/health_component.gd"
+const PLAYER_HITBOXES_SCRIPT_PATH: String = "res://src/player/player_hitboxes.gd"
 const CAMERA_EFFECTS_SCRIPT_PATH: String = "res://src/player/camera_effects.gd"
 const MOVEMENT_CONFIG_PATH: String = "res://src/player/default_movement.tres"
+const HITBOX_CONFIG_PATH: String = "res://src/player/default_hitboxes.tres"
 
 const LAYER_WORLD: int = 1 << 0
 const LAYER_PLAYERS: int = 1 << 1
@@ -83,9 +85,17 @@ func _add_head_and_components(player: CharacterBody3D) -> void:
 	player.add_child(stance_ctrl)
 
 	var health_script: GDScript = load(HEALTH_COMPONENT_SCRIPT_PATH) as GDScript
-	var health_comp: Node = health_script.new() as Node
+	var health_comp: HealthComponent = health_script.new() as HealthComponent
 	health_comp.name = "HealthComponent"
 	player.add_child(health_comp)
+
+	var hitboxes_script: GDScript = load(PLAYER_HITBOXES_SCRIPT_PATH) as GDScript
+	var hitboxes: PlayerHitboxes = hitboxes_script.new() as PlayerHitboxes
+	hitboxes.name = "Hitboxes"
+	var hb_cfg: HitboxConfig = load(HITBOX_CONFIG_PATH) as HitboxConfig
+	var mov_cfg: MovementConfig = load(MOVEMENT_CONFIG_PATH) as MovementConfig
+	player.add_child(hitboxes)
+	hitboxes.setup(player, health_comp, mov_cfg, hb_cfg, PlayerStance.STAND)
 
 
 func _set_owner_recursive(node: Node, owner_node: Node) -> void:

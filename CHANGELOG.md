@@ -2,6 +2,18 @@
 
 Все заметные изменения проекта документируются в этом файле по шагам плана (`docs/STEPS.md`).
 
+## [step-1.7] — 2026-10-26
+
+### Добавлено
+- Ресурс конфигурации хитбоксов `HitboxConfig` (`src/player/hitbox_config.gd`) и базовый профиль `src/player/default_hitboxes.tres` с множителями урона по зонам (`head_mult = 2.0`, `torso_mult = 1.0`, `arms_mult = 0.8`, `legs_mult = 0.75`) и габаритами зон.
+- Узел зоны попадания `HitboxZone` (`src/player/hitbox_zone.gd`, `Area3D` на слое `hitboxes = 4`, `collision_mask = 0`, `monitoring = false`) с зонами `HEAD`, `TORSO`, `ARMS`, `LEGS`, полем `damage_mult`, ссылкой `health_component` (`owner_health`) и методом `apply_damage(...)`.
+- Узел набора хитбоксов игрока `PlayerHitboxes` (`src/player/player_hitboxes.gd`), создающий зоны `HeadZone` (`SphereShape3D`), `TorsoZone`, `LeftArmZone`, `RightArmZone`, `LegsZone` (`BoxShape3D`) и подгоняющий их размеры и координаты под текущую стойку (`STAND`, `CROUCH`, `PRONE`) и смещение наклона `lean_offset`.
+- Класс результата попадания `HitResult` (`src/weapons/hit_result.gd`) и трассировщик лучей `HitscanQuery` (`src/weapons/hitscan_query.gd`) с методом `HitscanQuery.cast(from, to, exclude) -> HitResult` (`collide_with_areas = true`, `collide_with_bodies = true`, маска `world + hitboxes = 5`).
+- Модульные и интеграционные тесты `tests/unit/test_hitboxes.gd` (множители и слои `HitboxZone`, попадания в голову/торс/руки/ноги и пол на `testbed.tscn`, адаптация зон к стойкам `STAND`/`CROUCH`/`PRONE` и наклону, исключение `exclude` и отсутствие помех движению игрока).
+
+### Изменено
+- В `src/player/player.gd`, `tools/gen_player.gd` и `src/player/player.tscn` интегрирован узел `Hitboxes` (`PlayerHitboxes`) с синхронизацией размеров и позиций зон в `step_simulation` и методом `get_hitscan_exclude_rids()`.
+
 ## [step-1.6] — 2026-10-26
 
 ### Добавлено
