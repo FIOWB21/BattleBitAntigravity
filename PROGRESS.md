@@ -1,7 +1,7 @@
 # PROGRESS
 
-Текущий шаг: 2.1 (DONE)
-Последний завершённый: 2.1
+Текущий шаг: 2.2 (DONE)
+Последний завершённый: 2.2
 
 | Шаг | Статус | Дата | Заметки |
 |---|---|---|---|
@@ -20,7 +20,7 @@
 | 1.7 | DONE | 2026-10-26 | Созданы `HitboxConfig` (`src/player/hitbox_config.gd`, `src/player/default_hitboxes.tres`), `HitboxZone` (`src/player/hitbox_zone.gd`, `Area3D` на слое `hitboxes = 4`, `monitoring = false`, зоны `HEAD`/`TORSO`/`ARMS`/`LEGS`, `damage_mult`, ссылка на `HealthComponent`), `PlayerHitboxes` (`src/player/player_hitboxes.gd`, подстройка зон под стойку и наклон), `HitResult` (`src/weapons/hit_result.gd`) и `HitscanQuery.cast` (`src/weapons/hitscan_query.gd`, маска `world + hitboxes`), интеграция в `Player` (`src/player/player.tscn`) и тесты `tests/unit/test_hitboxes.gd` |
 | 1.8 | DONE | 2026-10-26 | Созданы `TargetDummy` (`src/maps/testbed/target_dummy.gd`, `src/maps/testbed/target_dummy.tscn`, генератор `tools/gen_target_dummy.gd`): стоячий режим и патруль по точкам, `HealthComponent`, `PlayerHitboxes`, респавн через `3.0` с. Базовый `HUD` (`src/ui/hud/hud.gd`, `src/ui/hud/hud.tscn`, генератор `tools/gen_hud.gd`): полоска здоровья, прицел-точка, индикатор стойки, заглушка патронов; обновляется по сигналам, без `_process`. Добавлена консольная команда `damage <n>` в `DebugConsole`. На `testbed.tscn` размещены 5 мишеней (3 стоячие + 2 движущиеся), `HUD` и `DebugOverlay`. Тесты: `tests/unit/test_target_dummy_and_hud.gd`. Тег `phase-1-done` ждёт ручной пробежки (🧑) |
 | 2.1 | DONE | 2026-10-26 | Создан `WeaponData` (`src/weapons/weapon_data.gd`) с `cooldown()` и `damage_at(distance)`, восемь временных профилей категорий в `src/weapons/data/` и `tests/unit/test_weapon_data.gd`. Исправлен `PlayerHitboxes`: однократная инициализация и кеширование зон/форм, без повторного поиска узлов и дублирования форм при обновлениях. Добавлен `tests/unit/test_hitbox_cache.gd` (120 обновлений, повторные setup/ready, независимость экземпляров). `tools/check.sh`: 71 тест, 2976 проверок, 0 ошибок; headless-полигон 180 кадров без ошибок/предупреждений. Новых известных проблем нет; значения профилей временные |
-| 2.2 | TODO | | |
+| 2.2 | DONE | 2026-10-26 | Создан `Weapon` (`src/weapons/weapon.gd`, `Node3D`): шесть состояний, сроки в тиках симуляции, SEMI/AUTO/BURST, смена режима, блокировка, смена оружия, перезарядка и сигналы `fired`, `reload_started`, `reload_finished`, `ammo_changed`. Добавлены `tests/unit/test_weapon_timing.gd` и `tests/unit/test_weapon_states.gd` (20 новых тестов). `tools/check.sh`: 91 тест, 4307 проверок, 0 ошибок; headless-полигон 180 кадров без ошибок/предупреждений. Приёмка: 600 RPM за 60 тиков — 10 сигналов `fired`, очереди по 3, стрельба при перезарядке запрещена. Новых известных проблем нет; лучи и подключение оружия к игроку в шаг не входят |
 | 2.3 | TODO | | |
 | 2.4 | TODO | | |
 | 2.5 | TODO | | |
@@ -145,6 +145,7 @@
 | 15.7 | TODO | | |
 
 ## Известные проблемы
+- Шаг 2.2: критерии приёмки проверены автоматически; визуальные изменения отсутствуют. Полигон запущен headless на 180 кадров, лог без ошибок/предупреждений Godot. Графика и FPS вручную не оценивались; ручная проверка Фазы 1 ниже сохраняется. Следующий шаг не начат.
 - Шаг 2.1: критерии приёмки проверены автоматически; графика и FPS вручную не оценивались. Сохраняется указанная ниже ручная проверка Фазы 1. Следующий шаг не начат.
 - Шаг 1.8: при открытой консоли (`` ` ``) курсор остаётся захваченным, а нажатия WASD продолжают двигать игрока. Блокировку ввода при открытой консоли нужно делать позже, вместе с UI/меню.
 - Шаг 1.8: у `TargetDummy` нет физического тела, только хитбоксы, поэтому игрок проходит сквозь мишени. Для тренировочных мишеней это допустимо.
