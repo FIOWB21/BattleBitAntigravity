@@ -6,3 +6,5 @@
 |---|---|---|---|---|
 | `src/maps/testbed/ammo_box.tscn` | Собственная процедурная геометрия Godot (`BoxMesh`, материал, `Label3D`) | Проект BattlebitAntigravity | Собственный процедурный ассет, внешних файлов нет | 2026-10-26 |
 | Щелчок `src/weapons/weapon_dry_fire.gd` | PCM синтезируется в памяти из затухающего синуса | Проект BattlebitAntigravity | Собственный процедурный звук, внешних файлов нет | 2026-10-26 |
+| `src/weapons/temporary_viewmodel.tscn` | Собственная процедурная геометрия Godot (`BoxMesh`, материал) | Проект BattlebitAntigravity | Собственный процедурный ассет, внешних файлов нет | 2026-10-26 |
+| Оптика `src/ui/hud/scope_overlay.gd` | Процедурные 2D-дуги и линии Godot | Проект BattlebitAntigravity | Собственный процедурный ассет, внешних файлов нет | 2026-10-26 |

@@ -74,6 +74,9 @@ func _add_head_and_components(player: CharacterBody3D) -> void:
 	cam.fov = DEFAULT_CAMERA_FOV
 	cam.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	head.add_child(cam)
+	var ads_view: WeaponAdsView = WeaponAdsView.new()
+	ads_view.name = "WeaponAdsView"
+	cam.add_child(ads_view)
 
 	var effects_script: GDScript = load(CAMERA_EFFECTS_SCRIPT_PATH) as GDScript
 	var cam_effects: Node3D = effects_script.new() as Node3D

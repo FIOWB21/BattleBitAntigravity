@@ -1,0 +1,33 @@
+[gd_scene load_steps=5 format=3]
+
+[sub_resource type="StandardMaterial3D" id="Metal"]
+albedo_color = Color(0.12, 0.15, 0.17, 1)
+roughness = 0.8
+
+[sub_resource type="BoxMesh" id="Receiver"]
+material = SubResource("Metal")
+size = Vector3(0.08, 0.09, 0.32)
+
+[sub_resource type="BoxMesh" id="Barrel"]
+material = SubResource("Metal")
+size = Vector3(0.035, 0.035, 0.26)
+
+[sub_resource type="BoxMesh" id="Sight"]
+material = SubResource("Metal")
+size = Vector3(0.025, 0.035, 0.04)
+
+[node name="TemporaryViewmodel" type="Node3D"]
+
+[node name="Receiver" type="MeshInstance3D" parent="."]
+cast_shadow = 0
+mesh = SubResource("Receiver")
+
+[node name="Barrel" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.015, -0.29)
+cast_shadow = 0
+mesh = SubResource("Barrel")
+
+[node name="Sight" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.065, -0.12)
+cast_shadow = 0
+mesh = SubResource("Sight")

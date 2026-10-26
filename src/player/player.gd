@@ -23,6 +23,8 @@ var lean: float = 0.0
 var last_fall_damage: float = 0.0
 var motor: PlayerMotor = PlayerMotor.new()
 var input_reader: LocalInputReader = LocalInputReader.new()
+var ads: WeaponAds = WeaponAds.new()
+var _base_fov: float = 90.0
 var _mouse_captured: bool = false
 
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
@@ -34,12 +36,18 @@ var _mouse_captured: bool = false
 @onready var hitboxes: PlayerHitboxes = get_node_or_null("Hitboxes") as PlayerHitboxes
 @onready var weapon: Weapon = get_node_or_null("Weapon") as Weapon
 @onready var weapon_hitscan: WeaponHitscan = get_node_or_null("WeaponHitscan") as WeaponHitscan
+@onready var ads_view: WeaponAdsView = get_node_or_null("Head/Camera3D/WeaponAdsView") as WeaponAdsView
 
 
 func _ready() -> void:
 	_setup_components()
 	if weapon_hitscan != null:
 		weapon_hitscan.setup(weapon, get_multiplayer_authority(), get_hitscan_exclude_rids())
+	if weapon != null:
+		weapon.configured.connect(_reset_ads)
+	_reset_ads()
+	if ads_view != null:
+		ads_view.setup(weapon, is_local_player)
 	input_reader.yaw = rotation.y
 	if head != null:
 		input_reader.pitch = clampf(
@@ -89,10 +97,17 @@ func _exit_tree() -> void:
 
 
 func apply_settings() -> void:
-	if camera != null and Settings != null:
-		camera.fov = Settings.get_fov()
+	if Settings != null:
+		_base_fov = Settings.get_fov()
+	_apply_ads_projection()
 	if camera_effects != null:
 		camera_effects.sync_with_settings()
+
+
+func _apply_ads_projection() -> void:
+	if camera != null:
+		camera.fov = ads.fov(_base_fov)
+		input_reader.aim_sensitivity_scale = WeaponAds.sensitivity_scale(camera.fov, _base_fov)
 
 
 func capture_mouse() -> void:
@@ -155,6 +170,7 @@ func step_simulation(inp: PlayerInput, delta: float) -> void:
 				stance_controller.current_head_height,
 				stance_controller.current_lean_offset
 			)
+	_step_ads(inp, delta)
 	motor.simulate(self, inp, movement_config, stance, delta)
 	if motor.landed_this_tick:
 		last_fall_damage = motor.last_fall_damage
@@ -173,7 +189,21 @@ func step_simulation(inp: PlayerInput, delta: float) -> void:
 		if health_component is HealthComponent:
 			blocked = blocked or (health_component as HealthComponent).is_dead
 		weapon_hitscan.simulate(inp, aim, blocked, stance,
-			Vector2(velocity.x, velocity.z).length(), motor.is_sprinting)
+			Vector2(velocity.x, velocity.z).length(), motor.is_sprinting, ads.amount())
+
+
+func _reset_ads() -> void:
+	ads.setup(weapon.data if weapon != null else null)
+	input_reader.aim_sensitivity_scale = 1.0
+
+
+func _step_ads(inp: PlayerInput, delta: float) -> void:
+	var allowed: bool = not (health_component is HealthComponent and health_component.is_dead)
+	if weapon != null:
+		allowed = allowed and weapon.state != Weapon.State.SWITCHING_IN and weapon.state != Weapon.State.SWITCHING_OUT
+	ads.simulate(inp, delta, allowed)
+	motor.movement_multiplier = ads.movement_multiplier()
+	motor.aim_held = ads.target > 0.0
 
 
 func get_hitscan_exclude_rids() -> Array[RID]:
@@ -196,6 +226,10 @@ func apply_fall_damage(amount: float) -> void:
 
 
 func update_camera_visuals(delta: float) -> void:
+	ads.update_visuals(delta)
+	_apply_ads_projection()
+	if ads_view != null:
+		ads_view.apply_ads(ads.amount(true))
 	var horiz_speed: float = Vector2(velocity.x, velocity.z).length()
 	var eff_offset: Vector3 = Vector3.ZERO
 	var eff_rot: Vector3 = Vector3.ZERO

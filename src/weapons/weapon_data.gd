@@ -38,6 +38,7 @@ const SECONDS_PER_MINUTE: float = 60.0
 @export var draw_time: float = 0.5
 @export var ads_time: float = 0.2
 @export var ads_fov_mult: float = 0.75
+@export var ads_move_speed_mult: float = 0.65
 @export var move_speed_mult: float = 1.0
 @export var spread_hip_deg: float = 2.0
 @export var spread_ads_deg: float = 0.3
@@ -59,6 +60,9 @@ const SECONDS_PER_MINUTE: float = 60.0
 @export var spread_max_deg: float = 15.0
 
 @export_group("Presentation")
+@export var viewmodel_hip_offset: Vector3 = Vector3(0.22, -0.22, -0.5)
+@export var viewmodel_ads_offset: Vector3 = Vector3(0.0, -0.1, -0.5)
+@export var scope_overlay_enabled: bool = true
 @export var viewmodel_scene: PackedScene
 @export var worldmodel_scene: PackedScene
 @export var fire_sound: AudioStream

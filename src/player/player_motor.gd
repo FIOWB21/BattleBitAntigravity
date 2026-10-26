@@ -10,6 +10,8 @@ const STEP_EDGE_OVER_MARGIN: float = 0.02
 var stamina: float = 100.0
 var coyote_timer: float = 0.0
 var is_sprinting: bool = false
+var movement_multiplier: float = 1.0
+var aim_held: bool = false
 var last_fall_damage: float = 0.0
 var landed_this_tick: bool = false
 
@@ -68,7 +70,7 @@ func _compute_tick_velocity(
 	var body_basis: Basis = (
 		body.global_transform.basis if body.is_inside_tree() else body.transform.basis
 	)
-	var target: Vector3 = (body_basis * local) * cfg.speed_for(stance, is_sprinting)
+	var target: Vector3 = (body_basis * local) * cfg.speed_for(stance, is_sprinting) * movement_multiplier
 	var v: Vector3 = body.velocity
 	var accel: float = cfg.accel_ground if was_on_floor else cfg.accel_air
 	v.x = move_toward(v.x, target.x, accel * delta)
@@ -119,6 +121,8 @@ func _can_sprint(
 	clamped_move: Vector2
 ) -> bool:
 	if stance != PlayerStance.STAND:
+		return false
+	if aim_held:
 		return false
 	if inp.pressed(PlayerInput.BTN_CROUCH) or inp.pressed(PlayerInput.BTN_PRONE):
 		return false

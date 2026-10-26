@@ -9,6 +9,7 @@ const FALLBACK_SENSITIVITY: float = 0.2
 var tick: int = 0
 var yaw: float = 0.0
 var pitch: float = 0.0
+var aim_sensitivity_scale: float = 1.0
 
 
 func apply_mouse_delta(
@@ -19,6 +20,7 @@ func apply_mouse_delta(
 	var sens: float = sensitivity
 	if sens < 0.0:
 		sens = Settings.get_sensitivity() if Settings != null else FALLBACK_SENSITIVITY
+	sens *= aim_sensitivity_scale
 	var inv_y: bool = (
 		bool(invert_y)
 		if invert_y != null

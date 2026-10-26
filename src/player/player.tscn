@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://src/weapons/weapon_hitscan.gd" id="9_hitscan"]
 [ext_resource type="Script" path="res://src/weapons/ammo_receiver.gd" id="10_ammo"]
 [ext_resource type="Script" path="res://src/weapons/weapon_dry_fire.gd" id="11_click"]
+[ext_resource type="Script" path="res://src/weapons/weapon_ads_view.gd" id="12_ads_view"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_cwolq"]
 radius = 0.35
@@ -50,6 +51,9 @@ fov = 90.0
 
 [node name="CameraEffects" type="Node3D" parent="Head" unique_id=187580085]
 script = ExtResource("2_o822w")
+
+[node name="WeaponAdsView" type="Node3D" parent="Head/Camera3D"]
+script = ExtResource("12_ads_view")
 
 [node name="StanceController" type="Node" parent="." unique_id=410938432]
 script = ExtResource("3_x42xx")
