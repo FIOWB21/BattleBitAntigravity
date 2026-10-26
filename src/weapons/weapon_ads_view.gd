@@ -6,6 +6,7 @@ const FALLBACK_MODEL: PackedScene = preload("res://src/weapons/temporary_viewmod
 
 var model: Node3D
 var overlay: ScopeOverlay
+var rig: ViewmodelRig
 
 var _weapon: Weapon
 var _local: bool = false
@@ -28,33 +29,44 @@ func setup(weapon: Weapon, local: bool) -> void:
 		overlay = ScopeOverlay.new()
 		canvas.add_child(overlay)
 	_select_model()
+	if rig != null:
+		rig.bind_weapon(_weapon if _local else null)
 
 
 # Предварительная загрузка всего комплекта: смена в физическом тике не создаёт модель.
 func cache_weapon(weapon: Weapon, local: bool) -> void:
 	if not local or weapon == null or _models.has(weapon):
 		return
+	if rig == null:
+		rig = ViewmodelRig.new()
+		rig.name = "ViewmodelRig"
+		add_child(rig)
 	var scene: PackedScene = weapon.data.viewmodel_scene
 	var cached: Node3D = (scene if scene != null else FALLBACK_MODEL).instantiate() as Node3D
 	_models[weapon] = cached
 	var geometry: Array[GeometryInstance3D] = []
 	_geometries[weapon] = geometry
 	if cached != null:
-		add_child(cached)
+		rig.add_child(cached)
 		cached.visible = false
 		_cache_geometry(cached, geometry)
+		var settings: ViewmodelConfig = weapon.data.viewmodel_config
+		for item: GeometryInstance3D in geometry:
+			rig.prepare_geometry(item, settings if settings != null else ViewmodelRig.DEFAULT_CONFIG)
 
 
 func _rebuild() -> void:
 	if _models.has(_weapon):
 		var cached: Node3D = _models[_weapon]
 		if is_instance_valid(cached):
-			remove_child(cached)
+			cached.get_parent().remove_child(cached)
 			cached.queue_free()
 		_models.erase(_weapon)
 		_geometries.erase(_weapon)
 	model = null
 	_select_model()
+	if rig != null:
+		rig.bind_weapon(_weapon if _local else null)
 
 
 func _select_model() -> void:

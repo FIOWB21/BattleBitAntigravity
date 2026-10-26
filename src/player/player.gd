@@ -135,8 +135,11 @@ func handle_input_event(event: InputEvent) -> void:
 		return
 	if not is_mouse_captured():
 		return
+	var previous_look: Vector2 = Vector2(input_reader.yaw, input_reader.pitch)
 	input_reader.handle_input_event(event)
 	if event is InputEventMouseMotion:
+		if ads_view != null and ads_view.rig != null:
+			ads_view.rig.motion.add_look_delta(Vector2(input_reader.yaw, input_reader.pitch) - previous_look)
 		if head != null:
 			head.rotation.x = input_reader.pitch
 
@@ -227,6 +230,8 @@ func update_camera_visuals(delta: float) -> void:
 	if ads_view != null:
 		ads_view.apply_ads(ads.amount(true))
 	var horiz_speed: float = Vector2(velocity.x, velocity.z).length()
+	if ads_view != null and ads_view.rig != null:
+		ads_view.rig.advance(delta, horiz_speed, is_on_floor(), motor.is_sprinting)
 	var eff_offset: Vector3 = Vector3.ZERO
 	var eff_rot: Vector3 = Vector3.ZERO
 	if camera_effects != null:

@@ -60,6 +60,7 @@ const SECONDS_PER_MINUTE: float = 60.0
 @export var spread_max_deg: float = 15.0
 
 @export_group("Presentation")
+@export var viewmodel_config: ViewmodelConfig
 @export var viewmodel_hip_offset: Vector3 = Vector3(0.22, -0.22, -0.5)
 @export var viewmodel_ads_offset: Vector3 = Vector3(0.0, -0.1, -0.5)
 @export var scope_overlay_enabled: bool = true
