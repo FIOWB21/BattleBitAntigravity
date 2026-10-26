@@ -37,17 +37,14 @@ var _mouse_captured: bool = false
 @onready var weapon: Weapon = get_node_or_null("Weapon") as Weapon
 @onready var weapon_hitscan: WeaponHitscan = get_node_or_null("WeaponHitscan") as WeaponHitscan
 @onready var ads_view: WeaponAdsView = get_node_or_null("Head/Camera3D/WeaponAdsView") as WeaponAdsView
+@onready var inventory: Inventory = get_node_or_null("Inventory") as Inventory
+@onready var equipment: PlayerEquipment = get_node_or_null("PlayerEquipment") as PlayerEquipment
 
 
 func _ready() -> void:
 	_setup_components()
-	if weapon_hitscan != null:
-		weapon_hitscan.setup(weapon, get_multiplayer_authority(), get_hitscan_exclude_rids())
-	if weapon != null:
-		weapon.configured.connect(_reset_ads)
-	_reset_ads()
-	if ads_view != null:
-		ads_view.setup(weapon, is_local_player)
+	if equipment != null:
+		equipment.setup(self)
 	input_reader.yaw = rotation.y
 	if head != null:
 		input_reader.pitch = clampf(
@@ -138,8 +135,8 @@ func handle_input_event(event: InputEvent) -> void:
 		return
 	if not is_mouse_captured():
 		return
+	input_reader.handle_input_event(event)
 	if event is InputEventMouseMotion:
-		input_reader.handle_input_event(event)
 		if head != null:
 			head.rotation.x = input_reader.pitch
 
@@ -159,6 +156,8 @@ func _process(delta: float) -> void:
 
 
 func step_simulation(inp: PlayerInput, delta: float) -> void:
+	if inventory != null:
+		inventory.simulate(inp, not (health_component is HealthComponent and health_component.is_dead))
 	rotation.y = inp.yaw
 	if stance_controller != null:
 		stance_controller.step(inp, delta)
@@ -192,15 +191,12 @@ func step_simulation(inp: PlayerInput, delta: float) -> void:
 			Vector2(velocity.x, velocity.z).length(), motor.is_sprinting, ads.amount())
 
 
-func _reset_ads() -> void:
-	ads.setup(weapon.data if weapon != null else null)
-	input_reader.aim_sensitivity_scale = 1.0
-
-
 func _step_ads(inp: PlayerInput, delta: float) -> void:
 	var allowed: bool = not (health_component is HealthComponent and health_component.is_dead)
 	if weapon != null:
 		allowed = allowed and weapon.state != Weapon.State.SWITCHING_IN and weapon.state != Weapon.State.SWITCHING_OUT
+	else:
+		allowed = false
 	ads.simulate(inp, delta, allowed)
 	motor.movement_multiplier = ads.movement_multiplier()
 	motor.aim_held = ads.target > 0.0

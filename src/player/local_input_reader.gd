@@ -5,11 +5,18 @@ extends RefCounted
 const MAX_PITCH_DEG: float = 89.0
 const MAX_PITCH_RAD: float = deg_to_rad(MAX_PITCH_DEG)
 const FALLBACK_SENSITIVITY: float = 0.2
+const SLOT_ACTIONS: Array[StringName] = [
+	InputActions.SLOT_1, InputActions.SLOT_2, InputActions.SLOT_3,
+	InputActions.SLOT_4, InputActions.SLOT_5,
+]
 
 var tick: int = 0
 var yaw: float = 0.0
 var pitch: float = 0.0
 var aim_sensitivity_scale: float = 1.0
+var _weapon_slot: int = 0
+var _weapon_cycle: int = 0
+var _last_weapon: bool = false
 
 
 func apply_mouse_delta(
@@ -39,6 +46,17 @@ func handle_input_event(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		var motion: InputEventMouseMotion = event as InputEventMouseMotion
 		apply_mouse_delta(motion.relative)
+	if event.is_echo():
+		return
+	for index: int in range(SLOT_ACTIONS.size()):
+		if event.is_action_pressed(SLOT_ACTIONS[index]):
+			_weapon_slot = index + 1
+	if event.is_action_pressed(InputActions.SWITCH_WEAPON_NEXT):
+		_weapon_cycle += 1
+	if event.is_action_pressed(InputActions.SWITCH_WEAPON_PREV):
+		_weapon_cycle -= 1
+	if event.is_action_pressed(InputActions.SWITCH_WEAPON_LAST):
+		_last_weapon = true
 
 
 func read_input() -> PlayerInput:
@@ -55,6 +73,12 @@ func read_input() -> PlayerInput:
 	inp.yaw = yaw
 	inp.pitch = pitch
 	inp.buttons = _read_buttons()
+	inp.weapon_slot = _weapon_slot
+	inp.weapon_cycle = signi(_weapon_cycle)
+	inp.last_weapon = _last_weapon
+	_weapon_slot = 0
+	_weapon_cycle = 0
+	_last_weapon = false
 	return inp
 
 

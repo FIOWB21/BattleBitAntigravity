@@ -1,8 +1,8 @@
 extends GutTest
 
 
-func test_all_input_action_constants_exist_in_input_map() -> void:
-	var expected_actions: Array[StringName] = [
+func _expected_actions() -> Array[StringName]:
+	return [
 		InputActions.MOVE_FORWARD,
 		InputActions.MOVE_BACK,
 		InputActions.MOVE_LEFT,
@@ -18,6 +18,7 @@ func test_all_input_action_constants_exist_in_input_map() -> void:
 		InputActions.RELOAD,
 		InputActions.SWITCH_WEAPON_NEXT,
 		InputActions.SWITCH_WEAPON_PREV,
+		InputActions.SWITCH_WEAPON_LAST,
 		InputActions.SLOT_1,
 		InputActions.SLOT_2,
 		InputActions.SLOT_3,
@@ -37,8 +38,12 @@ func test_all_input_action_constants_exist_in_input_map() -> void:
 		InputActions.VEHICLE_SEAT_NEXT,
 		InputActions.VEHICLE_EXIT,
 	]
-	assert_eq(expected_actions.size(), 33, "Must have 33 expected actions")
-	assert_eq(InputActions.ALL_ACTIONS.size(), 33, "ALL_ACTIONS must contain 33 actions")
+
+
+func test_all_input_action_constants_exist_in_input_map() -> void:
+	var expected_actions: Array[StringName] = _expected_actions()
+	assert_eq(expected_actions.size(), 34, "Must have 34 expected actions")
+	assert_eq(InputActions.ALL_ACTIONS.size(), 34, "ALL_ACTIONS must contain 34 actions")
 
 	for action: StringName in expected_actions:
 		assert_true(InputMap.has_action(action), "InputMap must have action: " + String(action))
@@ -67,4 +72,4 @@ func test_script_constants_match_input_map() -> void:
 				"Constant %s (%s) must be in ALL_ACTIONS" % [str(const_key), String(action_name)]
 			)
 
-	assert_eq(string_name_count, 33, "InputActions must declare exactly 33 StringName constants")
+	assert_eq(string_name_count, 34, "InputActions must declare exactly 34 StringName constants")

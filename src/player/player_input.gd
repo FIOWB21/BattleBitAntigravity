@@ -17,6 +17,9 @@ var move: Vector2 = Vector2.ZERO  # x: вправо, y: вперёд, длина
 var yaw: float = 0.0
 var pitch: float = 0.0
 var buttons: int = 0
+var weapon_slot: int = 0  # 1..5, 0 — нет команды.
+var weapon_cycle: int = 0  # -1 / +1, обход заполненных слотов.
+var last_weapon: bool = false
 
 
 func pressed(btn: int) -> bool:

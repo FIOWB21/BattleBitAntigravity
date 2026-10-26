@@ -100,7 +100,7 @@ func test_death_exits_ads_and_weapon_setup_resets_state() -> void:
 	assert_eq(_player.ads.fraction, 0.0)
 	assert_eq(_player.ads.visual_fraction, 0.0)
 	assert_eq(_player.input_reader.aim_sensitivity_scale, 1.0)
-	assert_eq(_player.ads_view.get_child_count(), 2, "One model and one canvas after rebuild")
+	assert_eq(_player.ads_view.get_child_count(), 3, "Two cached models and one canvas after rebuild")
 
 
 func test_remote_player_has_no_local_model_or_scope() -> void:

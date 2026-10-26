@@ -117,6 +117,15 @@ func _add_weapon(player: CharacterBody3D) -> void:
 	var click: WeaponDryFire = WeaponDryFire.new()
 	click.name = "DryFire"
 	weapon.add_child(click)
+	var inventory: Inventory = Inventory.new()
+	inventory.name = "Inventory"
+	inventory.loadout = load("res://src/weapons/data/default_loadout.tres") as Loadout
+	inventory.primary_weapon = weapon
+	player.add_child(inventory)
+	var equipment_script: GDScript = load("res://src/player/player_equipment.gd") as GDScript
+	var equipment: Node = equipment_script.new() as Node
+	equipment.name = "PlayerEquipment"
+	player.add_child(equipment)
 
 
 func _set_owner_recursive(node: Node, owner_node: Node) -> void:

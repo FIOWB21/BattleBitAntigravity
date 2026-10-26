@@ -19,6 +19,7 @@ var crosshair_dot: ColorRect = null
 var _bound_health: HealthComponent = null
 var _bound_stance: StanceController = null
 var _bound_weapon: Weapon = null
+var _bound_inventory: Inventory = null
 
 
 func _ready() -> void:
@@ -37,13 +38,29 @@ func _exit_tree() -> void:
 func bind_player(player: Node) -> void:
 	if player == null:
 		return
+	_unbind_inventory()
 	var hc: HealthComponent = player.get_node_or_null("HealthComponent") as HealthComponent
 	if hc != null:
 		bind_health_component(hc)
 	var sc: StanceController = player.get_node_or_null("StanceController") as StanceController
 	if sc != null:
 		bind_stance_controller(sc)
-	bind_weapon(player.get_node_or_null("Weapon") as Weapon)
+	_bound_inventory = player.get_node_or_null("Inventory") as Inventory
+	if _bound_inventory != null:
+		_bound_inventory.active_slot_changed.connect(_on_active_slot_changed)
+		bind_weapon(_bound_inventory.active_weapon())
+	else:
+		bind_weapon(player.get_node_or_null("Weapon") as Weapon)
+
+
+func _on_active_slot_changed(_slot: int, weapon: Weapon) -> void:
+	bind_weapon(weapon)
+
+
+func _unbind_inventory() -> void:
+	if is_instance_valid(_bound_inventory):
+		_bound_inventory.active_slot_changed.disconnect(_on_active_slot_changed)
+	_bound_inventory = null
 
 
 func bind_weapon(weapon: Weapon) -> void:
@@ -79,6 +96,7 @@ func bind_stance_controller(sc: StanceController) -> void:
 
 
 func unbind_all() -> void:
+	_unbind_inventory()
 	_unbind_health()
 	_unbind_stance()
 	_unbind_weapon()

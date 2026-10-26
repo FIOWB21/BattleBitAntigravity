@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Loadout" format=3]
+
+[ext_resource type="Script" path="res://src/weapons/loadout.gd" id="1"]
+[ext_resource type="Resource" path="res://src/weapons/data/ar.tres" id="2"]
+[ext_resource type="Resource" path="res://src/weapons/data/pistol.tres" id="3"]
+
+[resource]
+script = ExtResource("1")
+primary = ExtResource("2")
+secondary = ExtResource("3")

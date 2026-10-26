@@ -17,6 +17,7 @@ const AIM: StringName = &"aim"
 const RELOAD: StringName = &"reload"
 const SWITCH_WEAPON_NEXT: StringName = &"switch_weapon_next"
 const SWITCH_WEAPON_PREV: StringName = &"switch_weapon_prev"
+const SWITCH_WEAPON_LAST: StringName = &"switch_weapon_last"
 const SLOT_1: StringName = &"slot_1"
 const SLOT_2: StringName = &"slot_2"
 const SLOT_3: StringName = &"slot_3"
@@ -52,6 +53,7 @@ const ALL_ACTIONS: Array[StringName] = [
 	RELOAD,
 	SWITCH_WEAPON_NEXT,
 	SWITCH_WEAPON_PREV,
+	SWITCH_WEAPON_LAST,
 	SLOT_1,
 	SLOT_2,
 	SLOT_3,

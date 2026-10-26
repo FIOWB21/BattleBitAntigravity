@@ -10,6 +10,8 @@ var overlay: ScopeOverlay
 var _weapon: Weapon
 var _local: bool = false
 var _geometry: Array[GeometryInstance3D] = []
+var _models: Dictionary[Weapon, Node3D] = {}
+var _geometries: Dictionary[Weapon, Array] = {}
 
 
 func setup(weapon: Weapon, local: bool) -> void:
@@ -25,29 +27,52 @@ func setup(weapon: Weapon, local: bool) -> void:
 		add_child(canvas)
 		overlay = ScopeOverlay.new()
 		canvas.add_child(overlay)
-	_rebuild()
+	_select_model()
+
+
+# Предварительная загрузка всего комплекта: смена в физическом тике не создаёт модель.
+func cache_weapon(weapon: Weapon, local: bool) -> void:
+	if not local or weapon == null or _models.has(weapon):
+		return
+	var scene: PackedScene = weapon.data.viewmodel_scene
+	var cached: Node3D = (scene if scene != null else FALLBACK_MODEL).instantiate() as Node3D
+	_models[weapon] = cached
+	var geometry: Array[GeometryInstance3D] = []
+	_geometries[weapon] = geometry
+	if cached != null:
+		add_child(cached)
+		cached.visible = false
+		_cache_geometry(cached, geometry)
 
 
 func _rebuild() -> void:
-	if is_instance_valid(model):
-		remove_child(model)
-		model.queue_free()
+	if _models.has(_weapon):
+		var cached: Node3D = _models[_weapon]
+		if is_instance_valid(cached):
+			remove_child(cached)
+			cached.queue_free()
+		_models.erase(_weapon)
+		_geometries.erase(_weapon)
 	model = null
-	_geometry.clear()
-	if _weapon != null and _weapon.data != null and _local:
-		var scene: PackedScene = _weapon.data.viewmodel_scene
-		model = (scene if scene != null else FALLBACK_MODEL).instantiate() as Node3D
-		if model != null:
-			add_child(model)
-			_cache_geometry(model)
+	_select_model()
+
+
+func _select_model() -> void:
+	if is_instance_valid(model):
+		model.visible = false
+	cache_weapon(_weapon, _local)
+	model = _models.get(_weapon) as Node3D if _weapon != null and _local else null
+	if model != null:
+		model.visible = true
+		_geometry = _geometries[_weapon]
 	apply_ads(0.0)
 
 
-func _cache_geometry(node: Node) -> void:
+func _cache_geometry(node: Node, geometry: Array[GeometryInstance3D]) -> void:
 	if node is GeometryInstance3D:
-		_geometry.append(node as GeometryInstance3D)
+		geometry.append(node as GeometryInstance3D)
 	for child: Node in node.get_children():
-		_cache_geometry(child)
+		_cache_geometry(child, geometry)
 
 
 func apply_ads(amount: float) -> void:

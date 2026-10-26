@@ -12,6 +12,9 @@
 [ext_resource type="Script" path="res://src/weapons/ammo_receiver.gd" id="10_ammo"]
 [ext_resource type="Script" path="res://src/weapons/weapon_dry_fire.gd" id="11_click"]
 [ext_resource type="Script" path="res://src/weapons/weapon_ads_view.gd" id="12_ads_view"]
+[ext_resource type="Script" path="res://src/weapons/inventory.gd" id="13_inventory"]
+[ext_resource type="Resource" path="res://src/weapons/data/default_loadout.tres" id="14_loadout"]
+[ext_resource type="Script" path="res://src/player/player_equipment.gd" id="15_equipment"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_cwolq"]
 radius = 0.35
@@ -140,3 +143,11 @@ weapon = NodePath("../Weapon")
 
 [node name="DryFire" type="AudioStreamPlayer" parent="Weapon"]
 script = ExtResource("11_click")
+
+[node name="Inventory" type="Node" parent="." node_paths=PackedStringArray("primary_weapon")]
+script = ExtResource("13_inventory")
+loadout = ExtResource("14_loadout")
+primary_weapon = NodePath("../Weapon")
+
+[node name="PlayerEquipment" type="Node" parent="."]
+script = ExtResource("15_equipment")

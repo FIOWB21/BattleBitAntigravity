@@ -117,6 +117,32 @@ func switch_in() -> bool:
 	return true
 
 
+# Только начальная раскладка инвентаря; боезапас не переинициализируется.
+func holster() -> void:
+	if not _has_authority() or _last_tick >= 0:
+		return
+	_equipped = false
+	state = State.BLOCKED
+	_burst_remaining = 0
+
+
+func equip_initial() -> void:
+	if not _has_authority() or _last_tick >= 0:
+		return
+	_equipped = true
+	state = State.IDLE
+
+
+# Завершает только срок смены, сохраняя возможность обработать ввод этого же тика.
+func advance_switch(tick: int) -> void:
+	if not _has_authority() or tick <= _last_tick:
+		return
+	if state != State.SWITCHING_IN and state != State.SWITCHING_OUT:
+		return
+	if tick >= switch_end_tick:
+		_finish_switch()
+
+
 func _has_authority() -> bool:
 	return data != null and is_inside_tree() and multiplayer.is_server()
 
@@ -135,9 +161,13 @@ func _advance_state() -> void:
 				_finish_reload()
 		State.SWITCHING_IN, State.SWITCHING_OUT:
 			if _last_tick >= switch_end_tick:
-				_equipped = state == State.SWITCHING_IN
-				state = State.IDLE if _equipped else State.BLOCKED
-				switch_end_tick = -1
+				_finish_switch()
+
+
+func _finish_switch() -> void:
+	_equipped = state == State.SWITCHING_IN
+	state = State.IDLE if _equipped else State.BLOCKED
+	switch_end_tick = -1
 
 
 func _start_reload() -> bool:
