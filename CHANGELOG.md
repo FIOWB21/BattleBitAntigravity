@@ -2,6 +2,19 @@
 
 Все заметные изменения проекта документируются в этом файле по шагам плана (`docs/STEPS.md`).
 
+## [step-1.5] — 2026-10-26
+
+### Добавлено
+- В `MovementConfig` (`src/player/movement_config.gd`) и `src/player/default_movement.tres` добавлены параметры спринта и опциональной выносливости (`sprint_min_forward_dot = 0.5`, `stamina_enabled = false`, `max_stamina = 100.0`, `stamina_drain_rate = 20.0`, `stamina_regen_rate = 15.0`, `stamina_regen_delay = 1.0`), `coyote_time = 0.1`, автоподъёма на ступени (`step_height = 0.35`, `step_probe_distance = 0.08`) и расчёта урона от падения (`fall_damage_min_speed = 12.0`, `fall_damage_scale = 10.0`, `fall_damage_max = 100.0`, метод `calculate_fall_damage(vertical_velocity)`).
+- В `PlayerMotor` (`src/player/player_motor.gd`) реализованы:
+  - ограничение спринта направлением вперёд (`move_dir.y >= sprint_min_forward_dot`) и запрет спринта в `CROUCH` / `PRONE`;
+  - система опциональной выносливости (`stamina`, `is_sprinting`) с бесконечным спринтом по умолчанию (`stamina_enabled = false`);
+  - окно `coyote_time` (`0.1` с) для одиночного прыжка после схода с уступа;
+  - детерминированный автоподъём на ступени до `0.35` м (`test_move` вверх → вперёд → вниз с переиспользуемым `KinematicCollision3D`) без вертикальных подпрыгиваний;
+  - фиксация приземления (`landed_this_tick`) и расчёт `last_fall_damage` при вертикальной скорости ниже `−12` м/с.
+- В `Player` (`src/player/player.gd`) добавлены сигнал `fall_damaged(amount)`, поле `last_fall_damage` и метод `apply_fall_damage(amount)` с локальной передачей урона в узел `HealthComponent` (`take_damage`).
+- Модульные тесты `tests/unit/test_player_step_fall_sprint.gd` (значения в `MovementConfig`, спринт только вперёд и запрет в присяде/лёжа, расход и восстановление выносливости, `coyote_time = 0.1` с, подъём на ступень `0.35` м и блокировка `0.50` м, пробежка по лестнице на `testbed.tscn` без подпрыгиваний, падение с `2` м без урона и с `8` м с уроном).
+
 ## [step-1.4] — 2026-10-25
 
 ### Добавлено

@@ -2,6 +2,8 @@
 class_name Player
 extends CharacterBody3D
 
+signal fall_damaged(amount: float)
+
 const DEFAULT_MOVEMENT_PATH: String = "res://src/player/default_movement.tres"
 
 @export var movement_config: MovementConfig = preload(DEFAULT_MOVEMENT_PATH)
@@ -13,6 +15,7 @@ const DEFAULT_MOVEMENT_PATH: String = "res://src/player/default_movement.tres"
 			stance_controller.set_stance_immediate(stance)
 
 var lean: float = 0.0
+var last_fall_damage: float = 0.0
 var motor: PlayerMotor = PlayerMotor.new()
 var input_reader: LocalInputReader = LocalInputReader.new()
 var _mouse_captured: bool = false
@@ -22,6 +25,7 @@ var _mouse_captured: bool = false
 @onready var camera: Camera3D = $Head/Camera3D
 @onready var camera_effects: CameraEffects = $Head/CameraEffects
 @onready var stance_controller: StanceController = get_node_or_null("StanceController") as StanceController
+@onready var health_component: Node = get_node_or_null("HealthComponent")
 
 
 func _ready() -> void:
@@ -118,12 +122,26 @@ func step_simulation(inp: PlayerInput, delta: float) -> void:
 		stance = stance_controller.current_stance
 		lean = stance_controller.current_lean
 	motor.simulate(self, inp, movement_config, stance, delta)
+	if motor.landed_this_tick:
+		last_fall_damage = motor.last_fall_damage
+		if last_fall_damage > 0.0:
+			apply_fall_damage(last_fall_damage)
 	if head != null:
 		head.rotation.x = clampf(
 			inp.pitch,
 			-LocalInputReader.MAX_PITCH_RAD,
 			LocalInputReader.MAX_PITCH_RAD
 		)
+
+
+func apply_fall_damage(amount: float) -> void:
+	if amount <= 0.0:
+		return
+	if health_component == null:
+		health_component = get_node_or_null("HealthComponent")
+	if health_component != null and health_component.has_method("take_damage"):
+		health_component.call("take_damage", amount)
+	fall_damaged.emit(amount)
 
 
 func update_camera_visuals(delta: float) -> void:

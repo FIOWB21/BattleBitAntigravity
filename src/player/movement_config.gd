@@ -33,6 +33,21 @@ const STANCE_PRONE: int = PlayerStance.PRONE
 @export var lean_speed: float = 10.0
 @export var lean_wall_margin: float = 0.25
 
+@export var sprint_min_forward_dot: float = 0.5
+@export var stamina_enabled: bool = false
+@export var max_stamina: float = 100.0
+@export var stamina_drain_rate: float = 20.0
+@export var stamina_regen_rate: float = 15.0
+@export var stamina_regen_delay: float = 1.0
+
+@export var coyote_time: float = 0.1
+@export var step_height: float = 0.35
+@export var step_probe_distance: float = 0.08
+
+@export var fall_damage_min_speed: float = 12.0
+@export var fall_damage_scale: float = 10.0
+@export var fall_damage_max: float = 100.0
+
 var jump_velocity: float:
 	get:
 		return sqrt(2.0 * gravity * maxf(jump_height, 0.0))
@@ -49,6 +64,14 @@ func speed_for(stance: int, sprint: bool = false) -> float:
 			return prone_speed
 		_:
 			return sprint_speed if sprint else walk_speed
+
+
+func calculate_fall_damage(vertical_velocity: float) -> float:
+	var downward_speed: float = -vertical_velocity
+	if downward_speed <= fall_damage_min_speed:
+		return 0.0
+	var raw_damage: float = (downward_speed - fall_damage_min_speed) * fall_damage_scale
+	return clampf(raw_damage, 0.0, fall_damage_max)
 
 
 func capsule_height_for(stance: int) -> float:
