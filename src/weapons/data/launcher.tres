@@ -14,6 +14,7 @@ damage_far = 120.0
 range_near = 0.0
 range_far = 200.0
 mag_size = 1
+chamber_enabled = false
 reserve_mags = 4
 reload_time = 3.0
 reload_empty_time = 4.0

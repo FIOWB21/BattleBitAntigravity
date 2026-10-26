@@ -7,6 +7,8 @@ const TARGET_DUMMY_SCENE_PATH: String = "res://src/maps/testbed/target_dummy.tsc
 const HUD_SCENE_PATH: String = "res://src/ui/hud/hud.tscn"
 const DEBUG_OVERLAY_SCENE_PATH: String = "res://src/ui/debug_overlay.tscn"
 const WORLD_LAYER: int = 1
+const AMMO_BOX_PATH: String = "res://src/maps/testbed/ammo_box.tscn"
+const AMMO_BOX_POSITION: Vector3 = Vector3(3.0, 0.0, 8.0)
 
 const FLOOR_SIZE: Vector3 = Vector3(200.0, 1.0, 200.0)
 const STEP_HEIGHT: float = 0.2
@@ -54,11 +56,9 @@ func _build_testbed_scene() -> Node3D:
 	var floor_mat: ShaderMaterial = _create_grid_material(grid_shader, Color(0.28, 0.30, 0.32))
 	var obstacle_mat: ShaderMaterial = _create_grid_material(grid_shader, Color(0.42, 0.45, 0.48))
 	var target_mat: StandardMaterial3D = _create_target_material()
-
 	_add_environment_and_light(root)
 	_add_player_spawn(root)
 	_add_floor(root, floor_mat)
-
 	var obstacles: Node3D = Node3D.new()
 	obstacles.name = "Obstacles"
 	root.add_child(obstacles)
@@ -70,6 +70,9 @@ func _build_testbed_scene() -> Node3D:
 	_add_shooting_range(root, floor_mat, obstacle_mat, target_mat)
 	_add_target_dummies(root)
 	_add_ui(root)
+	var box: AmmoBox = (load(AMMO_BOX_PATH) as PackedScene).instantiate() as AmmoBox
+	box.position = AMMO_BOX_POSITION
+	root.add_child(box)
 	return root
 
 

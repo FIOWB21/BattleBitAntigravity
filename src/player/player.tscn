@@ -9,6 +9,8 @@
 [ext_resource type="Script" path="res://src/weapons/weapon.gd" id="7_weapon"]
 [ext_resource type="Resource" path="res://src/weapons/data/ar.tres" id="8_profile"]
 [ext_resource type="Script" path="res://src/weapons/weapon_hitscan.gd" id="9_hitscan"]
+[ext_resource type="Script" path="res://src/weapons/ammo_receiver.gd" id="10_ammo"]
+[ext_resource type="Script" path="res://src/weapons/weapon_dry_fire.gd" id="11_click"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_cwolq"]
 radius = 0.35
@@ -127,3 +129,10 @@ data = ExtResource("8_profile")
 
 [node name="WeaponHitscan" type="Node3D" parent="."]
 script = ExtResource("9_hitscan")
+
+[node name="AmmoReceiver" type="Node" parent="." node_paths=PackedStringArray("weapon")]
+script = ExtResource("10_ammo")
+weapon = NodePath("../Weapon")
+
+[node name="DryFire" type="AudioStreamPlayer" parent="Weapon"]
+script = ExtResource("11_click")

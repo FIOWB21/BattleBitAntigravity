@@ -148,7 +148,7 @@ func test_hud_elements_and_signal_subscription() -> void:
 
 	assert_almost_eq(hud.health_bar.value, 100.0, 0.001, "Initial HUD health bar must be 100")
 	assert_eq(hud.stance_label.text, "STAND", "Initial HUD stance must be STAND")
-	assert_eq(hud.ammo_label.text, "30 / 120", "Initial HUD ammo placeholder must be 30 / 120")
+	assert_eq(hud.ammo_label.text, "0 / 0", "Unbound HUD must not invent ammunition")
 
 	var hc: HealthComponent = HealthComponent.new()
 	add_child_autofree(hc)

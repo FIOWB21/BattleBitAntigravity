@@ -55,7 +55,7 @@ func test_reload_blocks_fire_until_exact_end_tick() -> void:
 	assert_eq(_shots, [0, 13])
 	assert_eq(_reload_finishes, 1)
 	assert_eq(_ammo_events, [Vector2i(30, 150), Vector2i(29, 150),
-		Vector2i(30, 149), Vector2i(29, 149)])
+		Vector2i(31, 148), Vector2i(30, 148)])
 
 
 func test_empty_reload_uses_longer_duration_and_partial_reserve() -> void:
@@ -76,6 +76,7 @@ func test_empty_reload_uses_longer_duration_and_partial_reserve() -> void:
 
 func test_reload_rejects_full_magazine_and_empty_reserve() -> void:
 	var weapon: Weapon = _weapon()
+	weapon.ammo_in_mag = weapon.data.mag_size + 1
 	_step(weapon, 0, PlayerInput.BTN_RELOAD)
 	assert_eq(weapon.state, Weapon.State.IDLE)
 	_step(weapon, 1)
@@ -166,7 +167,7 @@ func test_reload_completes_while_blocked_without_firing() -> void:
 	_step(weapon, 0, PlayerInput.BTN_RELOAD)
 	_step(weapon, 12, PlayerInput.BTN_FIRE, true)
 	assert_eq(weapon.state, Weapon.State.BLOCKED)
-	assert_eq(weapon.ammo_in_mag, 30)
+	assert_eq(weapon.ammo_in_mag, 31)
 	assert_eq(_reload_finishes, 1)
 	assert_eq(_shots.size(), 0)
 

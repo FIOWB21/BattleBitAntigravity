@@ -127,7 +127,7 @@ func _add_bottom_right_panel(root: Control) -> void:
 
 	var ammo_label: Label = Label.new()
 	ammo_label.name = "AmmoLabel"
-	ammo_label.text = "30 / 120"
+	ammo_label.text = "0 / 0"
 	ammo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	margin.add_child(ammo_label)
 

@@ -7,6 +7,8 @@ signal reload_started
 signal reload_finished
 signal ammo_changed(magazine: int, reserve: int)
 signal configured
+signal dry_fired(tick: int)
+signal reload_cancelled
 
 enum State { IDLE, FIRING, RELOADING, SWITCHING_IN, SWITCHING_OUT, BLOCKED }
 
@@ -26,6 +28,7 @@ var _fire_held: bool = false
 var _reload_held: bool = false
 var _burst_remaining: int = 0
 var _equipped: bool = true
+var _reload_capacity: int = 0
 
 
 func _ready() -> void:
@@ -38,7 +41,7 @@ func setup(weapon_data: WeaponData) -> void:
 	state = State.IDLE
 	fire_mode = data.fire_modes[0] if not data.fire_modes.is_empty() else WeaponData.FireMode.SEMI
 	ammo_in_mag = maxi(data.mag_size, 0)
-	reserve_ammo = ammo_in_mag * maxi(data.reserve_mags, 0)
+	reserve_ammo = reserve_capacity()
 	next_fire_tick = 0
 	reload_end_tick = -1
 	switch_end_tick = -1
@@ -47,12 +50,13 @@ func setup(weapon_data: WeaponData) -> void:
 	_reload_held = false
 	_burst_remaining = 0
 	_equipped = true
+	_reload_capacity = 0
 	ammo_changed.emit(ammo_in_mag, reserve_ammo)
 	configured.emit()
 
 
 # blocked передаётся симуляцией движения: спринт, лестница или падение.
-func simulate(inp: PlayerInput, blocked: bool = false) -> void:
+func simulate(inp: PlayerInput, blocked: bool = false, sprinting: bool = false) -> void:
 	if not _has_authority() or inp.tick <= _last_tick:
 		return
 	_last_tick = inp.tick
@@ -60,11 +64,13 @@ func simulate(inp: PlayerInput, blocked: bool = false) -> void:
 	var reload_pressed: bool = inp.pressed(PlayerInput.BTN_RELOAD) and not _reload_held
 	_fire_held = inp.pressed(PlayerInput.BTN_FIRE)
 	_reload_held = inp.pressed(PlayerInput.BTN_RELOAD)
+	if state == State.RELOADING and sprinting and data.reload_interrupt_on_sprint:
+		_cancel_reload()
 	_advance_state()
 	match state:
 		State.RELOADING, State.SWITCHING_IN, State.SWITCHING_OUT:
 			return
-	if blocked or not _equipped:
+	if blocked or sprinting or not _equipped:
 		state = State.BLOCKED
 		_burst_remaining = 0
 		return
@@ -92,6 +98,10 @@ func switch_out() -> bool:
 		return false
 	if state == State.SWITCHING_IN or state == State.SWITCHING_OUT:
 		return false
+	if state == State.RELOADING:
+		if not data.reload_interrupt_on_switch:
+			return false
+		_cancel_reload()
 	state = State.SWITCHING_OUT
 	switch_end_tick = _last_tick + _duration_ticks(data.draw_time)
 	reload_end_tick = -1
@@ -131,7 +141,10 @@ func _advance_state() -> void:
 
 
 func _start_reload() -> bool:
-	if ammo_in_mag >= data.mag_size or reserve_ammo <= 0:
+	_reload_capacity = maxi(data.mag_size, 0)
+	if data.chamber_enabled and ammo_in_mag > 0 and _reload_capacity > 0:
+		_reload_capacity += 1
+	if ammo_in_mag >= _reload_capacity or reserve_ammo <= 0:
 		return false
 	var duration: float = data.reload_empty_time if ammo_in_mag == 0 else data.reload_time
 	reload_end_tick = _last_tick + _duration_ticks(duration)
@@ -142,7 +155,7 @@ func _start_reload() -> bool:
 
 
 func _finish_reload() -> void:
-	var transferred: int = mini(data.mag_size - ammo_in_mag, reserve_ammo)
+	var transferred: int = mini(maxi(_reload_capacity - ammo_in_mag, 0), reserve_ammo)
 	ammo_in_mag += transferred
 	reserve_ammo -= transferred
 	reload_end_tick = -1
@@ -151,8 +164,29 @@ func _finish_reload() -> void:
 	reload_finished.emit()
 
 
+func _cancel_reload() -> void:
+	reload_end_tick = -1
+	state = State.IDLE
+	_burst_remaining = 0
+	reload_cancelled.emit()
+
+
+func reserve_capacity() -> int:
+	return maxi(data.mag_size, 0) * maxi(data.reserve_mags, 0) if data != null else 0
+
+
+func add_reserve_ammo(amount: int) -> int:
+	if not _has_authority() or amount <= 0:
+		return 0
+	var added: int = mini(amount, maxi(reserve_capacity() - reserve_ammo, 0))
+	if added > 0:
+		reserve_ammo += added
+		ammo_changed.emit(ammo_in_mag, reserve_ammo)
+	return added
+
+
 func _try_fire(fire_pressed: bool) -> void:
-	if _last_tick < next_fire_tick or ammo_in_mag <= 0 or data.rpm <= 0.0:
+	if _last_tick < next_fire_tick or data.rpm <= 0.0:
 		return
 	var wants_fire: bool = false
 	match fire_mode:
@@ -165,6 +199,11 @@ func _try_fire(fire_pressed: bool) -> void:
 				_burst_remaining = maxi(data.burst_count, 1)
 			wants_fire = _burst_remaining > 0
 	if not wants_fire:
+		return
+	if ammo_in_mag <= 0:
+		_burst_remaining = 0
+		if fire_pressed:
+			dry_fired.emit(_last_tick)
 		return
 	if fire_mode == WeaponData.FireMode.BURST:
 		_burst_remaining -= 1

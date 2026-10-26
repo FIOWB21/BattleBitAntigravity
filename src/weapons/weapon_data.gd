@@ -30,6 +30,9 @@ const SECONDS_PER_MINUTE: float = 60.0
 @export var reserve_mags: int = 5
 @export var reload_time: float = 2.2
 @export var reload_empty_time: float = 2.8
+@export var chamber_enabled: bool = true
+@export var reload_interrupt_on_switch: bool = true
+@export var reload_interrupt_on_sprint: bool = true
 
 @export_group("Handling")
 @export var draw_time: float = 0.5

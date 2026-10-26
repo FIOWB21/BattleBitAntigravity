@@ -1,16 +1,14 @@
-# Базовый игровой HUD: полоска здоровья, прицел-точка, индикатор стойки и заглушка боезапаса.
+# Базовый игровой HUD: здоровье, прицел, стойка и боезапас; обновление по сигналам.
 class_name HUD
 extends CanvasLayer
 
 const DEFAULT_MAX_HEALTH: float = 100.0
-const DEFAULT_CLIP_AMMO: int = 30
-const DEFAULT_RESERVE_AMMO: int = 120
 
 var current_health: float = DEFAULT_MAX_HEALTH
 var max_health: float = DEFAULT_MAX_HEALTH
 var current_stance: int = PlayerStance.STAND
-var current_ammo: int = DEFAULT_CLIP_AMMO
-var reserve_ammo: int = DEFAULT_RESERVE_AMMO
+var current_ammo: int = 0
+var reserve_ammo: int = 0
 
 var health_bar: ProgressBar = null
 var health_label: Label = null
@@ -20,6 +18,7 @@ var crosshair_dot: ColorRect = null
 
 var _bound_health: HealthComponent = null
 var _bound_stance: StanceController = null
+var _bound_weapon: Weapon = null
 
 
 func _ready() -> void:
@@ -44,6 +43,17 @@ func bind_player(player: Node) -> void:
 	var sc: StanceController = player.get_node_or_null("StanceController") as StanceController
 	if sc != null:
 		bind_stance_controller(sc)
+	bind_weapon(player.get_node_or_null("Weapon") as Weapon)
+
+
+func bind_weapon(weapon: Weapon) -> void:
+	_unbind_weapon()
+	_bound_weapon = weapon
+	if _bound_weapon == null:
+		set_ammo(0, 0)
+		return
+	_bound_weapon.ammo_changed.connect(set_ammo)
+	set_ammo(_bound_weapon.ammo_in_mag, _bound_weapon.reserve_ammo)
 
 
 func bind_health_component(hc: HealthComponent) -> void:
@@ -71,6 +81,13 @@ func bind_stance_controller(sc: StanceController) -> void:
 func unbind_all() -> void:
 	_unbind_health()
 	_unbind_stance()
+	_unbind_weapon()
+
+
+func _unbind_weapon() -> void:
+	if is_instance_valid(_bound_weapon) and _bound_weapon.ammo_changed.is_connected(set_ammo):
+		_bound_weapon.ammo_changed.disconnect(set_ammo)
+	_bound_weapon = null
 
 
 func set_ammo(in_clip: int, in_reserve: int) -> void:

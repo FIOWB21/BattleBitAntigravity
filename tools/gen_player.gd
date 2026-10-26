@@ -107,6 +107,13 @@ func _add_weapon(player: CharacterBody3D) -> void:
 	var hitscan: WeaponHitscan = WeaponHitscan.new()
 	hitscan.name = "WeaponHitscan"
 	player.add_child(hitscan)
+	var receiver: AmmoReceiver = AmmoReceiver.new()
+	receiver.name = "AmmoReceiver"
+	receiver.weapon = weapon
+	player.add_child(receiver)
+	var click: WeaponDryFire = WeaponDryFire.new()
+	click.name = "DryFire"
+	weapon.add_child(click)
 
 
 func _set_owner_recursive(node: Node, owner_node: Node) -> void:

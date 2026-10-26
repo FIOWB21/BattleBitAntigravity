@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="PackedScene" path="res://src/player/player.tscn" id="1_7it17"]
+[ext_resource type="PackedScene" path="res://src/maps/testbed/ammo_box.tscn" id="10_ammo_box"]
 [ext_resource type="Script" path="res://src/player/player.gd" id="2_depta"]
 [ext_resource type="Shader" path="res://src/maps/testbed/grid_1m.gdshader" id="3_a6l6a"]
 [ext_resource type="PackedScene" path="res://src/maps/testbed/target_dummy.tscn" id="4_iorja"]
@@ -618,3 +619,6 @@ script = ExtResource("7_njwu2")
 layer = 100
 visible = false
 script = ExtResource("9_w30o7")
+
+[node name="AmmoBox" parent="." instance=ExtResource("10_ammo_box")]
+position = Vector3(3, 0, 8)

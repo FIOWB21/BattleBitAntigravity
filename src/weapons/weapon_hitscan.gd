@@ -29,7 +29,8 @@ func setup(weapon: Weapon, attacker: int, exclude: Array[RID]) -> void:
 
 
 func simulate(inp: PlayerInput, aim: Transform3D, blocked: bool = false,
-		stance: int = PlayerStance.STAND, horizontal_speed: float = 0.0) -> void:
+		stance: int = PlayerStance.STAND, horizontal_speed: float = 0.0,
+		sprinting: bool = false) -> void:
 	if _weapon == null or not is_inside_tree() or not multiplayer.is_server():
 		return
 	if not handling.advance(inp.tick, _weapon.ticks_per_second):
@@ -37,7 +38,7 @@ func simulate(inp: PlayerInput, aim: Transform3D, blocked: bool = false,
 	var angles: Vector3 = aim.basis.get_euler()
 	_aim = Transform3D(Basis.from_euler(handling.aim_rotation(angles.x, angles.y, angles.z)), aim.origin)
 	_spread_deg = handling.spread_degrees(inp.pressed(PlayerInput.BTN_AIM), stance, horizontal_speed)
-	_weapon.simulate(inp, blocked)
+	_weapon.simulate(inp, blocked, sprinting)
 
 
 func _reset_handling() -> void:
