@@ -6,6 +6,7 @@ signal fired(tick: int)
 signal reload_started
 signal reload_finished
 signal ammo_changed(magazine: int, reserve: int)
+signal configured
 
 enum State { IDLE, FIRING, RELOADING, SWITCHING_IN, SWITCHING_OUT, BLOCKED }
 
@@ -47,6 +48,7 @@ func setup(weapon_data: WeaponData) -> void:
 	_burst_remaining = 0
 	_equipped = true
 	ammo_changed.emit(ammo_in_mag, reserve_ammo)
+	configured.emit()
 
 
 # blocked передаётся симуляцией движения: спринт, лестница или падение.

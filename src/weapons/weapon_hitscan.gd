@@ -5,28 +5,43 @@ extends Node3D
 signal shot_traced(tick: int, pellet: int, direction: Vector3, hit: HitResult)
 signal damage_applied(event: DamageEvent)
 
+var handling: WeaponHandling = WeaponHandling.new()
+
 var _weapon: Weapon = null
 var _attacker: int = 0
 var _exclude: Array[RID] = []
 var _aim: Transform3D = Transform3D.IDENTITY
-var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
+var _spread_deg: float = 0.0
 
 
 func setup(weapon: Weapon, attacker: int, exclude: Array[RID]) -> void:
 	if _weapon != null and _weapon.fired.is_connected(_on_fired):
 		_weapon.fired.disconnect(_on_fired)
+	if _weapon != null and _weapon.configured.is_connected(_reset_handling):
+		_weapon.configured.disconnect(_reset_handling)
 	_weapon = weapon
 	_attacker = attacker
 	_exclude = exclude.duplicate()
 	if _weapon != null:
 		_weapon.fired.connect(_on_fired)
+		_weapon.configured.connect(_reset_handling)
+	_reset_handling()
 
 
-func simulate(inp: PlayerInput, aim: Transform3D, blocked: bool = false) -> void:
+func simulate(inp: PlayerInput, aim: Transform3D, blocked: bool = false,
+		stance: int = PlayerStance.STAND, horizontal_speed: float = 0.0) -> void:
 	if _weapon == null or not is_inside_tree() or not multiplayer.is_server():
 		return
-	_aim = aim
+	if not handling.advance(inp.tick, _weapon.ticks_per_second):
+		return
+	var angles: Vector3 = aim.basis.get_euler()
+	_aim = Transform3D(Basis.from_euler(handling.aim_rotation(angles.x, angles.y, angles.z)), aim.origin)
+	_spread_deg = handling.spread_degrees(inp.pressed(PlayerInput.BTN_AIM), stance, horizontal_speed)
 	_weapon.simulate(inp, blocked)
+
+
+func _reset_handling() -> void:
+	handling.setup(_weapon.data if _weapon != null else null)
 
 
 func _on_fired(tick: int) -> void:
@@ -35,24 +50,14 @@ func _on_fired(tick: int) -> void:
 	var data: WeaponData = _weapon.data
 	if data == null or data.hitscan_range <= 0.0:
 		return
-	_rng.seed = hash(Vector2i(_attacker, tick))
 	for pellet: int in range(maxi(data.pellets, 1)):
-		var direction: Vector3 = _spread_direction(_aim.basis, data.spread_hip_deg)
+		var direction: Vector3 = handling.spread_direction(_aim.basis, _spread_deg, tick, _attacker, pellet)
 		var hit: HitResult = HitscanQuery.cast(_aim.origin,
 			_aim.origin + direction * data.hitscan_range, _exclude,
 			get_world_3d().direct_space_state)
 		_apply_hit(data, hit)
 		shot_traced.emit(tick, pellet, direction, hit)
-
-
-func _spread_direction(aim_basis: Basis, spread_deg: float) -> Vector3:
-	var angle: float = deg_to_rad(clampf(spread_deg, 0.0, 90.0))
-	var cos_theta: float = lerpf(1.0, cos(angle), _rng.randf())
-	var sin_theta: float = sqrt(maxf(0.0, 1.0 - cos_theta * cos_theta))
-	var azimuth: float = _rng.randf() * TAU
-	var local: Vector3 = Vector3(cos(azimuth) * sin_theta,
-		sin(azimuth) * sin_theta, -cos_theta)
-	return (aim_basis * local).normalized()
+	handling.apply_shot(tick, _attacker)
 
 
 func _apply_hit(data: WeaponData, hit: HitResult) -> void:

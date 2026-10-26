@@ -40,6 +40,21 @@ const SECONDS_PER_MINUTE: float = 60.0
 @export var spread_ads_deg: float = 0.3
 @export var recoil_pattern: Array[Vector2] = []
 
+@export_group("Recoil and Spread")
+# Vector2: подъём pitch и поворот yaw в градусах на выстрел.
+@export var recoil_fallback_deg: Vector2 = Vector2(0.6, 0.0)
+@export var recoil_noise_deg: Vector2 = Vector2(0.15, 0.25)
+@export var recoil_pause: float = 0.2
+@export var recoil_recovery_deg_per_second: float = 12.0
+@export var spread_per_shot_deg: float = 0.35
+@export var spread_max_bloom_deg: float = 3.0
+@export var spread_recovery_deg_per_second: float = 2.5
+@export var spread_move_deg_per_mps: float = 0.25
+@export var spread_crouch_mult: float = 0.7
+@export var spread_prone_mult: float = 0.45
+@export var spread_ads_extra_mult: float = 0.5
+@export var spread_max_deg: float = 15.0
+
 @export_group("Presentation")
 @export var viewmodel_scene: PackedScene
 @export var worldmodel_scene: PackedScene

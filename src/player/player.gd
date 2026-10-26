@@ -172,7 +172,7 @@ func step_simulation(inp: PlayerInput, delta: float) -> void:
 		var blocked: bool = motor.is_sprinting or not is_on_floor()
 		if health_component is HealthComponent:
 			blocked = blocked or (health_component as HealthComponent).is_dead
-		weapon_hitscan.simulate(inp, aim, blocked)
+		weapon_hitscan.simulate(inp, aim, blocked, stance, Vector2(velocity.x, velocity.z).length())
 
 
 func get_hitscan_exclude_rids() -> Array[RID]:
@@ -212,6 +212,9 @@ func update_camera_visuals(delta: float) -> void:
 			input_reader.yaw + eff_rot.y,
 			head.rotation.z + eff_rot.z
 		)
+		if weapon_hitscan != null:
+			look_euler = weapon_hitscan.handling.aim_rotation(
+				input_reader.pitch, input_reader.yaw, head.rotation.z) + eff_rot
 		var look_basis: Basis = Basis.from_euler(look_euler)
 		camera.global_transform = Transform3D(look_basis, base_origin + look_basis * eff_offset)
 	else:
