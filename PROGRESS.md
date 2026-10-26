@@ -1,7 +1,7 @@
 # PROGRESS
 
-Текущий шаг: 1.8
-Последний завершённый: 1.7
+Текущий шаг: 2.1
+Последний завершённый: 1.8
 
 | Шаг | Статус | Дата | Заметки |
 |---|---|---|---|
@@ -18,7 +18,7 @@
 | 1.5 | DONE | 2026-10-26 | Реализованы спринт только вперёд (`sprint_min_forward_dot = 0.5`, запрет в `CROUCH`/`PRONE`), опциональная выносливость (`stamina_enabled = false` по умолчанию), `coyote_time = 0.1` с, автоподъём на ступени до `0.35` м (`test_move` вверх → вперёд → вниз без подпрыгиваний), расчёт и локальное применение урона от падения при скорости ниже `−12` м/с (`MovementConfig.calculate_fall_damage`, передача в `HealthComponent`) и тесты `tests/unit/test_player_step_fall_sprint.gd` |
 | 1.6 | DONE | 2026-10-26 | Создан `HealthComponent` (`src/core/health_component.gd`) с сигналами `health_changed`, `damaged`, `died`, методами `apply_damage`, `heal`, `reset`, опциональной регенерацией (`regen_delay`, `regen_rate`, отключена по умолчанию), интеграцией в `Player` (`src/player/player.tscn`) и тестами `tests/unit/test_health_component.gd` |
 | 1.7 | DONE | 2026-10-26 | Созданы `HitboxConfig` (`src/player/hitbox_config.gd`, `src/player/default_hitboxes.tres`), `HitboxZone` (`src/player/hitbox_zone.gd`, `Area3D` на слое `hitboxes = 4`, `monitoring = false`, зоны `HEAD`/`TORSO`/`ARMS`/`LEGS`, `damage_mult`, ссылка на `HealthComponent`), `PlayerHitboxes` (`src/player/player_hitboxes.gd`, подстройка зон под стойку и наклон), `HitResult` (`src/weapons/hit_result.gd`) и `HitscanQuery.cast` (`src/weapons/hitscan_query.gd`, маска `world + hitboxes`), интеграция в `Player` (`src/player/player.tscn`) и тесты `tests/unit/test_hitboxes.gd` |
-| 1.8 | TODO | | |
+| 1.8 | DONE | 2026-10-26 | Созданы `TargetDummy` (`src/maps/testbed/target_dummy.gd`, `src/maps/testbed/target_dummy.tscn`, генератор `tools/gen_target_dummy.gd`): стоячий режим и патруль по точкам, `HealthComponent`, `PlayerHitboxes`, респавн через `3.0` с. Базовый `HUD` (`src/ui/hud/hud.gd`, `src/ui/hud/hud.tscn`, генератор `tools/gen_hud.gd`): полоска здоровья, прицел-точка, индикатор стойки, заглушка патронов; обновляется по сигналам, без `_process`. Добавлена консольная команда `damage <n>` в `DebugConsole`. На `testbed.tscn` размещены 5 мишеней (3 стоячие + 2 движущиеся), `HUD` и `DebugOverlay`. Тесты: `tests/unit/test_target_dummy_and_hud.gd`. Тег `phase-1-done` ждёт ручной пробежки (🧑) |
 | 2.1 | TODO | | |
 | 2.2 | TODO | | |
 | 2.3 | TODO | | |
@@ -145,4 +145,10 @@
 | 15.7 | TODO | | |
 
 ## Известные проблемы
-- (пусто)
+- Шаг 1.8: при открытой консоли (`` ` ``) курсор остаётся захваченным, а нажатия WASD продолжают двигать игрока. Блокировку ввода при открытой консоли нужно делать позже, вместе с UI/меню.
+- Шаг 1.8: у `TargetDummy` нет физического тела, только хитбоксы, поэтому игрок проходит сквозь мишени. Для тренировочных мишеней это допустимо.
+- Шаг 1.8: команда `damage <n>` выполняется локально, без сервера. Это отладочный инструмент офлайн-фазы; авторитетный урон появится в фазе 4.
+
+## Замечания по итогам Фазы 1 (`phase-1-done`)
+- Автотесты покрывают: разгон и торможение, прыжок, склон 45°, лестницу 0.2 м, туннель 1.0 м, наклоны у стен, урон от падения, хитбоксы, 5 мишеней `TargetDummy`, обновление `HUD` по сигналам и команду `damage <n>`.
+- 🧑 Требуется проверка человеком: пробежать полигон 5 минут, оценить камеру, переходы стоек и читаемость HUD, записать замечания сюда. После этого поставить тег `phase-1-done`.

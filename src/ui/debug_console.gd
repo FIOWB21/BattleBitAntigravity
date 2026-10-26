@@ -5,6 +5,7 @@ extends RefCounted
 signal command_executed(command_line: String, output: String)
 signal god_toggled(enabled: bool)
 signal noclip_toggled(enabled: bool)
+signal damage_requested(amount: float)
 
 const MIN_FPS: int = 0
 const MIN_PING_MS: int = 0
@@ -14,6 +15,7 @@ const MAX_LOSS_PCT: float = 100.0
 var commands: Dictionary = {}
 var history: Array[String] = []
 var output_lines: Array[String] = []
+var damage_target: Object = null
 
 
 func _init() -> void:
@@ -85,6 +87,7 @@ func _register_builtin_commands() -> void:
 	register_command("net_sim", _cmd_net_sim)
 	register_command("god", _cmd_god)
 	register_command("noclip", _cmd_noclip)
+	register_command("damage", _cmd_damage)
 
 
 func _cmd_help(_args: PackedStringArray) -> String:
@@ -147,3 +150,42 @@ func _resolve_toggle_arg(args: PackedStringArray, current: bool) -> bool:
 	if token == "0" or token == "false" or token == "off":
 		return false
 	return not current
+
+
+func _cmd_damage(args: PackedStringArray) -> String:
+	if args.size() != 1 or not args[0].is_valid_float():
+		return "Usage: damage <n>"
+	var amount: float = args[0].to_float()
+	if amount <= 0.0:
+		return "Error: damage must be > 0"
+	damage_requested.emit(amount)
+	var target: Object = _resolve_damage_target()
+	if target != null and target.has_method("apply_damage"):
+		target.call("apply_damage", amount)
+		if target is HealthComponent:
+			var hc: HealthComponent = target as HealthComponent
+			return "damage: %.1f (health: %.1f/%.1f)" % [amount, hc.current, hc.max_health]
+	return "damage: %.1f" % amount
+
+
+func _resolve_damage_target() -> Object:
+	if damage_target != null and is_instance_valid(damage_target):
+		if damage_target.has_method("apply_damage"):
+			return damage_target
+		if damage_target is Node:
+			var child_hc: Node = (damage_target as Node).get_node_or_null("HealthComponent")
+			if child_hc != null:
+				return child_hc
+	var debug_hc: Variant = Game.debug.get("local_health_component", null)
+	if debug_hc is Object and is_instance_valid(debug_hc):
+		return debug_hc as Object
+	var main_loop: MainLoop = Engine.get_main_loop()
+	if main_loop is SceneTree:
+		var tree: SceneTree = main_loop as SceneTree
+		if tree.root != null:
+			var player_node: Node = tree.root.find_child("Player", true, false)
+			if player_node != null:
+				var hc_node: Node = player_node.get_node_or_null("HealthComponent")
+				if hc_node != null:
+					return hc_node
+	return null

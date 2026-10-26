@@ -46,12 +46,20 @@
 ## Отладочный оверлей и консоль
 
 - **`DebugOverlay` (`res://src/ui/debug_overlay.tscn`, `res://src/ui/debug_overlay.gd`)** — слой `CanvasLayer` с панелью телеметрии `StatsPanel` (FPS, кадр в мс, память в MiB, число узлов, позиция локального игрока и пинг из `Game.debug`, переключение по `F3`) и панелью консоли `ConsolePanel` (переключение по `` ` `` / `KEY_QUOTELEFT`).
-- **`DebugConsole` (`res://src/ui/debug_console.gd`)** — `RefCounted`-реестр и парсер команд (`commands: Dictionary` вида `name -> Callable`), предоставляющий встроенные команды `help`, `fps <n>`, `net_sim <ping_ms> <loss_%>`, `god`, `noclip`.
+- **`DebugConsole` (`res://src/ui/debug_console.gd`)** — `RefCounted`-реестр и парсер команд (`commands: Dictionary` вида `name -> Callable`), предоставляющий встроенные команды `help`, `fps <n>`, `net_sim <ping_ms> <loss_%>`, `god`, `noclip`, `damage <n>` (отладочный локальный урон: `damage_target` → `Game.debug["local_health_component"]` → `HealthComponent` узла `Player`).
+
+## HUD
+
+- **`HUD` (`res://src/ui/hud/hud.tscn`, `res://src/ui/hud/hud.gd`, генератор `res://tools/gen_hud.gd`)** — `CanvasLayer` (слой `10`) с прицелом-точкой, полоской/текстом здоровья, индикатором стойки и заглушкой боезапаса. Обновляется только по сигналам: `bind_player(player)` подписывает HUD на `HealthComponent.health_changed`/`died` и `StanceController.stance_changed`. Опроса в `_process` нет. При добавлении в сцену рядом с узлом `Player` HUD сам привязывается к нему (`_auto_bind_from_parent`).
+
+## Тренировочные мишени
+
+- **`TargetDummy` (`res://src/maps/testbed/target_dummy.tscn`, `res://src/maps/testbed/target_dummy.gd`, генератор `res://tools/gen_target_dummy.gd`)** — `Node3D` без физического тела: `HealthComponent` + `PlayerHitboxes` (стойка `STAND`, слой `hitboxes`) + узел `Visuals`. Режимы: стоячий или патруль по `waypoints` со скоростью `move_speed` (`set_patrol_path`). При `died` хитбоксы отключаются, визуал скрывается, через `respawn_delay` (3 с) вызывается `HealthComponent.reset()`. Логика шага вынесена в `step(delta)` и вызывается из `_physics_process`, поэтому тестируется детерминированно.
 
 ## Генерация сцен и полигон (`Testbed`)
 
 - **Генераторы сцен (`tools/gen_*.gd`)** — сцены создаются воспроизводимыми headless-скриптами (`PackedScene.pack()` + `ResourceSaver.save()`).
-- **Тестовый полигон (`res://src/maps/testbed/testbed.tscn`, генератор `res://tools/gen_testbed.gd`)** — уровень 200×200 м с процедурным шейдером метровой сетки (`res://src/maps/testbed/grid_1m.gdshader`), окружением `WorldEnvironment`, солнцем `DirectionalLight3D`, точкой спавна `PlayerSpawn`, препятствиями для тестирования передвижения (стены 1.0–3.0 м, рампы 15°/30°/45°, лестница 0.2 м, коридор 0.8 м, туннель 1.0 м) и стрельбищем (`ShootingRange`, мишени на 10/25/50/100/200 м). Все коллайдеры находятся на физическом слое `world` (`1`).
+- **Тестовый полигон (`res://src/maps/testbed/testbed.tscn`, генератор `res://tools/gen_testbed.gd`)** — уровень 200×200 м с процедурным шейдером метровой сетки (`res://src/maps/testbed/grid_1m.gdshader`), окружением `WorldEnvironment`, солнцем `DirectionalLight3D`, точкой спавна `PlayerSpawn`, препятствиями для тестирования передвижения (стены 1.0–3.0 м, рампы 15°/30°/45°, лестница 0.2 м, коридор 0.8 м, туннель 1.0 м) и стрельбищем (`ShootingRange`, мишени на 10/25/50/100/200 м), узлом `Targets` с 5 экземплярами `TargetDummy` (3 стоячие, 2 патрульные), а также `HUD` и `DebugOverlay`. Все коллайдеры находятся на физическом слое `world` (`1`).
 
 ## Поток данных: ввод → симуляция → представление
 

@@ -3,6 +3,9 @@ extends SceneTree
 const OUTPUT_PATH: String = "res://src/maps/testbed/testbed.tscn"
 const GRID_SHADER_PATH: String = "res://src/maps/testbed/grid_1m.gdshader"
 const PLAYER_SCENE_PATH: String = "res://src/player/player.tscn"
+const TARGET_DUMMY_SCENE_PATH: String = "res://src/maps/testbed/target_dummy.tscn"
+const HUD_SCENE_PATH: String = "res://src/ui/hud/hud.tscn"
+const DEBUG_OVERLAY_SCENE_PATH: String = "res://src/ui/debug_overlay.tscn"
 const WORLD_LAYER: int = 1
 
 const FLOOR_SIZE: Vector3 = Vector3(200.0, 1.0, 200.0)
@@ -15,6 +18,14 @@ const TUNNEL_HEIGHT: float = 1.0
 const WALL_HEIGHTS: Array[float] = [1.0, 1.5, 2.0, 3.0]
 const RAMP_ANGLES: Array[float] = [15.0, 30.0, 45.0]
 const TARGET_DISTANCES: Array[int] = [10, 25, 50, 100, 200]
+# Мишени TargetDummy: первые DUMMY_STANDING_COUNT стоят, остальные патрулируют на DUMMY_PATROL_OFFSET.
+const DUMMY_POSITIONS: Array[Vector3] = [
+	Vector3(-8.0, 0.0, 3.0), Vector3(-4.0, 0.0, 3.0), Vector3(3.0, 0.0, 2.0),
+	Vector3(-9.0, 0.0, -2.0), Vector3(8.0, 0.0, 2.0),
+]
+const DUMMY_STANDING_COUNT: int = 3
+const DUMMY_PATROL_OFFSET: Vector3 = Vector3(6.0, 0.0, 0.0)
+const DUMMY_PATROL_SPEEDS: Array[float] = [3.0, 4.0]
 
 
 func _initialize() -> void:
@@ -57,6 +68,8 @@ func _build_testbed_scene() -> Node3D:
 	_add_corridor(obstacles, obstacle_mat)
 	_add_tunnel(obstacles, obstacle_mat)
 	_add_shooting_range(root, floor_mat, obstacle_mat, target_mat)
+	_add_target_dummies(root)
+	_add_ui(root)
 	return root
 
 
@@ -118,14 +131,8 @@ func _add_player_spawn(root: Node3D) -> void:
 
 
 func _add_floor(root: Node3D, mat: Material) -> void:
-	var floor_body: StaticBody3D = _create_static_box(
-		"Floor",
-		FLOOR_SIZE,
-		Vector3(0.0, -FLOOR_SIZE.y * 0.5, 0.0),
-		Vector3.ZERO,
-		mat
-	)
-	root.add_child(floor_body)
+	var pos: Vector3 = Vector3(0.0, -FLOOR_SIZE.y * 0.5, 0.0)
+	root.add_child(_create_static_box("Floor", FLOOR_SIZE, pos, Vector3.ZERO, mat))
 
 
 func _add_walls(parent: Node3D, mat: Material) -> void:
@@ -225,11 +232,7 @@ func _add_shooting_range(root: Node3D, floor_mat: Material, booth_mat: Material,
 
 
 func _create_static_box(
-	node_name: String,
-	size: Vector3,
-	pos: Vector3,
-	rot_deg: Vector3,
-	mat: Material
+	node_name: String, size: Vector3, pos: Vector3, rot_deg: Vector3, mat: Material
 ) -> StaticBody3D:
 	var body: StaticBody3D = StaticBody3D.new()
 	body.name = node_name
@@ -253,6 +256,38 @@ func _create_static_box(
 	mesh_inst.material_override = mat
 	body.add_child(mesh_inst)
 	return body
+
+
+func _add_target_dummies(root: Node3D) -> void:
+	var targets_root: Node3D = Node3D.new()
+	targets_root.name = "Targets"
+	root.add_child(targets_root)
+	var dummy_packed: PackedScene = load(TARGET_DUMMY_SCENE_PATH) as PackedScene
+	if dummy_packed == null:
+		return
+	for i: int in range(DUMMY_POSITIONS.size()):
+		var dummy: TargetDummy = dummy_packed.instantiate() as TargetDummy
+		dummy.name = "TargetDummy_%02d" % (i + 1)
+		dummy.position = DUMMY_POSITIONS[i]
+		var patrol_idx: int = i - DUMMY_STANDING_COUNT
+		if patrol_idx >= 0:
+			var p0: Vector3 = DUMMY_POSITIONS[i]
+			var points: PackedVector3Array = PackedVector3Array([p0, p0 + DUMMY_PATROL_OFFSET])
+			dummy.set_patrol_path(points, DUMMY_PATROL_SPEEDS[patrol_idx])
+		targets_root.add_child(dummy)
+
+
+func _add_ui(root: Node3D) -> void:
+	var hud_packed: PackedScene = load(HUD_SCENE_PATH) as PackedScene
+	if hud_packed != null:
+		var hud: Node = hud_packed.instantiate()
+		hud.name = "HUD"
+		root.add_child(hud)
+	var overlay_packed: PackedScene = load(DEBUG_OVERLAY_SCENE_PATH) as PackedScene
+	if overlay_packed != null:
+		var overlay: Node = overlay_packed.instantiate()
+		overlay.name = "DebugOverlay"
+		root.add_child(overlay)
 
 
 func _set_owner_recursive(node: Node, owner_node: Node) -> void:

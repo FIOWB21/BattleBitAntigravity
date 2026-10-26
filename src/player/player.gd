@@ -50,6 +50,7 @@ func _ready() -> void:
 		Events.settings_changed.connect(_on_settings_changed)
 	apply_settings()
 	if is_local_player:
+		Game.debug["local_health_component"] = health_component
 		capture_mouse()
 		update_camera_visuals(0.0)
 
@@ -79,6 +80,8 @@ func _setup_components() -> void:
 func _exit_tree() -> void:
 	if Events != null and Events.settings_changed.is_connected(_on_settings_changed):
 		Events.settings_changed.disconnect(_on_settings_changed)
+	if Game != null and Game.debug.get("local_health_component", null) == health_component:
+		Game.debug.erase("local_health_component")
 
 
 func apply_settings() -> void:

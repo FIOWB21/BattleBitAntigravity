@@ -2,6 +2,18 @@
 
 Все заметные изменения проекта документируются в этом файле по шагам плана (`docs/STEPS.md`).
 
+## [step-1.8] — 2026-10-26
+
+### Добавлено
+- Тренировочная мишень `TargetDummy` (`src/maps/testbed/target_dummy.gd`), сцена `src/maps/testbed/target_dummy.tscn` и генератор `tools/gen_target_dummy.gd`: `HealthComponent`, хитбоксы `PlayerHitboxes`, процедурный визуал (капсула + сфера), стоячий режим и патруль по точкам (`set_patrol_path(points, speed)`), отключение хитбоксов и скрытие при смерти, респавн через `respawn_delay = 3.0` с. Сигналы `health_changed`, `died`, `respawned`.
+- Базовый HUD `HUD` (`src/ui/hud/hud.gd`), сцена `src/ui/hud/hud.tscn` и генератор `tools/gen_hud.gd`: полоска и текст здоровья, прицел-точка, индикатор стойки (`STAND`/`CROUCH`/`PRONE`), заглушка боезапаса (`set_ammo`). Подписан на `HealthComponent.health_changed`/`died` и `StanceController.stance_changed`, `_process` не используется.
+- Консольная команда `damage <n>` в `DebugConsole` (`src/ui/debug_console.gd`): сигнал `damage_requested`, цель — `damage_target`, иначе `Game.debug["local_health_component"]`, иначе `HealthComponent` узла `Player`.
+- Тесты `tests/unit/test_target_dummy_and_hud.gd`.
+
+### Изменено
+- `tools/gen_testbed.gd` и `src/maps/testbed/testbed.tscn`: добавлены узел `Targets` с 5 мишенями (3 стоячие, 2 патрульные), `HUD` и `DebugOverlay`.
+- `src/player/player.gd`: локальный игрок регистрирует свой `HealthComponent` в `Game.debug["local_health_component"]` и снимает регистрацию в `_exit_tree`.
+
 ## [step-1.7] — 2026-10-26
 
 ### Добавлено
