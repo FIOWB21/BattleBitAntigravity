@@ -1,32 +1,36 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://src/player/player.gd" id="1_mf2ua"]
-[ext_resource type="Script" path="res://src/player/camera_effects.gd" id="2_244u8"]
-[ext_resource type="Script" path="res://src/player/stance_controller.gd" id="3_5f2sf"]
+[ext_resource type="Script" path="res://src/player/player.gd" id="1_244u8"]
+[ext_resource type="Script" path="res://src/player/camera_effects.gd" id="2_5f2sf"]
+[ext_resource type="Script" path="res://src/player/stance_controller.gd" id="3_jiejy"]
+[ext_resource type="Script" path="res://src/core/health_component.gd" id="4_o822w"]
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jiejy"]
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_x42xx"]
 radius = 0.35
 height = 1.8
 
-[node name="Player" type="CharacterBody3D" unique_id=2089282455]
+[node name="Player" type="CharacterBody3D" unique_id=1537605927]
 collision_layer = 2
 floor_max_angle = 0.7863982
-script = ExtResource("1_mf2ua")
+script = ExtResource("1_244u8")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=656996933]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=936374140]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-shape = SubResource("CapsuleShape3D_jiejy")
+shape = SubResource("CapsuleShape3D_x42xx")
 
-[node name="Head" type="Node3D" parent="." unique_id=1241181233]
+[node name="Head" type="Node3D" parent="." unique_id=251158102]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0)
 
-[node name="Camera3D" type="Camera3D" parent="Head" unique_id=1628557949]
+[node name="Camera3D" type="Camera3D" parent="Head" unique_id=427875339]
 physics_interpolation_mode = 2
 current = true
 fov = 90.0
 
-[node name="CameraEffects" type="Node3D" parent="Head" unique_id=2118725992]
-script = ExtResource("2_244u8")
+[node name="CameraEffects" type="Node3D" parent="Head" unique_id=588520810]
+script = ExtResource("2_5f2sf")
 
-[node name="StanceController" type="Node" parent="." unique_id=82019647]
-script = ExtResource("3_5f2sf")
+[node name="StanceController" type="Node" parent="." unique_id=713508965]
+script = ExtResource("3_jiejy")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=1855443452]
+script = ExtResource("4_o822w")

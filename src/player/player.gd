@@ -37,6 +37,10 @@ func _ready() -> void:
 		stance_controller.name = "StanceController"
 		add_child(stance_controller)
 	stance_controller.setup(self, collision_shape, head, movement_config, stance)
+	if health_component == null:
+		health_component = HealthComponent.new()
+		health_component.name = "HealthComponent"
+		add_child(health_component)
 	input_reader.yaw = rotation.y
 	if head != null:
 		input_reader.pitch = clampf(
@@ -139,8 +143,11 @@ func apply_fall_damage(amount: float) -> void:
 		return
 	if health_component == null:
 		health_component = get_node_or_null("HealthComponent")
-	if health_component != null and health_component.has_method("take_damage"):
-		health_component.call("take_damage", amount)
+	if health_component != null:
+		if health_component.has_method("apply_damage"):
+			health_component.call("apply_damage", amount)
+		elif health_component.has_method("take_damage"):
+			health_component.call("take_damage", amount)
 	fall_damaged.emit(amount)
 
 

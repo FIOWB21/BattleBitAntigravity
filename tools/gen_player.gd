@@ -4,6 +4,7 @@ extends SceneTree
 const OUTPUT_PATH: String = "res://src/player/player.tscn"
 const PLAYER_SCRIPT_PATH: String = "res://src/player/player.gd"
 const STANCE_CONTROLLER_SCRIPT_PATH: String = "res://src/player/stance_controller.gd"
+const HEALTH_COMPONENT_SCRIPT_PATH: String = "res://src/core/health_component.gd"
 const CAMERA_EFFECTS_SCRIPT_PATH: String = "res://src/player/camera_effects.gd"
 const MOVEMENT_CONFIG_PATH: String = "res://src/player/default_movement.tres"
 
@@ -54,6 +55,11 @@ func _build_player_scene() -> CharacterBody3D:
 	col.shape = capsule
 	player.add_child(col)
 
+	_add_head_and_components(player)
+	return player
+
+
+func _add_head_and_components(player: CharacterBody3D) -> void:
 	var head: Node3D = Node3D.new()
 	head.name = "Head"
 	head.position = Vector3(0.0, HEAD_HEIGHT, 0.0)
@@ -76,7 +82,10 @@ func _build_player_scene() -> CharacterBody3D:
 	stance_ctrl.name = "StanceController"
 	player.add_child(stance_ctrl)
 
-	return player
+	var health_script: GDScript = load(HEALTH_COMPONENT_SCRIPT_PATH) as GDScript
+	var health_comp: Node = health_script.new() as Node
+	health_comp.name = "HealthComponent"
+	player.add_child(health_comp)
 
 
 func _set_owner_recursive(node: Node, owner_node: Node) -> void:

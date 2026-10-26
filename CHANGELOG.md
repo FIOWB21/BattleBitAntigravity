@@ -2,6 +2,15 @@
 
 Все заметные изменения проекта документируются в этом файле по шагам плана (`docs/STEPS.md`).
 
+## [step-1.6] — 2026-10-26
+
+### Добавлено
+- Компонент здоровья `HealthComponent` (`src/core/health_component.gd`) с сигналами `health_changed(current, max_value)`, `damaged(amount, source_id, zone)`, `died(killer_id)`, методами `apply_damage(...)` (и алиасом `take_damage(...)`), `heal(amount)`, `reset()` для респавна и опциональной регенерацией (`regen_enabled = false`, `regen_delay = 5.0`, `regen_rate = 0.0`, метод `step_regen(delta)`).
+- Модульные тесты `tests/unit/test_health_component.gd` (нанесение урона, смерть ровно один раз, игнорирование урона мёртвому, ограничение лечения `max_health`, `reset()` при респавне, опциональная регенерация и интеграция в `player.tscn`).
+
+### Изменено
+- В `tools/gen_player.gd`, `src/player/player.tscn` и `src/player/player.gd` добавлен дочерний узел `HealthComponent` и вызов `apply_damage(...)` при уроне от падения.
+
 ## [step-1.5] — 2026-10-26
 
 ### Добавлено

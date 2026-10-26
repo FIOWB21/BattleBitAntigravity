@@ -1,7 +1,7 @@
 # PROGRESS
 
-Текущий шаг: 1.6
-Последний завершённый: 1.5
+Текущий шаг: 1.7
+Последний завершённый: 1.6
 
 | Шаг | Статус | Дата | Заметки |
 |---|---|---|---|
@@ -16,7 +16,7 @@
 | 1.3 | DONE | 2026-10-25 | Реализованы обзор мышью в `LocalInputReader` (накопление `yaw`, кламп `pitch` ±89°, `sensitivity` и `invert_y` из `Settings`), `Camera3D` на `Head` с `FOV` 60–120 (дефолт 90), захват курсора и освобождение по `Esc` (`pause_menu`), физическая интерполяция `physics/common/physics_interpolation=true` со сглаживанием через `get_global_transform_interpolated()`, визуальный узел `CameraEffects` (`src/player/camera_effects.gd`) и тесты `tests/unit/test_player_camera.gd` |
 | 1.4 | DONE | 2026-10-25 | Созданы `PlayerStance` (`src/player/player_stance.gd`) и `StanceController` (`src/player/stance_controller.gd`): стойки `STAND`/`CROUCH`/`PRONE` с высотой капсулы `1.8`/`1.2`/`0.5` м и камеры `1.65`/`1.05`/`0.35` м, плавные переходы без смещения ступней, проверка потолка (`test_move`), подъём из `PRONE` в `STAND` через `CROUCH` за `0.6` с, запрет прыжка лёжа, наклоны `±15°` и `±0.4` м с проверкой стены и тесты `tests/unit/test_player_stance.gd` |
 | 1.5 | DONE | 2026-10-26 | Реализованы спринт только вперёд (`sprint_min_forward_dot = 0.5`, запрет в `CROUCH`/`PRONE`), опциональная выносливость (`stamina_enabled = false` по умолчанию), `coyote_time = 0.1` с, автоподъём на ступени до `0.35` м (`test_move` вверх → вперёд → вниз без подпрыгиваний), расчёт и локальное применение урона от падения при скорости ниже `−12` м/с (`MovementConfig.calculate_fall_damage`, передача в `HealthComponent`) и тесты `tests/unit/test_player_step_fall_sprint.gd` |
-| 1.6 | TODO | | |
+| 1.6 | DONE | 2026-10-26 | Создан `HealthComponent` (`src/core/health_component.gd`) с сигналами `health_changed`, `damaged`, `died`, методами `apply_damage`, `heal`, `reset`, опциональной регенерацией (`regen_delay`, `regen_rate`, отключена по умолчанию), интеграцией в `Player` (`src/player/player.tscn`) и тестами `tests/unit/test_health_component.gd` |
 | 1.7 | TODO | | |
 | 1.8 | TODO | | |
 | 2.1 | TODO | | |
