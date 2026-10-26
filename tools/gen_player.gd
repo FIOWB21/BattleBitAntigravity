@@ -58,6 +58,7 @@ func _build_player_scene() -> CharacterBody3D:
 	player.add_child(col)
 
 	_add_head_and_components(player)
+	_add_weapon(player)
 	return player
 
 
@@ -96,6 +97,16 @@ func _add_head_and_components(player: CharacterBody3D) -> void:
 	var mov_cfg: MovementConfig = load(MOVEMENT_CONFIG_PATH) as MovementConfig
 	player.add_child(hitboxes)
 	hitboxes.setup(player, health_comp, mov_cfg, hb_cfg, PlayerStance.STAND)
+
+
+func _add_weapon(player: CharacterBody3D) -> void:
+	var weapon: Weapon = Weapon.new()
+	weapon.name = "Weapon"
+	weapon.data = load("res://src/weapons/data/ar.tres") as WeaponData
+	player.add_child(weapon)
+	var hitscan: WeaponHitscan = WeaponHitscan.new()
+	hitscan.name = "WeaponHitscan"
+	player.add_child(hitscan)
 
 
 func _set_owner_recursive(node: Node, owner_node: Node) -> void:

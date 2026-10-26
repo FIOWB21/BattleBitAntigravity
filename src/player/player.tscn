@@ -6,6 +6,9 @@
 [ext_resource type="Script" path="res://src/core/health_component.gd" id="4_l271a"]
 [ext_resource type="Script" path="res://src/player/player_hitboxes.gd" id="5_8ydov"]
 [ext_resource type="Script" path="res://src/player/hitbox_zone.gd" id="6_ylhto"]
+[ext_resource type="Script" path="res://src/weapons/weapon.gd" id="7_weapon"]
+[ext_resource type="Resource" path="res://src/weapons/data/ar.tres" id="8_profile"]
+[ext_resource type="Script" path="res://src/weapons/weapon_hitscan.gd" id="9_hitscan"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_cwolq"]
 radius = 0.35
@@ -117,3 +120,10 @@ health_component = NodePath("../../HealthComponent")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Hitboxes/LegsZone" unique_id=1593901662]
 shape = SubResource("BoxShape3D_hrerp")
+
+[node name="Weapon" type="Node3D" parent="."]
+script = ExtResource("7_weapon")
+data = ExtResource("8_profile")
+
+[node name="WeaponHitscan" type="Node3D" parent="."]
+script = ExtResource("9_hitscan")

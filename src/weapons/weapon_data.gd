@@ -23,6 +23,7 @@ const SECONDS_PER_MINUTE: float = 60.0
 @export var limb_mult: float = 0.8
 @export var pellets: int = 1
 @export var penetration: float = 0.0
+@export var hitscan_range: float = 1000.0
 
 @export_group("Ammo")
 @export var mag_size: int = 30

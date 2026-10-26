@@ -32,10 +32,14 @@ var _mouse_captured: bool = false
 @onready var stance_controller: StanceController = get_node_or_null("StanceController") as StanceController
 @onready var health_component: Node = get_node_or_null("HealthComponent")
 @onready var hitboxes: PlayerHitboxes = get_node_or_null("Hitboxes") as PlayerHitboxes
+@onready var weapon: Weapon = get_node_or_null("Weapon") as Weapon
+@onready var weapon_hitscan: WeaponHitscan = get_node_or_null("WeaponHitscan") as WeaponHitscan
 
 
 func _ready() -> void:
 	_setup_components()
+	if weapon_hitscan != null:
+		weapon_hitscan.setup(weapon, get_multiplayer_authority(), get_hitscan_exclude_rids())
 	input_reader.yaw = rotation.y
 	if head != null:
 		input_reader.pitch = clampf(
@@ -162,6 +166,13 @@ func step_simulation(inp: PlayerInput, delta: float) -> void:
 			-LocalInputReader.MAX_PITCH_RAD,
 			LocalInputReader.MAX_PITCH_RAD
 		)
+	if weapon_hitscan != null:
+		var aim: Transform3D = Transform3D(
+			Basis.from_euler(Vector3(head.rotation.x, inp.yaw, head.rotation.z)), head.global_position)
+		var blocked: bool = motor.is_sprinting or not is_on_floor()
+		if health_component is HealthComponent:
+			blocked = blocked or (health_component as HealthComponent).is_dead
+		weapon_hitscan.simulate(inp, aim, blocked)
 
 
 func get_hitscan_exclude_rids() -> Array[RID]:
