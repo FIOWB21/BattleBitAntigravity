@@ -18,6 +18,7 @@ var _weapon_slot: int = 0
 var _weapon_cycle: int = 0
 var _last_weapon: bool = false
 var _throw_grenade: bool = false
+var _melee: bool = false
 
 
 func apply_mouse_delta(
@@ -60,6 +61,8 @@ func handle_input_event(event: InputEvent) -> void:
 		_last_weapon = true
 	if event.is_action_pressed(InputActions.THROW_GRENADE):
 		_throw_grenade = true
+	if event.is_action_pressed(InputActions.MELEE):
+		_melee = true
 
 
 func read_input() -> PlayerInput:
@@ -80,10 +83,12 @@ func read_input() -> PlayerInput:
 	inp.weapon_cycle = signi(_weapon_cycle)
 	inp.last_weapon = _last_weapon
 	inp.throw_grenade = _throw_grenade
+	inp.melee = _melee
 	_weapon_slot = 0
 	_weapon_cycle = 0
 	_last_weapon = false
 	_throw_grenade = false
+	_melee = false
 	return inp
 
 

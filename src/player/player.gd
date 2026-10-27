@@ -160,7 +160,8 @@ func _process(delta: float) -> void:
 
 func step_simulation(inp: PlayerInput, delta: float) -> void:
 	if inventory != null:
-		inventory.simulate(inp, not (health_component is HealthComponent and health_component.is_dead))
+		inventory.simulate(inp, not (health_component is HealthComponent and health_component.is_dead)
+			and not (equipment != null and equipment.melee.busy))
 	rotation.y = inp.yaw
 	if stance_controller != null:
 		stance_controller.step(inp, delta)
@@ -184,8 +185,10 @@ func step_simulation(inp: PlayerInput, delta: float) -> void:
 			-LocalInputReader.MAX_PITCH_RAD,
 			LocalInputReader.MAX_PITCH_RAD
 		)
-	if equipment != null and equipment.projectiles != null:
-		equipment.projectiles.simulate(inp)
+	if equipment != null:
+		equipment.simulate_melee(inp)
+		if equipment.projectiles != null and not equipment.melee.busy:
+			equipment.projectiles.simulate(inp)
 	_step_weapon(inp)
 
 
@@ -194,6 +197,7 @@ func _step_weapon(inp: PlayerInput) -> void:
 		var aim: Transform3D = Transform3D(
 			Basis.from_euler(Vector3(head.rotation.x, inp.yaw, head.rotation.z)), head.global_position)
 		var blocked: bool = motor.is_sprinting or not is_on_floor()
+		blocked = blocked or (equipment != null and equipment.melee.busy)
 		if health_component is HealthComponent:
 			blocked = blocked or (health_component as HealthComponent).is_dead
 		weapon_hitscan.simulate(inp, aim, blocked, stance,
@@ -202,6 +206,7 @@ func _step_weapon(inp: PlayerInput) -> void:
 
 func _step_ads(inp: PlayerInput, delta: float) -> void:
 	var allowed: bool = not (health_component is HealthComponent and health_component.is_dead)
+	allowed = allowed and not (equipment != null and (equipment.melee.busy or inp.melee))
 	if weapon != null:
 		allowed = allowed and weapon.state != Weapon.State.SWITCHING_IN and weapon.state != Weapon.State.SWITCHING_OUT
 	else:

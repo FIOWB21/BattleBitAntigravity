@@ -7,6 +7,8 @@ var _receiver: AmmoReceiver
 var _hitscans: Dictionary[Weapon, WeaponHitscan] = {}
 var effects: ShotEffects
 var projectiles: PlayerProjectiles
+var melee: MeleeAttack
+var melee_view: MeleeView
 
 
 func setup(player: Player) -> void:
@@ -18,6 +20,7 @@ func setup(player: Player) -> void:
 	projectiles = PlayerProjectiles.new()
 	add_child(projectiles)
 	projectiles.setup(player)
+	_setup_melee()
 	for slot: int in range(1, Loadout.SLOT_COUNT + 1):
 		var weapon: Weapon = inventory.weapon_at(slot)
 		if weapon == null:
@@ -35,6 +38,31 @@ func setup(player: Player) -> void:
 			player.ads_view.cache_weapon(weapon, player.is_local_player)
 	inventory.active_slot_changed.connect(_on_active_slot_changed)
 	_on_active_slot_changed(inventory.active_slot, inventory.active_weapon())
+
+
+func _setup_melee() -> void:
+	melee = MeleeAttack.new()
+	melee.name = "MeleeAttack"
+	add_child(melee)
+	var exclude: Array[RID] = _player.get_hitscan_exclude_rids().duplicate()
+	if not exclude.has(_player.get_rid()):
+		exclude.append(_player.get_rid())
+	melee.setup(_player.get_multiplayer_authority(), exclude)
+	if _player.is_local_player and not Game.is_dedicated:
+		melee_view = MeleeView.new()
+		melee_view.name = "MeleeView"
+		_player.camera.add_child(melee_view)
+		melee_view.setup(melee, _player.ads_view)
+
+
+func simulate_melee(inp: PlayerInput) -> void:
+	var alive: bool = not (_player.health_component is HealthComponent and _player.health_component.is_dead)
+	var allowed: bool = _player.inventory.phase == Inventory.Phase.READY
+	if _player.weapon != null:
+		allowed = allowed and _player.weapon.state != Weapon.State.RELOADING
+	var aim: Transform3D = Transform3D(Basis.from_euler(Vector3(
+		_player.head.rotation.x, inp.yaw, _player.head.rotation.z)), _player.head.global_position)
+	melee.simulate(inp, aim, _player.global_position, alive, allowed)
 
 
 func _setup_effects() -> void:
