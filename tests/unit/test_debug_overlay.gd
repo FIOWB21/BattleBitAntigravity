@@ -10,6 +10,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	Net.time_sync.configure_simulation(0, 0.0)
 	Game.reset_debug()
 	Engine.max_fps = 0
 	Log.min_level = Log.Level.DEBUG
@@ -78,14 +79,16 @@ func test_fps_command_updates_engine_max_fps() -> void:
 func test_net_sim_command_stores_values_in_game_debug() -> void:
 	var console: DebugConsole = DebugConsole.new()
 	var out: String = console.execute_command("net_sim 85 2.5")
-	assert_eq(int(Game.debug["ping_ms"]), 85, "Game.debug ping_ms set to 85")
+	assert_eq(int(Game.debug["simulated_ping_ms"]), 85, "Requested delay stored separately")
+	assert_eq(int(Game.debug["ping_ms"]), 0, "Command cannot fabricate measured RTT")
+	assert_eq(Net.time_sync.simulated_rtt_ms, 85)
 	assert_almost_eq(float(Game.debug["loss_percent"]), 2.5, 0.001, "Game.debug loss_percent set to 2.5")
 	assert_almost_eq(float(Game.debug["loss_pct"]), 2.5, 0.001, "Game.debug loss_pct set to 2.5")
 	assert_has(out, "85", "net_sim output contains ping")
 
 	var bad_out: String = console.execute_command("net_sim -10 150")
 	assert_has(bad_out, "Error:", "out-of-range net_sim returns error")
-	assert_eq(int(Game.debug["ping_ms"]), 85, "ping_ms unchanged after invalid net_sim")
+	assert_eq(Net.time_sync.simulated_rtt_ms, 85, "Delay unchanged after invalid command")
 
 
 func test_god_and_noclip_hooks_toggle_flags() -> void:

@@ -118,8 +118,9 @@ func format_stats_text() -> String:
 	var pos: Vector3 = Game.debug.get("player_position", Vector3.ZERO)
 	var ping_ms: int = int(Game.debug.get("ping_ms", 0))
 	return (
-		"FPS: %d\nFrame: %.2f ms\nMemory: %.2f MiB\nNodes: %d\nPos: (%.1f, %.1f, %.1f)\nPing: %d ms"
-		% [fps, frame_ms, mem_mib, node_count, pos.x, pos.y, pos.z, ping_ms]
+		"FPS: %d\nFrame: %.2f ms\nMemory: %.2f MiB\nNodes: %d\nPos: (%.1f, %.1f, %.1f)\nPing: %d ms\nTick: %d / Server: %.1f\nLead: %.1f ticks"
+		% [fps, frame_ms, mem_mib, node_count, pos.x, pos.y, pos.z, ping_ms,
+			Net.tick, Net.clock.estimated_server_tick(Time.get_ticks_usec()), Net.clock.lead_ticks()]
 	)
 
 

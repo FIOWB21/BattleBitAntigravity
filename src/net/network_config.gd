@@ -13,6 +13,12 @@ const CHANNEL_COUNT: int = 4
 @export var nickname_pattern: String = "^[A-Za-zА-Яа-яЁё0-9_-]+$"
 @export_range(0.1, 60.0) var handshake_timeout_seconds: float = 5.0
 @export_range(0.1, 2.0) var kick_grace_seconds: float = 0.2
+@export_range(0.1, 5.0) var ping_interval_seconds: float = 0.5
+@export_range(0.1, 10.0) var ping_timeout_seconds: float = 2.0
+@export_range(0.01, 1.0) var rtt_smoothing: float = 0.2
+@export_range(0.01, 1.0) var clock_smoothing: float = 0.2
+@export_range(1, 2) var jitter_buffer_ticks: int = 2
+@export_range(0.01, 0.5) var tick_slew_fraction: float = 0.25
 
 
 static func valid_port(port: int) -> bool:

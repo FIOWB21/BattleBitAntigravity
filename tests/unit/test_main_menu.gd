@@ -57,3 +57,10 @@ func test_menu_displays_errors_and_keeps_retry_enabled() -> void:
 	Net.connection_failed.emit()
 	assert_has(_menu.status.text, "protocol_mismatch")
 	assert_false(_menu.host_button.disabled)
+
+
+func test_connection_menu_exposes_clock_overlay_and_simulation_console() -> void:
+	var overlay: DebugOverlay = _menu.get_node("DebugOverlay") as DebugOverlay
+	assert_not_null(overlay)
+	assert_false(overlay.is_overlay_visible())
+	assert_true(overlay.console.has_command("net_sim"))

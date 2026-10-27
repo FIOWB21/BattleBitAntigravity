@@ -19,6 +19,8 @@ var local_nickname: String = "Player"
 var password: String = ""
 var last_error: String = ""
 var is_connected: bool = false
+var clock: NetClock = NetClock.new()
+var time_sync: NetTimeSync = NetTimeSync.new()
 
 var _peer: ENetMultiplayerPeer
 var _pending: Dictionary[int, Timer] = {}
@@ -27,6 +29,10 @@ var _client_timeout: Timer
 
 
 func _ready() -> void:
+	time_sync.name = "TimeSync"
+	time_sync.setup(self, clock)
+	time_sync.ping_updated.connect(_on_ping_updated)
+	add_child(time_sync)
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	multiplayer.connected_to_server.connect(_on_transport_connected)
@@ -38,9 +44,15 @@ func _ready() -> void:
 	add_child(_client_timeout)
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if _peer != null and multiplayer.is_server():
 		tick += 1
+	elif is_connected:
+		tick = clock.advance(delta, Time.get_ticks_usec())
+
+
+func _on_ping_updated(measured_ms: float) -> void:
+	Game.debug["ping_ms"] = measured_ms
 
 
 func start_server(port: int, max_clients: int, listen: bool = true) -> Error:
@@ -89,6 +101,7 @@ func join(address: String, port: int) -> Error:
 
 
 func disconnect_all() -> void:
+	time_sync.stop()
 	_client_timeout.stop()
 	for timer: Timer in _pending.values():
 		timer.stop()
@@ -163,6 +176,7 @@ func welcome(id: int) -> void:
 	nicknames[id] = local_nickname
 	is_connected = true
 	Log.i("NET CONNECTED id=%d" % id)
+	time_sync.start()
 	connected_to_server.emit()
 
 

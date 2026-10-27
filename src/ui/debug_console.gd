@@ -117,9 +117,10 @@ func _cmd_net_sim(args: PackedStringArray) -> String:
 		return "Usage: net_sim <ping_ms> <loss_%>"
 	var ping_ms: int = args[0].to_int()
 	var loss_pct: float = args[1].to_float()
-	if ping_ms < MIN_PING_MS or loss_pct < MIN_LOSS_PCT or loss_pct > MAX_LOSS_PCT:
+	if ping_ms < MIN_PING_MS or not is_finite(loss_pct) or loss_pct < MIN_LOSS_PCT or loss_pct > MAX_LOSS_PCT:
 		return "Error: ping_ms >= 0 and 0 <= loss_% <= 100"
-	Game.debug["ping_ms"] = ping_ms
+	Net.time_sync.configure_simulation(ping_ms, loss_pct)
+	Game.debug["simulated_ping_ms"] = ping_ms
 	Game.debug["loss_percent"] = loss_pct
 	Game.debug["loss_pct"] = loss_pct
 	Game.debug["loss"] = loss_pct
