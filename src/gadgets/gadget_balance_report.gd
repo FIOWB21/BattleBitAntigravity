@@ -4,7 +4,7 @@ extends RefCounted
 
 
 static func generate() -> String:
-	return _medical_bag() + _ammo_crate()
+	return _medical_bag() + _ammo_crate() + _repair_tool()
 
 
 static func _medical_bag() -> String:
@@ -36,3 +36,17 @@ static func _ammo_crate() -> String:
 		+ "Зарядов %d, кулдаун %.1f с, перезарядка %.1f с. " % [gadget.max_charges, gadget.cooldown, gadget.reload_time] \
 		+ "Снабжаются все живые игроки в сфере без LOS; раненые/мёртвые исключены. " \
 		+ "Баланс предварительный. Сцена проверки: `src/gadgets/scenes/support_lab.tscn`.\n"
+
+
+static func _repair_tool() -> String:
+	var data: RepairToolData = load("res://src/gadgets/data/repair_tool.tres") as RepairToolData
+	return "\n## Ремонт Engineer — шаг 3.4c\n\n" \
+		+ "`%s`: дальность луча %.1f м, %.1f HP/с; нагрев %.0f%%/с, охлаждение %.0f%%/с. " % [
+			data.id, data.reach, data.repair_per_second, data.heat_per_second * 100.0, data.cooling_per_second * 100.0] \
+		+ "При 100%% ремонт блокируется до %.0f%% тепла. Из холодного состояния до перегрева %.1f с, " % [
+			data.resume_heat * 100.0, 1.0 / data.heat_per_second] \
+		+ "полный цикл охлаждения до разблокировки %.2f с. " % ((1.0 - data.resume_heat) / data.cooling_per_second) \
+		+ "Лечится только живая RepairSurface техники; стена и дальность блокируют луч, полное/нулевое HP не чинится. " \
+		+ "Нагрев только за фактическое время ремонта, скрытый инструмент охлаждается; пропуски тиков не дают прошлого ремонта. " \
+		+ "Удержание ЛКМ из слота 3; гранаты и магазины не расходуются. " \
+		+ "Баланс предварительный. Сцена проверки с примитивной целью: `src/gadgets/scenes/engineer_lab.tscn`.\n"

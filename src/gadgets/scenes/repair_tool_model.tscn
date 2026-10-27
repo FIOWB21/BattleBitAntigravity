@@ -1,0 +1,42 @@
+[gd_scene load_steps=7 format=3]
+
+[sub_resource type="StandardMaterial3D" id="ToolMaterial"]
+albedo_color = Color(0.85, 0.48, 0.1, 1)
+no_depth_test = true
+
+[sub_resource type="StandardMaterial3D" id="NozzleMaterial"]
+albedo_color = Color(0.15, 0.18, 0.2, 1)
+no_depth_test = true
+
+[sub_resource type="StandardMaterial3D" id="BeamMaterial"]
+shading_mode = 0
+albedo_color = Color(0.15, 1, 0.4, 1)
+
+[sub_resource type="BoxMesh" id="BodyMesh"]
+material = SubResource("ToolMaterial")
+size = Vector3(0.16, 0.14, 0.3)
+
+[sub_resource type="BoxMesh" id="NozzleMesh"]
+material = SubResource("NozzleMaterial")
+size = Vector3(0.055, 0.06, 0.16)
+
+[sub_resource type="BoxMesh" id="BeamMesh"]
+material = SubResource("BeamMaterial")
+size = Vector3(0.012, 0.012, 1)
+
+[node name="RepairToolModel" type="Node3D"]
+
+[node name="Body" type="MeshInstance3D" parent="."]
+position = Vector3(0.3, -0.25, -0.55)
+mesh = SubResource("BodyMesh")
+cast_shadow = 0
+
+[node name="Nozzle" type="MeshInstance3D" parent="."]
+position = Vector3(0.3, -0.25, -0.74)
+mesh = SubResource("NozzleMesh")
+cast_shadow = 0
+
+[node name="Beam" type="MeshInstance3D" parent="."]
+visible = false
+mesh = SubResource("BeamMesh")
+cast_shadow = 0

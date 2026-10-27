@@ -1,0 +1,58 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/repair_fixture.gd" id="1"]
+[ext_resource type="Script" path="res://src/core/health_component.gd" id="2"]
+[ext_resource type="Script" path="res://src/gadgets/repair_surface.gd" id="3"]
+
+[sub_resource type="StandardMaterial3D" id="BodyMaterial"]
+albedo_color = Color(0.2, 0.3, 0.36, 1)
+
+[sub_resource type="BoxMesh" id="BodyMesh"]
+material = SubResource("BodyMaterial")
+size = Vector3(2.4, 1.2, 4)
+
+[sub_resource type="BoxMesh" id="CabinMesh"]
+material = SubResource("BodyMaterial")
+size = Vector3(1.8, 0.6, 1.5)
+
+[sub_resource type="BoxShape3D" id="BodyShape"]
+size = Vector3(2.4, 1.2, 4)
+
+[sub_resource type="BoxShape3D" id="CabinShape"]
+size = Vector3(1.8, 0.6, 1.5)
+
+[node name="RepairFixture" type="Node3D"]
+script = ExtResource("1")
+initial_damage = 200.0
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("2")
+max_health = 500.0
+
+[node name="Body" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.6, 0)
+mesh = SubResource("BodyMesh")
+
+[node name="Cabin" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1.5, 0.3)
+mesh = SubResource("CabinMesh")
+
+[node name="Surface" type="Area3D" parent="." node_paths=PackedStringArray("health")]
+collision_layer = 16
+collision_mask = 0
+monitoring = false
+script = ExtResource("3")
+health = NodePath("../Health")
+
+[node name="BodyShape" type="CollisionShape3D" parent="Surface"]
+position = Vector3(0, 0.6, 0)
+shape = SubResource("BodyShape")
+
+[node name="CabinShape" type="CollisionShape3D" parent="Surface"]
+position = Vector3(0, 1.5, 0.3)
+shape = SubResource("CabinShape")
+
+[node name="Label" type="Label3D" parent="."]
+position = Vector3(0, 2.3, 0)
+font_size = 32
+billboard = 1

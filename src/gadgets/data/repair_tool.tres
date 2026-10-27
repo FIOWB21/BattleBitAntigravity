@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RepairToolData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/repair_tool_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"repair_tool"
+display_name = "Repair tool"
+draw_time = 0.5
+max_charges = 0
+cooldown = 0.0
+reload_time = 0.0
+reach = 4.0
+repair_per_second = 25.0
+heat_per_second = 0.25
+cooling_per_second = 0.2
+resume_heat = 0.35

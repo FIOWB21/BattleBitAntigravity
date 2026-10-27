@@ -4,6 +4,7 @@ extends Node
 
 var _player: Player
 var _gadgets: Dictionary[int, Gadget] = {}
+var _tools: Dictionary[int, RepairTool] = {}
 var _placement: GroundDeployment = GroundDeployment.new()
 var _ctx: GadgetContext = GadgetContext.new()
 var _exclude: Array[RID] = []
@@ -25,6 +26,9 @@ func setup(player: Player) -> void:
 		var profile: GadgetData = player.inventory.loadout.item_at(slot) as GadgetData
 		if profile == null or not profile.is_valid():
 			continue
+		if profile is RepairToolData:
+			_setup_repair(slot, profile as RepairToolData)
+			continue
 		var gadget: Gadget = Gadget.new()
 		gadget.data = profile
 		add_child(gadget)
@@ -33,6 +37,22 @@ func setup(player: Player) -> void:
 
 func gadget_at(slot: int) -> Gadget:
 	return _gadgets.get(slot) as Gadget
+
+
+func tool_at(slot: int) -> RepairTool:
+	return _tools.get(slot) as RepairTool
+
+
+func _setup_repair(slot: int, profile: RepairToolData) -> void:
+	var tool: RepairTool = RepairTool.new()
+	tool.data = profile
+	add_child(tool)
+	tool.setup(_exclude)
+	_tools[slot] = tool
+	if _player.is_local_player and not Game.is_dedicated:
+		tool.view = RepairToolView.new()
+		_player.camera.add_child(tool.view)
+		tool.view.setup(tool)
 
 
 func simulate(inp: PlayerInput) -> void:
@@ -44,6 +64,7 @@ func simulate(inp: PlayerInput) -> void:
 	_fire_held = fire
 	for slot: int in _gadgets:
 		_gadgets[slot].simulate(inp.tick)
+	_simulate_tools(inp)
 	var active: Gadget = gadget_at(_player.inventory.active_slot)
 	if active == null or not _can_act():
 		return
@@ -57,6 +78,18 @@ func simulate(inp: PlayerInput) -> void:
 	_ctx.tick = inp.tick
 	_ctx.spawn_transform = _placement.pose
 	active.use(_ctx)
+
+
+func _simulate_tools(inp: PlayerInput) -> void:
+	if _tools.is_empty():
+		return
+	var aim: Transform3D = Transform3D(Basis.from_euler(Vector3(
+		_player.head.rotation.x, inp.yaw, _player.head.rotation.z)), _player.head.global_position)
+	for slot: int in _tools:
+		var allowed: bool = _player.inventory.active_slot == slot and _can_act()
+		_tools[slot].simulate(inp, aim, allowed)
+		if _tools[slot].view != null:
+			_tools[slot].view.set_active(allowed)
 
 
 func _can_act() -> bool:
