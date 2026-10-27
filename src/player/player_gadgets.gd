@@ -16,6 +16,8 @@ var spots: SpotRegistry
 var markers: SpotMarkers
 var _spotter: SpottingDevice
 var _held_view: GadgetHeldView
+var launcher: GadgetLauncher
+var launcher_view: LauncherStockView
 
 
 func setup(player: Player) -> void:
@@ -24,6 +26,8 @@ func setup(player: Player) -> void:
 	_ctx.source_id = player.get_multiplayer_authority()
 	_ctx.owner_id = player.get_instance_id()
 	_setup_spots(player)
+	launcher = GadgetLauncher.new()
+	add_child(launcher)
 	_exclude = player.get_hitscan_exclude_rids().duplicate()
 	charges = ChargeControl.new()
 	add_child(charges)
@@ -49,6 +53,9 @@ func setup(player: Player) -> void:
 		_held_view = GadgetHeldView.new()
 		player.camera.add_child(_held_view)
 		_held_view.setup(player)
+		launcher_view = LauncherStockView.new()
+		add_child(launcher_view)
+		launcher_view.setup(player)
 
 
 func _setup_spots(player: Player) -> void:
@@ -119,6 +126,9 @@ func _use(active: Gadget, inp: PlayerInput) -> void:
 	_ctx.squad_id = _player.affiliation.squad_id
 	if active.data is SpottingData:
 		_spotter.use(active, _ctx, _player.affiliation, _aim(inp), spots, _exclude)
+		return
+	if active.data is LauncherGadgetData:
+		launcher.fire(active, _ctx, _aim(inp), _player.equipment.projectiles.system, _exclude)
 		return
 	if not _placement.solve(_player.get_world_3d().direct_space_state,
 			_player.global_position, inp.yaw, active.data.placement, _exclude):

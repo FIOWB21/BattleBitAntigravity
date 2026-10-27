@@ -56,6 +56,10 @@ func can_use() -> bool:
 		and _last_tick >= next_use_tick
 
 
+func can_use_at(tick: int) -> bool:
+	return tick == _last_tick and can_use()
+
+
 func use(ctx: GadgetContext) -> bool:
 	if ctx == null or ctx.tick < _last_tick:
 		return false

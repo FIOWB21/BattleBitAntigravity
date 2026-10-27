@@ -4,7 +4,7 @@ extends RefCounted
 
 
 static func generate() -> String:
-	return _medical_bag() + _ammo_crate() + _repair_tool() + _charges() + _spotting() + _beacon()
+	return _medical_bag() + _ammo_crate() + _repair_tool() + _charges() + _spotting() + _beacon() + _launcher()
 
 
 static func _medical_bag() -> String:
@@ -91,3 +91,17 @@ static func _beacon() -> String:
 		+ "Возвращает полное здоровье без пополнения патронов/гранат; кнопка Squad beacon на текущем экране выбора. " \
 		+ "Заряды %d, кулдаун %.1f с, R %.1f с. " % [data.max_charges, data.cooldown, data.reload_time] \
 		+ "Собственная примитивная сцена и `recon_beacon_lab.tscn`; создание отрядов/режима матча не реализуется. Баланс предварительный.\n"
+
+
+static func _launcher() -> String:
+	var data: LauncherGadgetData = load("res://src/gadgets/data/underslung_launcher.tres") as LauncherGadgetData
+	return "\n## Подствольник Assault — шаг 3.4g\n\n" \
+		+ "`%s` в слоте 3: существующая `%s`, %.0f м/с, гравитация %.1f м/с²; контактный взрыв. " % [
+			data.id, data.projectile.id, data.projectile.speed, -data.projectile.gravity.y] \
+		+ "Урон %.0f→0 на %.1f м, запал %.1f с. Общий ProjectileSystem и штатные Explosion/эффекты. " % [
+			data.projectile.damage, data.projectile.radius, data.projectile.fuse] \
+		+ "Заряды %d, кулдаун %.1f с, R %.1f с по контракту Gadget без отдельного резерва. " % [
+			data.max_charges, data.cooldown, data.reload_time] \
+		+ "Заполненный пул не расходует заряд; патроны винтовки и ручные гранаты независимы. " \
+		+ "ЛКМ — один выстрел на нажатие, HUD показывает заряд/перезарядку. " \
+		+ "Собственный примитив под существующей моделью винтовки, `assault_launcher_lab.tscn`. Баланс предварительный.\n"

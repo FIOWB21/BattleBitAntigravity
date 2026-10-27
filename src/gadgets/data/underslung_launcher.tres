@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="LauncherGadgetData" format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/launcher_gadget_data.gd" id="1"]
+[ext_resource type="Resource" path="res://src/weapons/projectiles/underslung_grenade.tres" id="2"]
+[ext_resource type="PackedScene" path="res://src/gadgets/scenes/underslung_launcher.tscn" id="3"]
+
+[resource]
+script = ExtResource("1")
+id = &"underslung_launcher"
+display_name = "Underbarrel grenade launcher"
+max_charges = 1
+cooldown = 1.0
+reload_time = 3.0
+projectile = ExtResource("2")
+model_scene = ExtResource("3")

@@ -1,0 +1,13 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/gadget_lab.gd" id="1"]
+[ext_resource type="Resource" path="res://src/classes/data/assault.tres" id="2"]
+[ext_resource type="Resource" path="res://src/gadgets/data/underslung_launcher.tres" id="3"]
+[ext_resource type="Resource" path="res://src/weapons/data/ar.tres" id="4"]
+
+[node name="AssaultLauncherLab" type="Node3D"]
+script = ExtResource("1")
+class_profile = ExtResource("2")
+gadget_profile = ExtResource("3")
+primary_profile = ExtResource("4")
+instructions = "3: underbarrel launcher | LMB: fire contact grenade | R: reload 3 s | Rifle ammo and hand grenades are separate"
