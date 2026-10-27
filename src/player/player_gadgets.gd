@@ -12,6 +12,10 @@ var _last_tick: int = -1
 var _fire_held: bool = false
 var _aim_held: bool = false
 var charges: ChargeControl
+var spots: SpotRegistry
+var markers: SpotMarkers
+var _spotter: SpottingDevice
+var _held_view: GadgetHeldView
 
 
 func setup(player: Player) -> void:
@@ -19,6 +23,7 @@ func setup(player: Player) -> void:
 	_ctx.spawn_parent = player.get_parent() as Node3D
 	_ctx.source_id = player.get_multiplayer_authority()
 	_ctx.owner_id = player.get_instance_id()
+	_setup_spots(player)
 	_exclude = player.get_hitscan_exclude_rids().duplicate()
 	charges = ChargeControl.new()
 	add_child(charges)
@@ -40,6 +45,24 @@ func setup(player: Player) -> void:
 		add_child(gadget)
 		gadget.deployable_created.connect(charges.track)
 		_gadgets[slot] = gadget
+	if player.is_local_player and not Game.is_dedicated:
+		_held_view = GadgetHeldView.new()
+		player.camera.add_child(_held_view)
+		_held_view.setup(player)
+
+
+func _setup_spots(player: Player) -> void:
+	spots = SpotRegistry.for_world(player.get_parent())
+	_spotter = SpottingDevice.new()
+	add_child(_spotter)
+	if player.is_local_player and not Game.is_dedicated:
+		markers = SpotMarkers.new()
+		add_child(markers)
+		markers.setup(spots, player.affiliation, player.camera)
+
+
+func _physics_process(delta: float) -> void:
+	spots.advance(delta, Engine.get_physics_frames())
 
 
 func gadget_at(slot: int) -> Gadget:
@@ -75,6 +98,8 @@ func simulate(inp: PlayerInput) -> void:
 	for slot: int in _gadgets:
 		_gadgets[slot].simulate(inp.tick)
 	_simulate_tools(inp)
+	if _held_view != null:
+		_held_view.set_active(_can_act())
 	var active: Gadget = gadget_at(_player.inventory.active_slot)
 	if active == null or not _can_act():
 		return
@@ -85,12 +110,25 @@ func simulate(inp: PlayerInput) -> void:
 		active.reload(inp.tick)
 	if not pressed or not active.can_use():
 		return
+	_use(active, inp)
+
+
+func _use(active: Gadget, inp: PlayerInput) -> void:
+	_ctx.tick = inp.tick
+	if active.data is SpottingData:
+		_spotter.use(active, _ctx, _player.affiliation, _aim(inp), spots, _exclude)
+		return
 	if not _placement.solve(_player.get_world_3d().direct_space_state,
 			_player.global_position, inp.yaw, active.data.placement, _exclude):
 		return
 	_ctx.tick = inp.tick
 	_ctx.spawn_transform = _placement.pose
 	active.use(_ctx)
+
+
+func _aim(inp: PlayerInput) -> Transform3D:
+	return Transform3D(Basis.from_euler(Vector3(_player.head.rotation.x,
+		inp.yaw, _player.head.rotation.z)), _player.head.global_position)
 
 
 func _simulate_tools(inp: PlayerInput) -> void:

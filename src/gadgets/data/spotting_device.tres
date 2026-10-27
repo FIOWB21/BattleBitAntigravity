@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SpottingData" format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/spotting_data.gd" id="1"]
+[ext_resource type="PackedScene" path="res://src/gadgets/scenes/spotting_device.tscn" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"spotting_device"
+display_name = "Spotting binoculars"
+max_charges = 1
+cooldown = 0.5
+reload_time = 1.0
+reach = 250.0
+duration = 8.0
+capacity = 32
+model_scene = ExtResource("2")

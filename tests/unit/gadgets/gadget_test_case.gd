@@ -61,10 +61,14 @@ func make_player(world: Node3D, class_id: String, profile: GadgetData) -> Player
 	elif class_id == "engineer":
 		inventory.loadout.primary = load("res://src/weapons/data/smg.tres") as WeaponData
 		(player.get_node("Weapon") as Weapon).data = inventory.loadout.primary
+	elif class_id == "recon":
+		inventory.loadout.primary = load("res://src/weapons/data/dmr.tres") as WeaponData
+		(player.get_node("Weapon") as Weapon).data = inventory.loadout.primary
 	world.add_child(player)
 	player.set_physics_process(false)
 	player.set_process(false)
 	player.equipment.projectiles.system.set_physics_process(false)
+	player.equipment.gadgets.set_physics_process(false)
 	return player
 
 

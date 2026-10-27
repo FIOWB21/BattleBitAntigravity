@@ -4,7 +4,7 @@ extends RefCounted
 
 
 static func generate() -> String:
-	return _medical_bag() + _ammo_crate() + _repair_tool() + _charges()
+	return _medical_bag() + _ammo_crate() + _repair_tool() + _charges() + _spotting()
 
 
 static func _medical_bag() -> String:
@@ -65,3 +65,15 @@ static func _charges() -> String:
 		+ "Заряды %d, кулдаун %.1f с, R %.1f с по контракту Gadget. " % [
 			data.max_charges, data.cooldown, data.reload_time] \
 		+ "Собственные примитивные сцены: `mine.tscn`, `c4.tscn`; полигоны `mine_lab.tscn`, `c4_lab.tscn`. Баланс предварительный.\n"
+
+
+static func _spotting() -> String:
+	var data: SpottingData = load("res://src/gadgets/data/spotting_device.tres") as SpottingData
+	return "\n## Засветка Recon — шаг 3.4e\n\n" \
+		+ "`%s`: серверный луч %.0f м выбирает живого противника; стены закрывают приобретение цели. " % [data.id, data.reach] \
+		+ "HUD-метка для команды наблюдателя видна сквозь стены %.1f с, повтор обновляет срок. " % data.duration \
+		+ "Пул %d меток на мир; переполнение отклоняет действие без расхода заряда. " % data.capacity \
+		+ "Смерть/удаление/переход цели в команду наблюдателя снимают метку. " \
+		+ "Заряды %d, кулдаун %.1f с, R %.1f с; ЛКМ из слота 3. " % [data.max_charges, data.cooldown, data.reload_time] \
+		+ "Принадлежность задаётся серверными CombatAffiliation; назначение команд матча и RPC не реализуются. " \
+		+ "Собственные бинокль/мишень; полигон `recon_spot_lab.tscn`. Баланс предварительный.\n"

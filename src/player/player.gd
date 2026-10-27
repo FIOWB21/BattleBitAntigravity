@@ -11,6 +11,7 @@ const DEFAULT_HITBOXES_PATH: String = "res://src/player/default_hitboxes.tres"
 @export var hitbox_config: HitboxConfig = preload(DEFAULT_HITBOXES_PATH)
 @export var is_local_player: bool = true
 @export var class_data: ClassData = preload("res://src/classes/data/assault.tres")
+@export var team_id: int = 1
 @export var stance: int = PlayerStance.STAND:
 	set(value):
 		stance = clampi(value, PlayerStance.STAND, PlayerStance.PRONE)
@@ -25,6 +26,7 @@ var last_fall_damage: float = 0.0
 var motor: PlayerMotor = PlayerMotor.new()
 var input_reader: LocalInputReader = LocalInputReader.new()
 var ads: WeaponAds = WeaponAds.new()
+var affiliation: CombatAffiliation
 var _base_fov: float = 90.0
 var _mouse_captured: bool = false
 
@@ -45,6 +47,11 @@ var _mouse_captured: bool = false
 
 func _ready() -> void:
 	_setup_components()
+	affiliation = CombatAffiliation.new()
+	affiliation.actor = self
+	affiliation.health = health_component as HealthComponent
+	affiliation.team_id = team_id
+	add_child(affiliation)
 	if equipment != null:
 		equipment.setup(self)
 	if life != null:

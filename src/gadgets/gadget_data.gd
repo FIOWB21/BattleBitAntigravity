@@ -7,6 +7,7 @@ extends EquipmentData
 @export var reload_time: float = 1.5
 @export var deployable_scene: PackedScene
 @export var placement: DeploymentConfig
+@export var model_scene: PackedScene
 
 
 func is_valid() -> bool:

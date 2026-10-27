@@ -1,0 +1,17 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/gadget_lab.gd" id="1"]
+[ext_resource type="Resource" path="res://src/classes/data/recon.tres" id="2"]
+[ext_resource type="Resource" path="res://src/gadgets/data/spotting_device.tres" id="3"]
+[ext_resource type="Resource" path="res://src/weapons/data/dmr.tres" id="4"]
+[ext_resource type="PackedScene" path="res://src/gadgets/scenes/spot_fixture.tscn" id="5"]
+
+[node name="ReconSpotLab" type="Node3D"]
+script = ExtResource("1")
+class_profile = ExtResource("2")
+gadget_profile = ExtResource("3")
+primary_profile = ExtResource("4")
+instructions = "3: binoculars | Aim at red target and press LMB to spot for allies for 8 s | R: recharge"
+
+[node name="SpotTarget" parent="." instance=ExtResource("5")]
+position = Vector3(0, 0, -8)
