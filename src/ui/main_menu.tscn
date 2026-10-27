@@ -1,0 +1,123 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/main_menu.gd" id="1"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.035, 0.055, 0.075, 1)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 28
+
+[node name="Form" type="VBoxContainer" parent="Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Center/Panel/Margin/Form"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "FRONTLINE"
+
+[node name="Subtitle" type="Label" parent="Center/Panel/Margin/Form"]
+layout_mode = 2
+text = "Connection lobby"
+
+[node name="AddressLabel" type="Label" parent="Center/Panel/Margin/Form"]
+layout_mode = 2
+text = "Server address"
+
+[node name="Address" type="LineEdit" parent="Center/Panel/Margin/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "127.0.0.1"
+placeholder_text = "IP address or hostname"
+
+[node name="PortLabel" type="Label" parent="Center/Panel/Margin/Form"]
+layout_mode = 2
+text = "UDP port"
+
+[node name="Port" type="SpinBox" parent="Center/Panel/Margin/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 1.0
+max_value = 65535.0
+value = 7777.0
+
+[node name="NicknameLabel" type="Label" parent="Center/Panel/Margin/Form"]
+layout_mode = 2
+text = "Nickname (2-24 letters, digits, _ or -)"
+
+[node name="Nickname" type="LineEdit" parent="Center/Panel/Margin/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Player"
+max_length = 24
+
+[node name="PasswordLabel" type="Label" parent="Center/Panel/Margin/Form"]
+layout_mode = 2
+text = "Server password (optional)"
+
+[node name="Password" type="LineEdit" parent="Center/Panel/Margin/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+secret = true
+
+[node name="Buttons" type="HBoxContainer" parent="Center/Panel/Margin/Form"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Host" type="Button" parent="Center/Panel/Margin/Form/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Host"
+
+[node name="Join" type="Button" parent="Center/Panel/Margin/Form/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Join"
+
+[node name="Disconnect" type="Button" parent="Center/Panel/Margin/Form/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Disconnect"
+
+[node name="Status" type="Label" parent="Center/Panel/Margin/Form"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(496, 48)
+layout_mode = 2
+text = "Ready"
+autowrap_mode = 2

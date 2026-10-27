@@ -13,6 +13,11 @@ var state: State = State.MENU
 var is_server: bool = false
 var is_dedicated: bool = false
 var debug: Dictionary = {}
+var server_port: int = NetworkConfig.DEFAULT_PORT
+var max_clients: int = NetworkConfig.DEFAULT_MAX_CLIENTS
+var map_id: String = "testbed"
+var server_password: String = ""
+var argument_errors: Array[String] = []
 
 
 func _init() -> void:
@@ -20,6 +25,8 @@ func _init() -> void:
 	var args: PackedStringArray = OS.get_cmdline_args()
 	args.append_array(OS.get_cmdline_user_args())
 	detect_runtime_flags(args, OS.has_feature(DEDICATED_FEATURE))
+	if is_dedicated:
+		argument_errors = parse_server_arguments(OS.get_cmdline_user_args())
 
 
 func reset_debug() -> void:
@@ -39,6 +46,50 @@ func detect_runtime_flags(cmdline_args: PackedStringArray, has_dedicated_feature
 	var has_server_arg: bool = cmdline_args.has(SERVER_ARG)
 	is_dedicated = has_dedicated_feature or has_server_arg
 	is_server = is_dedicated
+
+
+func parse_server_arguments(args: PackedStringArray) -> Array[String]:
+	server_port = NetworkConfig.DEFAULT_PORT
+	max_clients = NetworkConfig.DEFAULT_MAX_CLIENTS
+	map_id = "testbed"
+	server_password = ""
+	var errors: Array[String] = []
+	var seen: Dictionary[String, bool] = {}
+	for arg: String in args:
+		var key: String = arg.get_slice("=", 0)
+		if seen.has(key):
+			errors.append("duplicate_argument: " + key)
+			continue
+		seen[key] = true
+		if key == SERVER_ARG and arg == SERVER_ARG:
+			continue
+		var value: String = arg.substr(key.length() + 1)
+		if not arg.contains("=") or not _apply_server_option(key, value):
+			errors.append("invalid_argument: " + key)
+	return errors
+
+
+func _apply_server_option(key: String, value: String) -> bool:
+	match key:
+		"--port":
+			if not value.is_valid_int() or not NetworkConfig.valid_port(value.to_int()):
+				return false
+			server_port = value.to_int()
+		"--max":
+			if not value.is_valid_int() or not NetworkConfig.valid_max_clients(value.to_int()):
+				return false
+			max_clients = value.to_int()
+		"--map":
+			var pattern: RegEx = RegEx.create_from_string("^[a-z0-9_]+$")
+			var matched: RegExMatch = pattern.search(value)
+			if matched == null or matched.get_string() != value:
+				return false
+			map_id = value
+		"--password":
+			server_password = value
+		_:
+			return false
+	return true
 
 
 func set_state(new_state: State) -> void:
