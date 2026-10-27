@@ -20,6 +20,7 @@ static func generate(catalog: WeaponCatalog, hitboxes: HitboxConfig, tick_rate: 
 	output += _handling(catalog)
 	output += _explosives(catalog)
 	output += _playtest()
+	output += GadgetBalanceReport.generate()
 	return output
 
 

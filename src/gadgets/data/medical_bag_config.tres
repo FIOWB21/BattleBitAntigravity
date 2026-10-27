@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="MedicalBagConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/medical_bag_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+radius = 4.0
+heal_per_second = 10.0
+lifetime = 20.0

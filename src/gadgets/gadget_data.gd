@@ -6,6 +6,7 @@ extends EquipmentData
 @export var cooldown: float = 0.5
 @export var reload_time: float = 1.5
 @export var deployable_scene: PackedScene
+@export var placement: DeploymentConfig
 
 
 func is_valid() -> bool:

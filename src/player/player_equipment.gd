@@ -9,6 +9,7 @@ var effects: ShotEffects
 var projectiles: PlayerProjectiles
 var melee: MeleeAttack
 var melee_view: MeleeView
+var gadgets: PlayerGadgets
 
 
 func setup(player: Player) -> void:
@@ -21,6 +22,9 @@ func setup(player: Player) -> void:
 	add_child(projectiles)
 	projectiles.setup(player)
 	_setup_melee()
+	gadgets = PlayerGadgets.new()
+	add_child(gadgets)
+	gadgets.setup(player)
 	for slot: int in range(1, Loadout.SLOT_COUNT + 1):
 		var weapon: Weapon = inventory.weapon_at(slot)
 		if weapon == null:
@@ -63,6 +67,7 @@ func simulate_melee(inp: PlayerInput) -> void:
 	var aim: Transform3D = Transform3D(Basis.from_euler(Vector3(
 		_player.head.rotation.x, inp.yaw, _player.head.rotation.z)), _player.head.global_position)
 	melee.simulate(inp, aim, _player.global_position, alive, allowed)
+	gadgets.simulate(inp)
 
 
 func _setup_effects() -> void:

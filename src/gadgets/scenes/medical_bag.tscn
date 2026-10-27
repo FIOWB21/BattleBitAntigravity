@@ -1,0 +1,51 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/medical_bag.gd" id="1"]
+[ext_resource type="Script" path="res://src/gadgets/gadget_aura.gd" id="2"]
+[ext_resource type="Resource" path="res://src/gadgets/data/medical_bag_config.tres" id="3"]
+
+[sub_resource type="StandardMaterial3D" id="BagMaterial"]
+albedo_color = Color(0.12, 0.32, 0.18, 1)
+
+[sub_resource type="StandardMaterial3D" id="CrossMaterial"]
+albedo_color = Color(0.96, 0.96, 0.96, 1)
+
+[sub_resource type="BoxMesh" id="BagMesh"]
+material = SubResource("BagMaterial")
+size = Vector3(0.6, 0.3, 0.4)
+
+[sub_resource type="BoxMesh" id="CrossHorizontal"]
+material = SubResource("CrossMaterial")
+size = Vector3(0.3, 0.012, 0.08)
+
+[sub_resource type="BoxMesh" id="CrossVertical"]
+material = SubResource("CrossMaterial")
+size = Vector3(0.08, 0.014, 0.26)
+
+[sub_resource type="SphereShape3D" id="AuraShape"]
+radius = 4.0
+
+[node name="MedicalBag" type="Node3D"]
+script = ExtResource("1")
+config = ExtResource("3")
+
+[node name="Bag" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.15, 0)
+mesh = SubResource("BagMesh")
+
+[node name="CrossHorizontal" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.308, 0)
+mesh = SubResource("CrossHorizontal")
+
+[node name="CrossVertical" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.309, 0)
+mesh = SubResource("CrossVertical")
+
+[node name="Aura" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 4
+monitorable = false
+script = ExtResource("2")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Aura"]
+shape = SubResource("AuraShape")
