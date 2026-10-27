@@ -1,0 +1,13 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/gadget_lab.gd" id="1"]
+[ext_resource type="Resource" path="res://src/classes/data/support.tres" id="2"]
+[ext_resource type="Resource" path="res://src/gadgets/data/ammo_box.tres" id="3"]
+[ext_resource type="Resource" path="res://src/weapons/data/lmg.tres" id="4"]
+
+[node name="SupportLab" type="Node3D"]
+script = ExtResource("1")
+class_profile = ExtResource("2")
+gadget_profile = ExtResource("3")
+primary_profile = ExtResource("4")
+instructions = "3: supply crate | LMB: deploy | R: reload | G: grenade (stock 3) | crates replace per owner"

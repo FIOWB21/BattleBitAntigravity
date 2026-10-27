@@ -15,6 +15,7 @@ func setup(player: Player) -> void:
 	_player = player
 	_ctx.spawn_parent = player.get_parent() as Node3D
 	_ctx.source_id = player.get_multiplayer_authority()
+	_ctx.owner_id = player.get_instance_id()
 	_exclude = player.get_hitscan_exclude_rids().duplicate()
 	if not _exclude.has(player.get_rid()):
 		_exclude.append(player.get_rid())

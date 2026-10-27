@@ -1,0 +1,46 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/ammo_crate.gd" id="1"]
+[ext_resource type="Script" path="res://src/gadgets/gadget_aura.gd" id="2"]
+[ext_resource type="Resource" path="res://src/gadgets/data/ammo_crate_config.tres" id="3"]
+
+[sub_resource type="StandardMaterial3D" id="CrateMaterial"]
+albedo_color = Color(0.24, 0.28, 0.12, 1)
+
+[sub_resource type="BoxMesh" id="CrateMesh"]
+material = SubResource("CrateMaterial")
+size = Vector3(0.6, 0.3, 0.4)
+
+[sub_resource type="BoxMesh" id="LidMesh"]
+material = SubResource("CrateMaterial")
+size = Vector3(0.63, 0.04, 0.43)
+
+[sub_resource type="SphereShape3D" id="AuraShape"]
+radius = 4.0
+
+[node name="AmmoCrate" type="Node3D"]
+script = ExtResource("1")
+config = ExtResource("3")
+
+[node name="Crate" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.15, 0)
+mesh = SubResource("CrateMesh")
+
+[node name="Lid" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.32, 0)
+mesh = SubResource("LidMesh")
+
+[node name="Label" type="Label3D" parent="."]
+position = Vector3(0, 0.5, 0)
+text = "SUPPLY"
+font_size = 32
+billboard = 1
+
+[node name="Aura" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 4
+monitorable = false
+script = ExtResource("2")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Aura"]
+shape = SubResource("AuraShape")

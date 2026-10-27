@@ -4,6 +4,7 @@
 
 | Файл | Источник | Автор | Лицензия | Дата |
 |---|---|---|---|---|
+| `src/gadgets/scenes/ammo_crate.tscn`, `src/gadgets/scenes/support_lab.tscn`, `src/gadgets/data/ammo_box.tres`, `src/gadgets/data/ammo_crate_config.tres`, `src/player/default_grenade_stock.tres` | Собственные BoxMesh, Label3D, область снабжения и параметры Godot; существующий полигон/LMG переиспользованы | Проект BattlebitAntigravity | Собственные процедурные сцены и ресурсы, внешних файлов нет | 2026-10-27 |
 | `src/gadgets/scenes/medical_bag.tscn`, `src/gadgets/scenes/medic_lab.tscn`, `src/gadgets/data/medkit.tres`, `src/gadgets/data/medical_bag_config.tres`, `src/gadgets/data/ground_placement.tres` | Собственные BoxMesh, белый крест, сфера области и параметры Godot; проверочный полигон переиспользует существующие ассеты | Проект BattlebitAntigravity | Собственные процедурные сцены и ресурсы, внешних файлов нет | 2026-10-27 |
 | `src/weapons/attachments/test_*.tres`, `src/weapons/attachments/models/*.tscn` | Собственные пять профилей обвесов и сцены из BoxMesh/StandardMaterial3D, без внешних файлов | Проект BattlebitAntigravity | Собственные процедурные ресурсы и модели | 2026-10-27 |
 | График `tools/attachment_acceptance.gd` | Собственные 2D-круги, оси и точки фактических серверных лучей; снимки остаются в .godot | Проект BattlebitAntigravity | Собственная процедурная визуализация | 2026-10-27 |

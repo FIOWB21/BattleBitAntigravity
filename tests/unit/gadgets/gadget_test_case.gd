@@ -55,6 +55,9 @@ func make_player(world: Node3D, class_id: String, profile: GadgetData) -> Player
 	var inventory: Inventory = player.get_node("Inventory") as Inventory
 	inventory.loadout = inventory.loadout.duplicate() as Loadout
 	inventory.loadout.gadget_1 = profile
+	if class_id == "support":
+		inventory.loadout.primary = load("res://src/weapons/data/lmg.tres") as WeaponData
+		(player.get_node("Weapon") as Weapon).data = inventory.loadout.primary
 	world.add_child(player)
 	player.set_physics_process(false)
 	player.set_process(false)
