@@ -6,6 +6,7 @@ signal shot_traced(tick: int, pellet: int, direction: Vector3, hit: HitResult)
 signal damage_applied(event: DamageEvent)
 
 var handling: WeaponHandling = WeaponHandling.new()
+var projectiles: ProjectileSystem
 var shot_origin: Vector3:
 	get:
 		return _aim.origin
@@ -44,7 +45,10 @@ func simulate(inp: PlayerInput, aim: Transform3D, blocked: bool = false,
 	if ads_amount >= 0.0:
 		_spread_deg = lerpf(handling.spread_degrees(false, stance, horizontal_speed),
 			handling.spread_degrees(true, stance, horizontal_speed), clampf(ads_amount, 0.0, 1.0))
-	_weapon.simulate(inp, blocked, sprinting)
+	var projectile_blocked: bool = _weapon.data != null and _weapon.data.projectile_data != null
+	if projectile_blocked:
+		projectile_blocked = projectiles == null or not projectiles.has_capacity()
+	_weapon.simulate(inp, blocked or projectile_blocked, sprinting)
 
 
 func _reset_handling() -> void:
@@ -55,7 +59,13 @@ func _on_fired(tick: int) -> void:
 	if not is_inside_tree() or not multiplayer.is_server() or _weapon == null:
 		return
 	var data: WeaponData = _weapon.data
-	if data == null or data.hitscan_range <= 0.0:
+	if data == null:
+		return
+	if data.projectile_data != null:
+		_launch_projectile(tick, data.projectile_data)
+		handling.apply_shot(tick, _attacker)
+		return
+	if data.hitscan_range <= 0.0:
 		return
 	for pellet: int in range(maxi(data.pellets, 1)):
 		var direction: Vector3 = handling.spread_direction(_aim.basis, _spread_deg, tick, _attacker, pellet)
@@ -65,6 +75,14 @@ func _on_fired(tick: int) -> void:
 		_apply_hit(data, hit)
 		shot_traced.emit(tick, pellet, direction, hit)
 	handling.apply_shot(tick, _attacker)
+
+
+func _launch_projectile(tick: int, profile: ProjectileData) -> void:
+	if projectiles == null:
+		return
+	var direction: Vector3 = handling.spread_direction(_aim.basis, _spread_deg, tick, _attacker, 0)
+	projectiles.launch(profile, _aim.origin,
+		direction * profile.speed + Vector3.UP * profile.upward_speed, _attacker, _exclude)
 
 
 func _apply_hit(data: WeaponData, hit: HitResult) -> void:

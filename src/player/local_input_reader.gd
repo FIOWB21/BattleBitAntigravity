@@ -17,6 +17,7 @@ var aim_sensitivity_scale: float = 1.0
 var _weapon_slot: int = 0
 var _weapon_cycle: int = 0
 var _last_weapon: bool = false
+var _throw_grenade: bool = false
 
 
 func apply_mouse_delta(
@@ -57,6 +58,8 @@ func handle_input_event(event: InputEvent) -> void:
 		_weapon_cycle -= 1
 	if event.is_action_pressed(InputActions.SWITCH_WEAPON_LAST):
 		_last_weapon = true
+	if event.is_action_pressed(InputActions.THROW_GRENADE):
+		_throw_grenade = true
 
 
 func read_input() -> PlayerInput:
@@ -76,9 +79,11 @@ func read_input() -> PlayerInput:
 	inp.weapon_slot = _weapon_slot
 	inp.weapon_cycle = signi(_weapon_cycle)
 	inp.last_weapon = _last_weapon
+	inp.throw_grenade = _throw_grenade
 	_weapon_slot = 0
 	_weapon_cycle = 0
 	_last_weapon = false
+	_throw_grenade = false
 	return inp
 
 

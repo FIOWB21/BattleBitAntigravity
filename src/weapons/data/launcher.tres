@@ -1,12 +1,14 @@
-[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="WeaponData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://src/weapons/weapon_data.gd" id="1_weapon"]
+[ext_resource type="Resource" path="res://src/weapons/projectiles/rocket.tres" id="2_projectile"]
 
 [resource]
 script = ExtResource("1_weapon")
 id = &"sample_launcher"
 display_name = "Temporary Launcher"
 category = 7
+projectile_data = ExtResource("2_projectile")
 fire_modes = Array[int]([0])
 rpm = 30.0
 damage_near = 120.0

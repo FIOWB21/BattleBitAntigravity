@@ -20,6 +20,7 @@ var buttons: int = 0
 var weapon_slot: int = 0  # 1..5, 0 — нет команды.
 var weapon_cycle: int = 0  # -1 / +1, обход заполненных слотов.
 var last_weapon: bool = false
+var throw_grenade: bool = false
 
 
 func pressed(btn: int) -> bool:

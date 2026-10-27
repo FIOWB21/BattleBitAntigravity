@@ -6,6 +6,7 @@ var _player: Player
 var _receiver: AmmoReceiver
 var _hitscans: Dictionary[Weapon, WeaponHitscan] = {}
 var effects: ShotEffects
+var projectiles: PlayerProjectiles
 
 
 func setup(player: Player) -> void:
@@ -14,6 +15,9 @@ func setup(player: Player) -> void:
 	var inventory: Inventory = player.inventory
 	var exclude: Array[RID] = player.get_hitscan_exclude_rids()
 	_setup_effects()
+	projectiles = PlayerProjectiles.new()
+	add_child(projectiles)
+	projectiles.setup(player)
 	for slot: int in range(1, Loadout.SLOT_COUNT + 1):
 		var weapon: Weapon = inventory.weapon_at(slot)
 		if weapon == null:
@@ -23,6 +27,7 @@ func setup(player: Player) -> void:
 			hitscan = WeaponHitscan.new()
 			add_child(hitscan)
 		hitscan.setup(weapon, player.get_multiplayer_authority(), exclude)
+		hitscan.projectiles = projectiles.system
 		_hitscans[weapon] = hitscan
 		if effects != null:
 			effects.bind_weapon(weapon, hitscan)

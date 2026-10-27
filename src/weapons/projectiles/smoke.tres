@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ProjectileData" format=3]
+
+[ext_resource type="Script" path="res://src/weapons/projectiles/projectile_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"smoke"
+kind = 1
+fuse = 3.0
+damage = 0.0
+radius = 5.0
+effect_duration = 12.0
+sensory_duration = 0.0
+color = Color(0.68, 0.71, 0.73, 1)

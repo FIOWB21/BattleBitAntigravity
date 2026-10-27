@@ -184,6 +184,12 @@ func step_simulation(inp: PlayerInput, delta: float) -> void:
 			-LocalInputReader.MAX_PITCH_RAD,
 			LocalInputReader.MAX_PITCH_RAD
 		)
+	if equipment != null and equipment.projectiles != null:
+		equipment.projectiles.simulate(inp)
+	_step_weapon(inp)
+
+
+func _step_weapon(inp: PlayerInput) -> void:
 	if weapon_hitscan != null:
 		var aim: Transform3D = Transform3D(
 			Basis.from_euler(Vector3(head.rotation.x, inp.yaw, head.rotation.z)), head.global_position)
