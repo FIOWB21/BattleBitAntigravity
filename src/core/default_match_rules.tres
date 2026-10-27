@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MatchRules" format=3]
+
+[ext_resource type="Script" path="res://src/core/match_rules.gd" id="1_rules"]
+
+[resource]
+script = ExtResource("1_rules")
+downed_enabled = true
+bleedout_time = 20.0
+revive_time = 3.0
+revive_health_fraction = 0.3
+revive_distance = 2.0
+revive_perk = &"revive"

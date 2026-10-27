@@ -10,6 +10,7 @@ const DEFAULT_HITBOXES_PATH: String = "res://src/player/default_hitboxes.tres"
 @export var movement_config: MovementConfig = preload(DEFAULT_MOVEMENT_PATH)
 @export var hitbox_config: HitboxConfig = preload(DEFAULT_HITBOXES_PATH)
 @export var is_local_player: bool = true
+@export var class_data: ClassData = preload("res://src/classes/data/assault.tres")
 @export var stance: int = PlayerStance.STAND:
 	set(value):
 		stance = clampi(value, PlayerStance.STAND, PlayerStance.PRONE)
@@ -39,12 +40,15 @@ var _mouse_captured: bool = false
 @onready var ads_view: WeaponAdsView = get_node_or_null("Head/Camera3D/WeaponAdsView") as WeaponAdsView
 @onready var inventory: Inventory = get_node_or_null("Inventory") as Inventory
 @onready var equipment: PlayerEquipment = get_node_or_null("PlayerEquipment") as PlayerEquipment
+@onready var life: PlayerLife = get_node_or_null("PlayerLife") as PlayerLife
 
 
 func _ready() -> void:
 	_setup_components()
 	if equipment != null:
 		equipment.setup(self)
+	if life != null:
+		life.setup(self)
 	input_reader.yaw = rotation.y
 	if head != null:
 		input_reader.pitch = clampf(
@@ -159,6 +163,9 @@ func _process(delta: float) -> void:
 
 
 func step_simulation(inp: PlayerInput, delta: float) -> void:
+	if life != null:
+		life.interaction.simulate(inp, delta)
+		inp = life.filter_input(inp)
 	if inventory != null:
 		inventory.simulate(inp, not (health_component is HealthComponent and health_component.is_dead)
 			and not (equipment != null and equipment.melee.busy))

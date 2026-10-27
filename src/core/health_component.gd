@@ -5,6 +5,8 @@ extends Node
 signal health_changed(current: float, max_value: float)
 signal damaged(amount: float, source_id: int, zone: int)
 signal died(killer_id: int)
+signal finished_off(killer_id: int)
+signal restored()
 
 const DEFAULT_REGEN_RATE: float = 10.0
 
@@ -31,6 +33,7 @@ const DEFAULT_REGEN_RATE: float = 10.0
 
 var current: float = 0.0
 var is_dead: bool = false
+var is_downed: bool = false
 var _time_since_damage: float = 0.0
 
 
@@ -41,6 +44,7 @@ func _init() -> void:
 func _ready() -> void:
 	current = max_health
 	is_dead = false
+	is_downed = false
 	_time_since_damage = 0.0
 
 
@@ -49,7 +53,12 @@ func _physics_process(delta: float) -> void:
 
 
 func apply_damage(amount: float, source_id: int = 0, zone: int = 0) -> void:
-	if is_dead or amount <= 0.0:
+	if not _can_mutate() or not is_finite(amount) or amount <= 0.0:
+		return
+	if is_dead:
+		if is_downed:
+			is_downed = false
+			finished_off.emit(source_id)
 		return
 	_time_since_damage = 0.0
 	current = maxf(current - amount, 0.0)
@@ -65,17 +74,41 @@ func take_damage(amount: float, source_id: int = 0, zone: int = 0) -> void:
 
 
 func heal(amount: float) -> void:
-	if is_dead or amount <= 0.0:
+	if not _can_mutate() or is_dead or not is_finite(amount) or amount <= 0.0:
 		return
 	current = minf(current + amount, max_health)
 	health_changed.emit(current, max_health)
 
 
 func reset() -> void:
+	if not _can_mutate():
+		return
 	is_dead = false
+	is_downed = false
 	current = max_health
 	_time_since_damage = 0.0
 	health_changed.emit(current, max_health)
+	restored.emit()
+
+
+func restore_fraction(fraction: float) -> bool:
+	if not _can_mutate() or not is_downed or not is_finite(fraction) or fraction <= 0.0 or fraction > 1.0:
+		return false
+	is_dead = false
+	is_downed = false
+	current = max_health * fraction
+	_time_since_damage = 0.0
+	health_changed.emit(current, max_health)
+	restored.emit()
+	return true
+
+
+func can_receive_damage() -> bool:
+	return not is_dead or is_downed
+
+
+func _can_mutate() -> bool:
+	return not is_inside_tree() or multiplayer.is_server()
 
 
 func step_regen(delta: float) -> void:

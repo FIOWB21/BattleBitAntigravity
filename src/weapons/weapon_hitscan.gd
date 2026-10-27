@@ -92,7 +92,7 @@ func _launch_projectile(tick: int, profile: ProjectileData) -> void:
 
 
 func _apply_hit(data: WeaponData, hit: HitResult) -> void:
-	if not hit.hit or hit.health_component == null or hit.health_component.is_dead:
+	if not hit.hit or hit.health_component == null or not hit.health_component.can_receive_damage():
 		return
 	var event: DamageEvent = DamageEvent.new()
 	event.attacker = _attacker

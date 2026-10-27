@@ -15,6 +15,7 @@
 [ext_resource type="Script" path="res://src/weapons/inventory.gd" id="13_inventory"]
 [ext_resource type="Resource" path="res://src/weapons/data/default_loadout.tres" id="14_loadout"]
 [ext_resource type="Script" path="res://src/player/player_equipment.gd" id="15_equipment"]
+[ext_resource type="Script" path="res://src/player/player_life.gd" id="16_life"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_cwolq"]
 radius = 0.35
@@ -151,3 +152,6 @@ primary_weapon = NodePath("../Weapon")
 
 [node name="PlayerEquipment" type="Node" parent="."]
 script = ExtResource("15_equipment")
+
+[node name="PlayerLife" type="Node" parent="."]
+script = ExtResource("16_life")

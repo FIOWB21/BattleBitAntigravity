@@ -112,4 +112,6 @@ func _read_buttons() -> int:
 		mask |= PlayerInput.BTN_LEAN_L
 	if Input.is_action_pressed(InputActions.LEAN_RIGHT):
 		mask |= PlayerInput.BTN_LEAN_R
+	if Input.is_action_pressed(InputActions.INTERACT):
+		mask |= PlayerInput.BTN_INTERACT
 	return mask

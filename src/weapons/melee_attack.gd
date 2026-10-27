@@ -68,12 +68,12 @@ func _strike(aim: Transform3D, attacker_position: Vector3) -> void:
 	_query.to = aim.origin - aim.basis.z.normalized() * data.reach
 	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(_query)
 	var zone: HitboxZone = hit.get("collider") as HitboxZone
-	if zone == null or zone.health_component == null or zone.health_component.is_dead:
+	if zone == null or zone.health_component == null or not zone.health_component.can_receive_damage():
 		return
 	var entity: Node3D = zone.get_entity() as Node3D
 	var backstab: bool = entity != null and data.is_backstab(attacker_position, entity.global_transform)
 	var health: HealthComponent = zone.health_component
-	var damage: float = health.current if backstab else maxf(data.damage, 0.0)
+	var damage: float = maxf(health.current, data.damage) if backstab else maxf(data.damage, 0.0)
 	if damage <= 0.0:
 		return
 	health.apply_damage(damage, _attacker, zone.zone)

@@ -58,6 +58,10 @@ func _build_player_scene() -> CharacterBody3D:
 	player.add_child(col)
 
 	_add_head_and_components(player)
+	var life_script: GDScript = load("res://src/player/player_life.gd") as GDScript
+	var life: Node = life_script.new() as Node
+	life.name = "PlayerLife"
+	player.add_child(life)
 	_add_weapon(player)
 	return player
 

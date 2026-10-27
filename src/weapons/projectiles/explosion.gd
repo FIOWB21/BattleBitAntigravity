@@ -36,7 +36,7 @@ func apply(profile: ProjectileData, point: Vector3, attacker: int) -> void:
 		if not _targets.has(health) or zone.zone == HitboxZone.TORSO:
 			_targets[health] = zone
 	for health: HealthComponent in _targets:
-		if not is_instance_valid(health) or health.is_dead:
+		if not is_instance_valid(health) or not health.can_receive_damage():
 			continue
 		var target: Vector3 = _targets[health].global_position
 		var amount: float = profile.damage_at(point.distance_to(target),

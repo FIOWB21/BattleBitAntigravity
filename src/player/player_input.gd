@@ -11,6 +11,7 @@ const BTN_AIM: int = 1 << 5
 const BTN_RELOAD: int = 1 << 6
 const BTN_LEAN_L: int = 1 << 7
 const BTN_LEAN_R: int = 1 << 8
+const BTN_INTERACT: int = 1 << 9
 
 var tick: int = 0
 var move: Vector2 = Vector2.ZERO  # x: вправо, y: вперёд, длина <= 1
