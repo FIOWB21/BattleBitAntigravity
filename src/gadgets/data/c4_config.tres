@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ChargeConfig" format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/charge_config.gd" id="1"]
+[ext_resource type="Resource" path="res://src/gadgets/data/charge_blast.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+blast = ExtResource("2")
+vehicle_multiplier = 3.0
+arming_time = 1.0
+vehicle_trigger = false
+trigger_radius = 1.5
+max_active = 4

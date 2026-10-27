@@ -1,0 +1,17 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/gadget_lab.gd" id="1"]
+[ext_resource type="Resource" path="res://src/classes/data/engineer.tres" id="2"]
+[ext_resource type="Resource" path="res://src/gadgets/data/mine.tres" id="3"]
+[ext_resource type="Resource" path="res://src/weapons/data/smg.tres" id="4"]
+[ext_resource type="PackedScene" path="res://src/gadgets/scenes/repair_fixture.tscn" id="5"]
+
+[node name="ChargeLab" type="Node3D"]
+script = ExtResource("1")
+class_profile = ExtResource("2")
+gadget_profile = ExtResource("3")
+primary_profile = ExtResource("4")
+instructions = "3: mine | LMB: place | RMB: detonate owned charges after 1 s | R: reload | Mine also triggers on vehicles"
+
+[node name="VehicleTarget" parent="." instance=ExtResource("5")]
+position = Vector3(0, 0, 4)

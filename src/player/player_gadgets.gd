@@ -10,6 +10,8 @@ var _ctx: GadgetContext = GadgetContext.new()
 var _exclude: Array[RID] = []
 var _last_tick: int = -1
 var _fire_held: bool = false
+var _aim_held: bool = false
+var charges: ChargeControl
 
 
 func setup(player: Player) -> void:
@@ -18,6 +20,10 @@ func setup(player: Player) -> void:
 	_ctx.source_id = player.get_multiplayer_authority()
 	_ctx.owner_id = player.get_instance_id()
 	_exclude = player.get_hitscan_exclude_rids().duplicate()
+	charges = ChargeControl.new()
+	add_child(charges)
+	if player.equipment.projectiles.effects != null:
+		charges.exploded.connect(player.equipment.projectiles.effects.present)
 	if not _exclude.has(player.get_rid()):
 		_exclude.append(player.get_rid())
 	if not LoadoutValidator.validate(player.class_data, player.inventory.loadout).is_empty():
@@ -32,6 +38,7 @@ func setup(player: Player) -> void:
 		var gadget: Gadget = Gadget.new()
 		gadget.data = profile
 		add_child(gadget)
+		gadget.deployable_created.connect(charges.track)
 		_gadgets[slot] = gadget
 
 
@@ -62,11 +69,17 @@ func simulate(inp: PlayerInput) -> void:
 	var fire: bool = inp.pressed(PlayerInput.BTN_FIRE)
 	var pressed: bool = fire and not _fire_held
 	_fire_held = fire
+	var aimed: bool = inp.pressed(PlayerInput.BTN_AIM)
+	var detonate_pressed: bool = aimed and not _aim_held
+	_aim_held = aimed
 	for slot: int in _gadgets:
 		_gadgets[slot].simulate(inp.tick)
 	_simulate_tools(inp)
 	var active: Gadget = gadget_at(_player.inventory.active_slot)
 	if active == null or not _can_act():
+		return
+	if detonate_pressed and active.data.id in [&"mine", &"c4"]:
+		charges.detonate(_ctx.owner_id)
 		return
 	if inp.pressed(PlayerInput.BTN_RELOAD):
 		active.reload(inp.tick)

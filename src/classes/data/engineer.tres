@@ -6,12 +6,12 @@
 [sub_resource type="Resource" id="GadgetSlot_primary"]
 script = ExtResource("2_slot")
 slot = 3
-allowed_ids = Array[StringName]([&"repair_tool", &"anti_tank_launcher", &"mine"])
+allowed_ids = Array[StringName]([&"repair_tool", &"anti_tank_launcher", &"mine", &"c4"])
 
 [sub_resource type="Resource" id="GadgetSlot_secondary"]
 script = ExtResource("2_slot")
 slot = 4
-allowed_ids = Array[StringName]([&"repair_tool", &"anti_tank_launcher", &"mine"])
+allowed_ids = Array[StringName]([&"repair_tool", &"anti_tank_launcher", &"mine", &"c4"])
 
 [resource]
 script = ExtResource("1_class")

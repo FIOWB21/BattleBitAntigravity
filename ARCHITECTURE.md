@@ -96,6 +96,12 @@
 - [RepairToolView](src/gadgets/repair_tool_view.gd) создаёт собственные примитивы инструмента/луча и шкалу один раз только локально без dedicated. Сигнал presentation_changed обновляет косметику; скрытие слота скрывает и CanvasLayer, новых узлов в кадре нет. Вертикальное направление луча получает безопасный up-вектор. Симуляция не зависит от представления.
 - [engineer_lab.tscn](src/gadgets/scenes/engineer_lab.tscn) содержит [repair_fixture.tscn](src/gadgets/scenes/repair_fixture.tscn): примитивная приёмочная цель 300/500 HP с настоящими RepairSurface/HealthComponent. Это проверка компонента ремонта; управление/посадка/физика машины не реализуются. [repair_tool_acceptance.gd](tools/repair_tool_acceptance.gd) проверяет ввод слота, 325 HP за 1 с, 400 HP и перегрев за 4 с, охлаждение до 35% и постоянное число узлов, сохраняет два снимка Forward+. Новых автолоадов/RPC нет.
 
+## Взрывчатка Engineer (шаг 3.4d)
+
+- [ExplosiveCharge](src/gadgets/explosive_charge.gd) компонует Deployable, Area3D техники и [ChargeBlast](src/gadgets/charge_blast.gd). [ChargeConfig](src/gadgets/charge_config.gd) задаёт ProjectileData взрыва, взведение, множитель техники, триггер/лимит и смещение точки взрыва над землёй. Луч идёт к центру ближайшей пересекающейся формы; земля не закрывает собственный взрыв. Мир/destructible блокируют LOS, слой техники исключён из маски препятствий самого взрыва.
+- ChargeBlast объединяет HitboxZone/RepairSurface по HealthComponent, технике назначает ×3 один раз. Это контракт с существующим ремонтируемым компонентом, без создания управления техникой. Мина после 1 с реагирует на живую технику, C4 только на команду; обе принимают серверную команду владельца, повторный взрыв невозможен.
+- [ChargeControl](src/gadgets/charge_control.gd) принадлежит PlayerGadgets, кеширует созданные заряды и удаление по сигналам. ЛКМ использует GroundDeployment/Gadget; фронт BTN_AIM из выбранного слота мины/C4 детонирует заряды владельца. Лимит 4 на владельца, старейший удаляется без взрыва. Событие detonated направляется существующему прогретому ProjectileEffects; косметика не применяет урон. Сцены mine/c4 и два lab-полигона собственные, RPC/автолоадов нет.
+
 ## Ранение и реанимация (шаг 3.3)
 
 - [MatchRules](src/core/match_rules.gd) + [default_match_rules.tres](src/core/default_match_rules.tres) задают флаг downed_enabled, кровотечение 20 с, удержание 3 с, долю восстановления 0.3, дистанцию 2 м и идентификатор разрешающего перка revive. Это общие данные правил; изменение ресурсов в симуляции не требуется.

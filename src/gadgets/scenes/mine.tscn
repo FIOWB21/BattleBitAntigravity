@@ -1,0 +1,43 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/explosive_charge.gd" id="1"]
+[ext_resource type="Script" path="res://src/gadgets/charge_blast.gd" id="2"]
+[ext_resource type="Resource" path="res://src/gadgets/data/mine_config.tres" id="3"]
+
+[sub_resource type="StandardMaterial3D" id="Material"]
+albedo_color = Color(0.24, 0.28, 0.12, 1)
+
+[sub_resource type="CylinderMesh" id="Mesh"]
+material = SubResource("Material")
+top_radius = 0.22
+bottom_radius = 0.26
+height = 0.12
+
+[sub_resource type="SphereShape3D" id="TriggerShape"]
+radius = 1.5
+
+[sub_resource type="BoxMesh" id="Indicator"]
+size = Vector3(0.04, 0.03, 0.04)
+
+[node name="Mine" type="Node3D"]
+script = ExtResource("1")
+config = ExtResource("3")
+
+[node name="Model" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.1, 0)
+mesh = SubResource("Mesh")
+
+[node name="Indicator" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.21, 0)
+mesh = SubResource("Indicator")
+
+[node name="Blast" type="Node3D" parent="."]
+script = ExtResource("2")
+
+[node name="Trigger" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 16
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Trigger"]
+shape = SubResource("TriggerShape")

@@ -4,7 +4,7 @@ extends RefCounted
 
 
 static func generate() -> String:
-	return _medical_bag() + _ammo_crate() + _repair_tool()
+	return _medical_bag() + _ammo_crate() + _repair_tool() + _charges()
 
 
 static func _medical_bag() -> String:
@@ -50,3 +50,18 @@ static func _repair_tool() -> String:
 		+ "Нагрев только за фактическое время ремонта, скрытый инструмент охлаждается; пропуски тиков не дают прошлого ремонта. " \
 		+ "Удержание ЛКМ из слота 3; гранаты и магазины не расходуются. " \
 		+ "Баланс предварительный. Сцена проверки с примитивной целью: `src/gadgets/scenes/engineer_lab.tscn`.\n"
+
+
+static func _charges() -> String:
+	var config: ChargeConfig = load("res://src/gadgets/data/mine_config.tres") as ChargeConfig
+	var data: GadgetData = load("res://src/gadgets/data/mine.tres") as GadgetData
+	return "\n## Мина и C4 Engineer — шаг 3.4d\n\n" \
+		+ "Оба заряда: %.0f урона в центре, линейное падение до нуля на %.1f м; технике ×%.0f. " % [
+			config.blast.damage, config.blast.radius, config.vehicle_multiplier] \
+		+ "Стены закрывают взрыв, один HealthComponent получает один урон. Взведение %.1f с. " % config.arming_time \
+		+ "Мина срабатывает на RepairSurface в сфере %.1f м; C4 только по команде. " % config.trigger_radius \
+		+ "ЛКМ размещает, ПКМ взрывает только заряды владельца из выбранного слота мины/C4. " \
+		+ "Лимит %d активных зарядов на владельца, старейший удаляется без взрыва. " % config.max_active \
+		+ "Заряды %d, кулдаун %.1f с, R %.1f с по контракту Gadget. " % [
+			data.max_charges, data.cooldown, data.reload_time] \
+		+ "Собственные примитивные сцены: `mine.tscn`, `c4.tscn`; полигоны `mine_lab.tscn`, `c4_lab.tscn`. Баланс предварительный.\n"

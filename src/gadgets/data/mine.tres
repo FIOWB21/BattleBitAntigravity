@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="GadgetData" format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/gadget_data.gd" id="1"]
+[ext_resource type="PackedScene" path="res://src/gadgets/scenes/mine.tscn" id="2"]
+[ext_resource type="Resource" path="res://src/gadgets/data/ground_placement.tres" id="3"]
+
+[resource]
+script = ExtResource("1")
+id = &"mine"
+display_name = "Anti-tank mine"
+max_charges = 2
+cooldown = 1.0
+reload_time = 10.0
+deployable_scene = ExtResource("2")
+placement = ExtResource("3")
