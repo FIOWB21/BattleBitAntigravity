@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ShotFxConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/fx/shot_fx_config.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+flash_capacity = 8
+tracer_capacity = 32
+shell_capacity = 64
+impact_capacity = 64
+tracer_every = 3

@@ -6,6 +6,9 @@ signal shot_traced(tick: int, pellet: int, direction: Vector3, hit: HitResult)
 signal damage_applied(event: DamageEvent)
 
 var handling: WeaponHandling = WeaponHandling.new()
+var shot_origin: Vector3:
+	get:
+		return _aim.origin
 
 var _weapon: Weapon = null
 var _attacker: int = 0
