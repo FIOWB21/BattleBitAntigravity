@@ -31,3 +31,9 @@ mesh = SubResource("Barrel")
 position = Vector3(0, 0.065, -0.12)
 cast_shadow = 0
 mesh = SubResource("Sight")
+
+[node name="Muzzle" type="Marker3D" parent="Barrel"]
+position = Vector3(0, 0, -0.13)
+
+[node name="Grip" type="Marker3D" parent="Receiver"]
+position = Vector3(0, -0.045, -0.08)

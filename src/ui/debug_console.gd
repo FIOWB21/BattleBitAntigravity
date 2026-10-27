@@ -88,6 +88,7 @@ func _register_builtin_commands() -> void:
 	register_command("god", _cmd_god)
 	register_command("noclip", _cmd_noclip)
 	register_command("damage", _cmd_damage)
+	register_command("attachment", AttachmentCommand.execute)
 
 
 func _cmd_help(_args: PackedStringArray) -> String:

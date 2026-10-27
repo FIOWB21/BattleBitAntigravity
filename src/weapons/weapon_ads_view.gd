@@ -13,6 +13,7 @@ var _local: bool = false
 var _geometry: Array[GeometryInstance3D] = []
 var _models: Dictionary[Weapon, Node3D] = {}
 var _geometries: Dictionary[Weapon, Array] = {}
+var _attachments: Dictionary[Weapon, AttachmentView] = {}
 
 
 func setup(weapon: Weapon, local: bool) -> void:
@@ -44,6 +45,8 @@ func cache_weapon(weapon: Weapon, local: bool) -> void:
 	var scene: PackedScene = weapon.data.viewmodel_scene
 	var cached: Node3D = (scene if scene != null else FALLBACK_MODEL).instantiate() as Node3D
 	_models[weapon] = cached
+	if not weapon.stats_changed.is_connected(_update_attachments.bind(weapon)):
+		weapon.stats_changed.connect(_update_attachments.bind(weapon))
 	var geometry: Array[GeometryInstance3D] = []
 	_geometries[weapon] = geometry
 	if cached != null:
@@ -53,6 +56,8 @@ func cache_weapon(weapon: Weapon, local: bool) -> void:
 		var settings: ViewmodelConfig = weapon.data.viewmodel_config
 		for item: GeometryInstance3D in geometry:
 			rig.prepare_geometry(item, settings if settings != null else ViewmodelRig.DEFAULT_CONFIG)
+		_attachments[weapon] = AttachmentView.new()
+		_update_attachments(weapon)
 
 
 func _rebuild() -> void:
@@ -63,6 +68,7 @@ func _rebuild() -> void:
 			cached.queue_free()
 		_models.erase(_weapon)
 		_geometries.erase(_weapon)
+		_attachments.erase(_weapon)
 	model = null
 	_select_model()
 	if rig != null:
@@ -85,6 +91,20 @@ func _cache_geometry(node: Node, geometry: Array[GeometryInstance3D]) -> void:
 		geometry.append(node as GeometryInstance3D)
 	for child: Node in node.get_children():
 		_cache_geometry(child, geometry)
+
+
+func _update_attachments(weapon: Weapon) -> void:
+	var cached: Node3D = _models.get(weapon) as Node3D
+	if cached == null or not _attachments.has(weapon):
+		return
+	var settings: ViewmodelConfig = weapon.data.viewmodel_config
+	_attachments[weapon].apply(cached, weapon.attachments.items(), rig,
+		settings if settings != null else ViewmodelRig.DEFAULT_CONFIG)
+	var geometry: Array[GeometryInstance3D] = []
+	_cache_geometry(cached, geometry)
+	_geometries[weapon] = geometry
+	if weapon == _weapon:
+		_geometry = geometry
 
 
 func apply_ads(amount: float) -> void:

@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="AttachmentData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/attachment_data.gd" id="1"]
+[ext_resource type="Script" path="res://src/weapons/attachment_modifier.gd" id="2"]
+[ext_resource type="PackedScene" path="res://src/weapons/attachments/models/muzzle.tscn" id="3"]
+
+[sub_resource type="Resource" id="Mod_0"]
+script = ExtResource("2")
+stat = &"spread_hip_deg"
+op = 1
+value = 0.65
+
+[sub_resource type="Resource" id="Mod_1"]
+script = ExtResource("2")
+stat = &"spread_ads_deg"
+op = 1
+value = 0.8
+
+[resource]
+script = ExtResource("1")
+id = &"test_muzzle"
+display_name = "Test muzzle"
+slot = 1
+modifiers = Array[ExtResource("2")]([SubResource("Mod_0"), SubResource("Mod_1")])
+model_scene = ExtResource("3")

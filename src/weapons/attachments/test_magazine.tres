@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="AttachmentData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/attachment_data.gd" id="1"]
+[ext_resource type="Script" path="res://src/weapons/attachment_modifier.gd" id="2"]
+[ext_resource type="PackedScene" path="res://src/weapons/attachments/models/magazine.tscn" id="3"]
+
+[sub_resource type="Resource" id="Mod_0"]
+script = ExtResource("2")
+stat = &"mag_size"
+op = 0
+value = 10
+
+[sub_resource type="Resource" id="Mod_1"]
+script = ExtResource("2")
+stat = &"reload_time"
+op = 0
+value = 0.3
+
+[sub_resource type="Resource" id="Mod_2"]
+script = ExtResource("2")
+stat = &"reload_empty_time"
+op = 0
+value = 0.3
+
+[resource]
+script = ExtResource("1")
+id = &"test_magazine"
+display_name = "Test magazine"
+slot = 4
+modifiers = Array[ExtResource("2")]([SubResource("Mod_0"), SubResource("Mod_1"), SubResource("Mod_2")])
+model_scene = ExtResource("3")

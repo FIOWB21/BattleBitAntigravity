@@ -24,6 +24,10 @@ func setup(data: WeaponData) -> void:
 	_shot_index = 0
 
 
+func update_data(data: WeaponData) -> void:
+	_data = data
+
+
 # Разрыв тиков восстанавливает состояние за весь пропущенный интервал.
 func advance(tick: int, ticks_per_second: int) -> bool:
 	if _data == null or tick <= _last_tick:

@@ -4,6 +4,8 @@
 
 | Файл | Источник | Автор | Лицензия | Дата |
 |---|---|---|---|---|
+| `src/weapons/attachments/test_*.tres`, `src/weapons/attachments/models/*.tscn` | Собственные пять профилей обвесов и сцены из BoxMesh/StandardMaterial3D, без внешних файлов | Проект BattlebitAntigravity | Собственные процедурные ресурсы и модели | 2026-10-27 |
+| График `tools/attachment_acceptance.gd` | Собственные 2D-круги, оси и точки фактических серверных лучей; снимки остаются в .godot | Проект BattlebitAntigravity | Собственная процедурная визуализация | 2026-10-27 |
 | `src/weapons/data/catalog/*.tres`, `src/weapons/data/balanced_catalog.tres`, `src/weapons/projectiles/underslung_grenade.tres` | Собственные 17 профилей оружия, каталог и параметры контактной гранаты; существующие процедурные модель/звук переиспользуются | Проект BattlebitAntigravity | Собственные ресурсы, внешних файлов нет | 2026-10-27 |
 | `src/maps/testbed/ammo_box.tscn` | Собственная процедурная геометрия Godot (`BoxMesh`, материал, `Label3D`) | Проект BattlebitAntigravity | Собственный процедурный ассет, внешних файлов нет | 2026-10-26 |
 | Щелчок `src/weapons/weapon_dry_fire.gd` | PCM синтезируется в памяти из затухающего синуса | Проект BattlebitAntigravity | Собственный процедурный звук, внешних файлов нет | 2026-10-26 |

@@ -23,12 +23,14 @@ func setup(weapon: Weapon, attacker: int, exclude: Array[RID]) -> void:
 		_weapon.fired.disconnect(_on_fired)
 	if _weapon != null and _weapon.configured.is_connected(_reset_handling):
 		_weapon.configured.disconnect(_reset_handling)
+		_weapon.stats_changed.disconnect(_update_stats)
 	_weapon = weapon
 	_attacker = attacker
 	_exclude = exclude.duplicate()
 	if _weapon != null:
 		_weapon.fired.connect(_on_fired)
 		_weapon.configured.connect(_reset_handling)
+		_weapon.stats_changed.connect(_update_stats)
 	_reset_handling()
 
 
@@ -53,6 +55,10 @@ func simulate(inp: PlayerInput, aim: Transform3D, blocked: bool = false,
 
 func _reset_handling() -> void:
 	handling.setup(_weapon.data if _weapon != null else null)
+
+
+func _update_stats() -> void:
+	handling.update_data(_weapon.data)
 
 
 func _on_fired(tick: int) -> void:

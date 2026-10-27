@@ -21,6 +21,10 @@ func setup(data: WeaponData) -> void:
 	_last_tick = -1
 
 
+func update_data(data: WeaponData) -> void:
+	_data = data
+
+
 func simulate(inp: PlayerInput, delta: float, allowed: bool = true) -> void:
 	if inp.tick <= _last_tick:
 		return

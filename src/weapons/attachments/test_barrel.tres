@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="AttachmentData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/attachment_data.gd" id="1"]
+[ext_resource type="Script" path="res://src/weapons/attachment_modifier.gd" id="2"]
+[ext_resource type="PackedScene" path="res://src/weapons/attachments/models/barrel.tscn" id="3"]
+
+[sub_resource type="Resource" id="Mod_0"]
+script = ExtResource("2")
+stat = &"range_near"
+op = 1
+value = 1.1
+
+[sub_resource type="Resource" id="Mod_1"]
+script = ExtResource("2")
+stat = &"range_far"
+op = 1
+value = 1.1
+
+[sub_resource type="Resource" id="Mod_2"]
+script = ExtResource("2")
+stat = &"spread_hip_deg"
+op = 1
+value = 0.9
+
+[resource]
+script = ExtResource("1")
+id = &"test_barrel"
+display_name = "Test barrel"
+slot = 2
+modifiers = Array[ExtResource("2")]([SubResource("Mod_0"), SubResource("Mod_1"), SubResource("Mod_2")])
+model_scene = ExtResource("3")

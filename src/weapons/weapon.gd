@@ -7,6 +7,7 @@ signal reload_started
 signal reload_finished
 signal ammo_changed(magazine: int, reserve: int)
 signal configured
+signal stats_changed
 signal dry_fired(tick: int)
 signal reload_cancelled
 
@@ -22,6 +23,7 @@ var reserve_ammo: int = 0
 var next_fire_tick: int = 0
 var reload_end_tick: int = -1
 var switch_end_tick: int = -1
+var attachments: WeaponAttachments = WeaponAttachments.new()
 
 var _last_tick: int = -1
 var _fire_held: bool = false
@@ -38,6 +40,7 @@ func _ready() -> void:
 
 func setup(weapon_data: WeaponData) -> void:
 	data = weapon_data
+	attachments.setup(self, weapon_data)
 	state = State.IDLE
 	fire_mode = data.fire_modes[0] if not data.fire_modes.is_empty() else WeaponData.FireMode.SEMI
 	ammo_in_mag = maxi(data.mag_size, 0)

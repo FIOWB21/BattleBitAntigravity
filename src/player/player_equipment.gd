@@ -78,10 +78,12 @@ func _setup_effects() -> void:
 func _on_active_slot_changed(_slot: int, weapon: Weapon) -> void:
 	if _player.weapon != null and _player.weapon.configured.is_connected(_reset_ads):
 		_player.weapon.configured.disconnect(_reset_ads)
+		_player.weapon.stats_changed.disconnect(_update_stats)
 	_player.weapon = weapon
 	_player.weapon_hitscan = _hitscans.get(weapon) as WeaponHitscan if weapon != null else null
 	if weapon != null:
 		weapon.configured.connect(_reset_ads)
+		weapon.stats_changed.connect(_update_stats)
 	if _receiver != null:
 		_receiver.weapon = weapon
 	_reset_ads()
@@ -92,3 +94,7 @@ func _on_active_slot_changed(_slot: int, weapon: Weapon) -> void:
 func _reset_ads() -> void:
 	_player.ads.setup(_player.weapon.data if _player.weapon != null else null)
 	_player.input_reader.aim_sensitivity_scale = 1.0
+
+
+func _update_stats() -> void:
+	_player.ads.update_data(_player.weapon.data)
