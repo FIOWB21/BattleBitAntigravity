@@ -51,3 +51,11 @@ func is_in_menu() -> bool:
 
 func is_in_game() -> bool:
 	return state == State.IN_GAME
+
+
+# Учитывает MultiplayerAPI ветки узла; флаги запуска не дают клиенту полномочий.
+func is_server_or_offline(api: MultiplayerAPI = null) -> bool:
+	if not is_inside_tree():
+		return false
+	var active_api: MultiplayerAPI = multiplayer if api == null else api
+	return active_api.is_server()

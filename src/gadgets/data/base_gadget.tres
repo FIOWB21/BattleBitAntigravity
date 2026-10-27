@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="GadgetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/gadget_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"base_gadget"
+display_name = "Base gadget"
+max_charges = 2
+cooldown = 0.5
+reload_time = 1.5
