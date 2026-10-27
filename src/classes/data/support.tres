@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ClassData" format=3]
+
+[ext_resource type="Script" path="res://src/classes/class_data.gd" id="1_class"]
+[ext_resource type="Script" path="res://src/classes/gadget_slot_data.gd" id="2_slot"]
+
+[sub_resource type="Resource" id="GadgetSlot_primary"]
+script = ExtResource("2_slot")
+slot = 3
+allowed_ids = Array[StringName]([&"ammo_box"])
+
+[sub_resource type="Resource" id="GadgetSlot_secondary"]
+script = ExtResource("2_slot")
+slot = 4
+allowed_ids = Array[StringName]([&"ammo_pouch"])
+
+[resource]
+script = ExtResource("1_class")
+id = &"support"
+display_name = "Support"
+max_health = 100.0
+move_speed_mult = 0.95
+allowed_primary_categories = Array[int]([2, 5])
+allowed_secondary_categories = Array[int]([6])
+gadget_slots = Array[ExtResource("2_slot")]([SubResource("GadgetSlot_primary"), SubResource("GadgetSlot_secondary")])
+passive_perks = Array[StringName]([&"suppression"])
