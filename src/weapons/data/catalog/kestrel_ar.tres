@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"kestrel_ar"
+display_name = "Kestrel AR"
+category = 0
+rpm = 600
+damage_near = 30
+damage_far = 20
+range_near = 25
+range_far = 100
+mag_size = 30
+reserve_mags = 5
+reload_time = 2.1
+reload_empty_time = 2.7
+ads_time = 0.2
+move_speed_mult = 1
+spread_hip_deg = 2
+spread_ads_deg = 0.25
+spread_per_shot_deg = 0.3
+spread_max_bloom_deg = 3
+spread_recovery_deg_per_second = 2.5
+recoil_pause = 0.2
+recoil_recovery_deg_per_second = 12
+spread_move_deg_per_mps = 0.25
+spread_crouch_mult = 0.7
+spread_prone_mult = 0.45
+spread_ads_extra_mult = 0.5
+draw_time = 0.5
+headshot_mult = 2
+limb_mult = 0.8
+hitscan_range = 1000
+fire_modes = Array[int]([1, 0])
+recoil_pattern = Array[Vector2]([Vector2(0.65, 0), Vector2(0.65, 0.12), Vector2(0.65, -0.1), Vector2(0.65, 0.08)])
+recoil_fallback_deg = Vector2(0.65, 0)
+recoil_noise_deg = Vector2(0.12, 0.18)

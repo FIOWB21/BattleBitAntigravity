@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"meridian_dmr"
+display_name = "Meridian DMR"
+category = 3
+rpm = 300
+damage_near = 49
+damage_far = 35
+range_near = 40
+range_far = 160
+mag_size = 20
+reserve_mags = 5
+reload_time = 2.6
+reload_empty_time = 3.2
+ads_time = 0.28
+move_speed_mult = 0.95
+spread_hip_deg = 3
+spread_ads_deg = 0.12
+spread_per_shot_deg = 0.6
+spread_max_bloom_deg = 3
+spread_recovery_deg_per_second = 2.5
+recoil_pause = 0.2
+recoil_recovery_deg_per_second = 12
+spread_move_deg_per_mps = 0.25
+spread_crouch_mult = 0.7
+spread_prone_mult = 0.45
+spread_ads_extra_mult = 0.5
+draw_time = 0.5
+headshot_mult = 2
+limb_mult = 0.8
+hitscan_range = 1000
+fire_modes = Array[int]([0])
+recoil_pattern = Array[Vector2]([Vector2(1.25, 0), Vector2(1.25, 0.12), Vector2(1.25, -0.1), Vector2(1.25, 0.08)])
+recoil_fallback_deg = Vector2(1.25, 0)
+recoil_noise_deg = Vector2(0.12, 0.18)

@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"sweeper_shotgun"
+display_name = "Sweeper Shotgun"
+category = 5
+rpm = 180
+damage_near = 12
+damage_far = 2.5
+range_near = 6
+range_far = 28
+mag_size = 8
+reserve_mags = 5
+reload_time = 2.8
+reload_empty_time = 3.5
+ads_time = 0.24
+move_speed_mult = 0.96
+spread_hip_deg = 5
+spread_ads_deg = 3.5
+spread_per_shot_deg = 0.9
+spread_max_bloom_deg = 3
+spread_recovery_deg_per_second = 2.5
+recoil_pause = 0.2
+recoil_recovery_deg_per_second = 12
+spread_move_deg_per_mps = 0.25
+spread_crouch_mult = 0.7
+spread_prone_mult = 0.45
+spread_ads_extra_mult = 0.5
+draw_time = 0.5
+headshot_mult = 2
+limb_mult = 0.8
+hitscan_range = 1000
+pellets = 10
+fire_modes = Array[int]([0])
+recoil_pattern = Array[Vector2]([Vector2(1.5, 0), Vector2(1.5, 0.12), Vector2(1.5, -0.1), Vector2(1.5, 0.08)])
+recoil_fallback_deg = Vector2(1.5, 0)
+recoil_noise_deg = Vector2(0.12, 0.18)

@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"needle_sniper"
+display_name = "Needle Sniper"
+category = 4
+rpm = 75
+damage_near = 80
+damage_far = 52
+range_near = 50
+range_far = 300
+mag_size = 10
+reserve_mags = 5
+reload_time = 2.9
+reload_empty_time = 3.6
+ads_time = 0.4
+move_speed_mult = 0.91
+spread_hip_deg = 4.5
+spread_ads_deg = 0.04
+spread_per_shot_deg = 0.8
+spread_max_bloom_deg = 3
+spread_recovery_deg_per_second = 2.5
+recoil_pause = 0.2
+recoil_recovery_deg_per_second = 12
+spread_move_deg_per_mps = 0.5
+spread_crouch_mult = 0.7
+spread_prone_mult = 0.45
+spread_ads_extra_mult = 0.5
+draw_time = 0.75
+headshot_mult = 2
+limb_mult = 0.8
+hitscan_range = 1000
+ads_fov_mult = 0.4
+fire_modes = Array[int]([0])
+recoil_pattern = Array[Vector2]([Vector2(2.2, 0), Vector2(2.2, 0.12), Vector2(2.2, -0.1), Vector2(2.2, 0.08)])
+recoil_fallback_deg = Vector2(2.2, 0)
+recoil_noise_deg = Vector2(0.12, 0.18)

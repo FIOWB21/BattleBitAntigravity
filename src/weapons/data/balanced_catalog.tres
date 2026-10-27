@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="WeaponCatalog" load_steps=20 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_catalog.gd" id="1"]
+[ext_resource type="Script" path="res://src/weapons/weapon_data.gd" id="2"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/kestrel_ar.tres" id="w0"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/vanguard_ar.tres" id="w1"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/falcon_ar.tres" id="w2"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/swift_smg.tres" id="w3"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/wisp_smg.tres" id="w4"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/sentinel_lmg.tres" id="w5"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/bulwark_lmg.tres" id="w6"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/meridian_dmr.tres" id="w7"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/watchman_dmr.tres" id="w8"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/longbow_sniper.tres" id="w9"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/needle_sniper.tres" id="w10"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/breacher_shotgun.tres" id="w11"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/sweeper_shotgun.tres" id="w12"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/finch_pistol.tres" id="w13"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/marshal_pistol.tres" id="w14"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/anvil_pistol.tres" id="w15"]
+[ext_resource type="Resource" path="res://src/weapons/data/catalog/underslung_gl.tres" id="w16"]
+
+[resource]
+script = ExtResource("1")
+weapons = Array[ExtResource("2")]([ExtResource("w0"), ExtResource("w1"), ExtResource("w2"), ExtResource("w3"), ExtResource("w4"), ExtResource("w5"), ExtResource("w6"), ExtResource("w7"), ExtResource("w8"), ExtResource("w9"), ExtResource("w10"), ExtResource("w11"), ExtResource("w12"), ExtResource("w13"), ExtResource("w14"), ExtResource("w15"), ExtResource("w16")])

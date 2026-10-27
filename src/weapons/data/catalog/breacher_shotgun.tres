@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"breacher_shotgun"
+display_name = "Breacher Shotgun"
+category = 5
+rpm = 90
+damage_near = 14
+damage_far = 3
+range_near = 7
+range_far = 30
+mag_size = 6
+reserve_mags = 5
+reload_time = 3
+reload_empty_time = 3.8
+ads_time = 0.22
+move_speed_mult = 0.98
+spread_hip_deg = 4.5
+spread_ads_deg = 3
+spread_per_shot_deg = 0.8
+spread_max_bloom_deg = 3
+spread_recovery_deg_per_second = 2.5
+recoil_pause = 0.2
+recoil_recovery_deg_per_second = 12
+spread_move_deg_per_mps = 0.25
+spread_crouch_mult = 0.7
+spread_prone_mult = 0.45
+spread_ads_extra_mult = 0.5
+draw_time = 0.5
+headshot_mult = 2
+limb_mult = 0.8
+hitscan_range = 1000
+pellets = 8
+fire_modes = Array[int]([0])
+recoil_pattern = Array[Vector2]([Vector2(2, 0), Vector2(2, 0.12), Vector2(2, -0.1), Vector2(2, 0.08)])
+recoil_fallback_deg = Vector2(2, 0)
+recoil_noise_deg = Vector2(0.12, 0.18)
