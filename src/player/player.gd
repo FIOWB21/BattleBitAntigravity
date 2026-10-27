@@ -12,6 +12,7 @@ const DEFAULT_HITBOXES_PATH: String = "res://src/player/default_hitboxes.tres"
 @export var is_local_player: bool = true
 @export var class_data: ClassData = preload("res://src/classes/data/assault.tres")
 @export var team_id: int = 1
+@export var squad_id: int = 1
 @export var stance: int = PlayerStance.STAND:
 	set(value):
 		stance = clampi(value, PlayerStance.STAND, PlayerStance.PRONE)
@@ -51,6 +52,7 @@ func _ready() -> void:
 	affiliation.actor = self
 	affiliation.health = health_component as HealthComponent
 	affiliation.team_id = team_id
+	affiliation.squad_id = squad_id
 	add_child(affiliation)
 	if equipment != null:
 		equipment.setup(self)

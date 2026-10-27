@@ -5,6 +5,7 @@ extends Node
 const HEALTH_META: StringName = &"combat_affiliation"
 
 @export var team_id: int = 1
+@export var squad_id: int = 1
 @export var actor: Node3D
 @export var health: HealthComponent
 

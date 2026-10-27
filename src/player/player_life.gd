@@ -75,18 +75,36 @@ func revive() -> bool:
 	return _health.restore_fraction(rules.revive_health_fraction)
 
 
-# Единственная доступная точка текущего полигона; выбор делается кнопкой экрана.
+# Начальная точка текущего полигона сохраняет прежнее поведение.
 func select_initial_spawn() -> void:
+	spawn_at(_spawn)
+
+
+func select_beacon_spawn() -> bool:
 	if not _has_authority() or state != State.SPAWN_SELECT:
-		return
-	_player.global_transform = _spawn
+		return false
+	for node: Node in get_tree().get_nodes_in_group(SpawnBeacon.ACTIVE_GROUP):
+		var beacon: SpawnBeacon = node as SpawnBeacon
+		if beacon != null and beacon.try_spawn(_player):
+			return true
+	return false
+
+
+func spawn_at(pose: Transform3D) -> bool:
+	if not _has_authority() or state != State.SPAWN_SELECT:
+		return false
+	if not pose.is_finite():
+		return false
+	_player.global_transform = pose
 	_player.velocity = Vector3.ZERO
-	_player.input_reader.yaw = _spawn.basis.get_euler().y
+	_player.input_reader.yaw = pose.basis.get_euler().y
 	_player.input_reader.pitch = 0.0
+	_player.head.rotation.x = 0.0
 	_player.reset_physics_interpolation()
 	_health.reset()
 	if _player.is_local_player:
 		_player.capture_mouse()
+	return true
 
 
 func _on_incapacitated(killer_id: int) -> void:

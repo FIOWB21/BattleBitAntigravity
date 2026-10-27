@@ -5,5 +5,7 @@ extends RefCounted
 var tick: int = 0
 var source_id: int = 0
 var owner_id: int = 0  # Серверный идентификатор сущности; не назначается клиентом.
+var team_id: int = 0
+var squad_id: int = 0
 var spawn_parent: Node3D
 var spawn_transform: Transform3D = Transform3D.IDENTITY

@@ -115,6 +115,8 @@ func simulate(inp: PlayerInput) -> void:
 
 func _use(active: Gadget, inp: PlayerInput) -> void:
 	_ctx.tick = inp.tick
+	_ctx.team_id = _player.affiliation.team_id
+	_ctx.squad_id = _player.affiliation.squad_id
 	if active.data is SpottingData:
 		_spotter.use(active, _ctx, _player.affiliation, _aim(inp), spots, _exclude)
 		return

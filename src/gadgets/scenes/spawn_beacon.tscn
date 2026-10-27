@@ -1,0 +1,54 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/spawn_beacon.gd" id="1"]
+[ext_resource type="Script" path="res://src/core/health_component.gd" id="2"]
+[ext_resource type="Script" path="res://src/player/hitbox_zone.gd" id="3"]
+[ext_resource type="Resource" path="res://src/gadgets/data/beacon_config.tres" id="4"]
+
+[sub_resource type="StandardMaterial3D" id="Material"]
+albedo_color = Color(0.12, 0.24, 0.2, 1)
+
+[sub_resource type="StandardMaterial3D" id="LampMaterial"]
+albedo_color = Color(0.2, 0.8, 1, 1)
+emission_enabled = true
+emission = Color(0.1, 0.6, 1, 1)
+
+[sub_resource type="BoxMesh" id="Body"]
+material = SubResource("Material")
+size = Vector3(0.5, 0.3, 0.35)
+
+[sub_resource type="CylinderMesh" id="Antenna"]
+material = SubResource("LampMaterial")
+top_radius = 0.02
+bottom_radius = 0.03
+height = 0.7
+
+[sub_resource type="BoxShape3D" id="Shape"]
+size = Vector3(0.5, 1, 0.35)
+
+[node name="SpawnBeacon" type="Node3D"]
+script = ExtResource("1")
+config = ExtResource("4")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("2")
+
+[node name="Body" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.15, 0)
+mesh = SubResource("Body")
+
+[node name="Antenna" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.65, 0)
+mesh = SubResource("Antenna")
+
+[node name="Zone" type="Area3D" parent="." node_paths=PackedStringArray("health_component")]
+position = Vector3(0, 0.5, 0)
+collision_layer = 4
+collision_mask = 0
+monitoring = false
+script = ExtResource("3")
+zone = 1
+health_component = NodePath("../Health")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Zone"]
+shape = SubResource("Shape")

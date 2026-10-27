@@ -4,7 +4,7 @@ extends RefCounted
 
 
 static func generate() -> String:
-	return _medical_bag() + _ammo_crate() + _repair_tool() + _charges() + _spotting()
+	return _medical_bag() + _ammo_crate() + _repair_tool() + _charges() + _spotting() + _beacon()
 
 
 static func _medical_bag() -> String:
@@ -77,3 +77,17 @@ static func _spotting() -> String:
 		+ "Заряды %d, кулдаун %.1f с, R %.1f с; ЛКМ из слота 3. " % [data.max_charges, data.cooldown, data.reload_time] \
 		+ "Принадлежность задаётся серверными CombatAffiliation; назначение команд матча и RPC не реализуются. " \
 		+ "Собственные бинокль/мишень; полигон `recon_spot_lab.tscn`. Баланс предварительный.\n"
+
+
+static func _beacon() -> String:
+	var config: BeaconConfig = load("res://src/gadgets/data/beacon_config.tres") as BeaconConfig
+	var data: GadgetData = load("res://src/gadgets/data/spawn_beacon.tres") as GadgetData
+	return "\n## Маяк Recon — шаг 3.4f\n\n" \
+		+ "`%s`: %.0f HP, один маяк на владельца; новый удаляет предыдущий без взрыва. " % [data.id, config.max_health] \
+		+ "Только SPAWN_SELECT той же положительной команды/отряда, зафиксированных сервером при деплое. " \
+		+ "Проверяются %d позиции в %.1f м: земля, проход от маяка и стоячая капсула без пересечений. " % [
+			config.offsets.size(), config.offsets[0].length()] \
+		+ "Нет свободной позиции — нет возрождения; уничтожение сразу запрещает спавн. " \
+		+ "Возвращает полное здоровье без пополнения патронов/гранат; кнопка Squad beacon на текущем экране выбора. " \
+		+ "Заряды %d, кулдаун %.1f с, R %.1f с. " % [data.max_charges, data.cooldown, data.reload_time] \
+		+ "Собственная примитивная сцена и `recon_beacon_lab.tscn`; создание отрядов/режима матча не реализуется. Баланс предварительный.\n"

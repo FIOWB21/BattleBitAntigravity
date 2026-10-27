@@ -1,0 +1,13 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/gadgets/gadget_lab.gd" id="1"]
+[ext_resource type="Resource" path="res://src/classes/data/recon.tres" id="2"]
+[ext_resource type="Resource" path="res://src/gadgets/data/spawn_beacon.tres" id="3"]
+[ext_resource type="Resource" path="res://src/weapons/data/dmr.tres" id="4"]
+
+[node name="ReconBeaconLab" type="Node3D"]
+script = ExtResource("1")
+class_profile = ExtResource("2")
+gadget_profile = ExtResource("3")
+primary_profile = ExtResource("4")
+instructions = "3: beacon | LMB: deploy | damage 100 then damage 1: finish death | Choose Squad beacon | Shoot beacon to destroy"

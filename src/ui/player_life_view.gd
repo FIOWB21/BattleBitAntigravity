@@ -5,6 +5,7 @@ extends CanvasLayer
 var status_label: Label
 var spawn_panel: PanelContainer
 var spawn_button: Button
+var beacon_button: Button
 var progress_bar: ProgressBar
 var _life: PlayerLife
 
@@ -57,12 +58,23 @@ func _build_spawn_panel(root: Control) -> void:
 	spawn_button.custom_minimum_size.y = 60
 	spawn_button.pressed.connect(_life.select_initial_spawn)
 	column.add_child(spawn_button)
+	beacon_button = Button.new()
+	beacon_button.text = "Squad beacon"
+	beacon_button.custom_minimum_size.y = 60
+	beacon_button.pressed.connect(_on_beacon_pressed)
+	column.add_child(beacon_button)
+
+
+func _on_beacon_pressed() -> void:
+	if not _life.select_beacon_spawn():
+		beacon_button.text = "No safe squad beacon — try again"
 
 
 func _on_state_changed(state: PlayerLife.State) -> void:
 	spawn_panel.visible = state == PlayerLife.State.SPAWN_SELECT
 	status_label.visible = state == PlayerLife.State.DOWNED
 	if spawn_panel.visible:
+		beacon_button.text = "Squad beacon"
 		spawn_button.grab_focus()
 
 
