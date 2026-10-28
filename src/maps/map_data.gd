@@ -8,12 +8,14 @@ extends Resource
 @export var spawn_spacing: float = 2.0
 @export var spawn_columns: int = 3
 @export var spawn_row_spacing: float = 4.0
+@export var snapshot_config: SnapshotConfig = preload("res://src/net/default_snapshot.tres")
 
 
 func is_valid() -> bool:
 	return not id.is_empty() and scene != null and not spawn_path.is_empty() \
 		and spawn_columns > 0 and is_finite(spawn_spacing) and spawn_spacing > 0.0 \
-		and is_finite(spawn_row_spacing) and spawn_row_spacing > 0.0
+		and is_finite(spawn_row_spacing) and spawn_row_spacing > 0.0 \
+		and snapshot_config != null and snapshot_config.is_valid()
 
 
 func spawn_offset(index: int) -> Vector3:

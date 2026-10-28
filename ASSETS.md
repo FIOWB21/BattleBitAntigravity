@@ -4,6 +4,7 @@
 
 | Файл | Источник | Автор | Лицензия | Дата |
 |---|---|---|---|---|
+| `src/net/default_snapshot.tres`, указатель взгляда `src/player/remote_player_view.gd` | Собственные параметры квантования/интерполяции и BoxMesh под существующим материалом капсулы | Проект BattlebitAntigravity | Собственные процедурные ресурсы и геометрия, внешних файлов нет | 2026-10-28 |
 | `src/player/remote_player_view.gd`, `src/maps/testbed/network_testbed.tres` | Собственная CapsuleMesh/StandardMaterial3D и профиль сетевой копии существующего полигона | Проект BattlebitAntigravity | Собственные процедурные ассеты и ресурсы, внешних файлов нет | 2026-10-27 |
 | `src/gadgets/scenes/underslung_launcher.tscn`, `src/gadgets/scenes/assault_launcher_lab.tscn`, `src/gadgets/data/underslung_launcher.tres`, `src/ui/launcher_stock_view.gd` | Собственные CylinderMesh/BoxMesh крепления под существующей temporary_viewmodel, материалы, текст HUD и профиль; Projectile/эффекты/полигон проекта переиспользованы | Проект BattlebitAntigravity | Собственные процедурные сцены и ресурсы, внешних файлов нет | 2026-10-27 |
 | `src/gadgets/scenes/spawn_beacon.tscn`, `src/gadgets/scenes/recon_beacon_lab.tscn`, `src/gadgets/data/beacon_config.tres`, `src/gadgets/data/beacon_placement.tres`, `src/gadgets/data/spawn_beacon.tres` | Собственные BoxMesh/CylinderMesh, материал антенны, хитбокс и параметры маяка; существующий полигон переиспользован | Проект BattlebitAntigravity | Собственные процедурные сцены и ресурсы, внешних файлов нет | 2026-10-27 |

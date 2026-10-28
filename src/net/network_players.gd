@@ -1,4 +1,4 @@
-# Reliable presence only; the synchronizer controls visibility without properties.
+# Reliable presence; compact state transport is a separate world component.
 class_name NetworkPlayers
 extends Node3D
 
@@ -7,6 +7,7 @@ const PLAYER_SCENE: PackedScene = preload("res://src/player/player.tscn")
 var loader: MapLoader
 var actors: Dictionary[int, Player] = {}
 var ready_peers: Dictionary[int, bool] = {}
+var snapshots: SnapshotStream
 var _slots: Dictionary[int, int] = {}
 var _spawner: MultiplayerSpawner
 var _container: Node3D
@@ -21,6 +22,10 @@ func _ready() -> void:
 	_spawner.spawn_path = ^"../Players"
 	_spawner.spawn_function = _spawn_player
 	add_child(_spawner)
+	snapshots = SnapshotStream.new()
+	snapshots.name = "Snapshots"
+	snapshots.players = self
+	add_child(snapshots)
 	Net.peer_joined.connect(_peer_joined)
 	Net.peer_left.connect(_peer_left)
 
@@ -78,11 +83,13 @@ func _spawn_player(payload: Variant) -> Node:
 		presence.set_visibility_for(peer_id, true)
 	actor.add_child(presence)
 	actors[id] = actor
+	actor.ready.connect(snapshots.track.bind(actor))
 	actor.tree_exiting.connect(_actor_removed.bind(id))
 	return actor
 
 
 func _actor_removed(id: int) -> void:
+	snapshots.untrack(actors[id])
 	actors.erase(id)
 	_slots.erase(id)
 
@@ -94,6 +101,7 @@ func _peer_left(id: int) -> void:
 
 
 func clear() -> void:
+	snapshots.reset()
 	ready_peers.clear()
 	_slots.clear()
 	for actor: Player in actors.values():

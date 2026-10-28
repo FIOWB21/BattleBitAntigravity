@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SnapshotConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/net/snapshot_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+position_min = Vector3(-256, -64, -256)
+position_max = Vector3(256, 192, 256)
+velocity_limit = 64.0
+interval_ticks = 2
+interpolation_seconds = 0.1
+extrapolation_seconds = 0.1
+buffer_capacity = 32
