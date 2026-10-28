@@ -16,6 +16,9 @@
 [ext_resource type="Resource" path="res://src/weapons/data/default_loadout.tres" id="14_loadout"]
 [ext_resource type="Script" path="res://src/player/player_equipment.gd" id="15_equipment"]
 [ext_resource type="Script" path="res://src/player/player_life.gd" id="16_life"]
+[ext_resource type="Script" path="res://src/player/local_player_controller.gd" id="17_local"]
+[ext_resource type="Script" path="res://src/player/remote_player_view.gd" id="18_remote"]
+[ext_resource type="Script" path="res://src/player/server_player_sim.gd" id="19_sim"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_cwolq"]
 radius = 0.35
@@ -155,3 +158,12 @@ script = ExtResource("15_equipment")
 
 [node name="PlayerLife" type="Node" parent="."]
 script = ExtResource("16_life")
+
+[node name="LocalPlayerController" type="Node" parent="."]
+script = ExtResource("17_local")
+
+[node name="RemotePlayerView" type="Node3D" parent="."]
+script = ExtResource("18_remote")
+
+[node name="ServerPlayerSim" type="Node" parent="."]
+script = ExtResource("19_sim")

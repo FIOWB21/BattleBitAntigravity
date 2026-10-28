@@ -10,6 +10,7 @@ const DEFAULT_HITBOXES_PATH: String = "res://src/player/default_hitboxes.tres"
 @export var movement_config: MovementConfig = preload(DEFAULT_MOVEMENT_PATH)
 @export var hitbox_config: HitboxConfig = preload(DEFAULT_HITBOXES_PATH)
 @export var is_local_player: bool = true
+@export var network_owner_id: int = 0
 @export var class_data: ClassData = preload("res://src/classes/data/assault.tres")
 @export var team_id: int = 1
 @export var squad_id: int = 1
@@ -44,6 +45,15 @@ var _mouse_captured: bool = false
 @onready var inventory: Inventory = get_node_or_null("Inventory") as Inventory
 @onready var equipment: PlayerEquipment = get_node_or_null("PlayerEquipment") as PlayerEquipment
 @onready var life: PlayerLife = get_node_or_null("PlayerLife") as PlayerLife
+@onready var local_controller: LocalPlayerController = $LocalPlayerController
+@onready var remote_view: RemotePlayerView = $RemotePlayerView
+@onready var server_sim: ServerPlayerSim = $ServerPlayerSim
+
+
+func _enter_tree() -> void:
+	if network_owner_id != 0:
+		is_local_player = network_owner_id == multiplayer.get_unique_id() and not Game.is_dedicated
+		get_node("Head/Camera3D").current = is_local_player
 
 
 func _ready() -> void:
@@ -71,10 +81,9 @@ func _ready() -> void:
 	if Events != null and not Events.settings_changed.is_connected(_on_settings_changed):
 		Events.settings_changed.connect(_on_settings_changed)
 	apply_settings()
-	if is_local_player:
-		Game.debug["local_health_component"] = health_component
-		capture_mouse()
-		update_camera_visuals(0.0)
+	server_sim.setup(self)
+	remote_view.setup(self)
+	local_controller.setup(self)
 
 
 func _setup_components() -> void:
@@ -137,9 +146,7 @@ func is_mouse_captured() -> bool:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_local_player:
-		return
-	handle_input_event(event)
+	local_controller.handle_event(event)
 
 
 func handle_input_event(event: InputEvent) -> void:
@@ -158,20 +165,16 @@ func handle_input_event(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if not is_local_player:
-		return
-	var inp: PlayerInput = input_reader.read_input()
-	step_simulation(inp, delta)
-	Game.debug["player_position"] = global_position
+	local_controller.physics_step(delta)
 
 
 func _process(delta: float) -> void:
-	if not is_local_player:
-		return
-	update_camera_visuals(delta)
+	local_controller.present(delta)
 
 
 func step_simulation(inp: PlayerInput, delta: float) -> void:
+	if network_owner_id != 0 and not multiplayer.is_server():
+		return
 	if life != null:
 		life.interaction.simulate(inp, delta)
 		inp = life.filter_input(inp)

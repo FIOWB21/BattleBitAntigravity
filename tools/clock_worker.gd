@@ -1,8 +1,20 @@
 # Separate-process fixture using the production transport, clock and console.
 extends SceneTree
 
+class TickSampler extends Node:
+	var interval: float
+	var recorded: Callable
+	var _elapsed: float = 0.0
+
+	func _physics_process(delta: float) -> void:
+		_elapsed += delta
+		if _elapsed >= interval:
+			_elapsed = 0.0
+			recorded.call()
+
 const TIMEOUT_SECONDS: float = 15.0
 const SAMPLE_INTERVAL: float = 0.05
+const SHUTDOWN_GRACE_SECONDS: float = 0.1
 var _net: Node
 var _overlay: CanvasLayer
 var _options: Dictionary[String, String] = {}
@@ -50,8 +62,17 @@ func _client() -> void:
 	if _net.join("127.0.0.1", int(_options["--port"])) != OK:
 		quit(1)
 		return
+	# Runs after Net in tree order: measure its tick on the same physics frame.
+	var sampler: TickSampler = TickSampler.new()
+	sampler.interval = SAMPLE_INTERVAL
+	sampler.recorded = _record_client
+	root.add_child(sampler)
 	await _observe(float(_options.get("--hold", "5.0")))
+	sampler.queue_free()
 	await _capture()
+	# Drain an already transmitted probe before closing the local ENet endpoint.
+	_net.time_sync.stop()
+	await create_timer(SHUTDOWN_GRACE_SECONDS).timeout
 	_net.disconnect_all()
 	print("CLOCK RESET ", JSON.stringify({"tick": _net.tick, "samples": _net.clock.sample_count,
 		"ping": root.get_node("Game").debug["ping_ms"], "nodes": _net.time_sync.get_child_count()}))
@@ -70,13 +91,13 @@ func _observe(duration: float) -> void:
 				" probes=", _net.time_sync.probe_count)
 			_overlay.execute_command("net_sim 100 0")
 			recovered = true
-		if _net.clock.is_synchronized:
-			_record_client()
 		await create_timer(SAMPLE_INTERVAL).timeout
 
 
 func _record_client() -> void:
 	var clock: NetClock = _net.clock as NetClock
+	if not clock.is_synchronized:
+		return
 	var measured_ms: float = clock.rtt_seconds * NetClock.MS_PER_SECOND
 	print("CLOCK SAMPLE ", JSON.stringify({"tick": _net.tick, "ping": measured_ms,
 		"estimate": clock.estimated_server_tick(Time.get_ticks_usec()), "lead": clock.lead_ticks(),

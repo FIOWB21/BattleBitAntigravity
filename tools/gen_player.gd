@@ -63,7 +63,21 @@ func _build_player_scene() -> CharacterBody3D:
 	life.name = "PlayerLife"
 	player.add_child(life)
 	_add_weapon(player)
+	_add_network_roles(player)
 	return player
+
+
+func _add_network_roles(player: CharacterBody3D) -> void:
+	var roles: Dictionary[String, String] = {
+		"LocalPlayerController": "res://src/player/local_player_controller.gd",
+		"RemotePlayerView": "res://src/player/remote_player_view.gd",
+		"ServerPlayerSim": "res://src/player/server_player_sim.gd",
+	}
+	for role: String in roles:
+		var script: GDScript = load(roles[role]) as GDScript
+		var component: Node = script.new() as Node
+		component.name = role
+		player.add_child(component)
 
 
 func _add_head_and_components(player: CharacterBody3D) -> void:

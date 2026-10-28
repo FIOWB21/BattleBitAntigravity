@@ -161,19 +161,20 @@ func hello(version: int, nickname: String, supplied_password: String = "") -> vo
 		return
 	_clear_timer(_pending, id)
 	nicknames[id] = nickname
-	welcome.rpc_id(id, id)
+	welcome.rpc_id(id, id, Game.map_id)
 	Log.i("NET ACCEPT id=%d nickname=%s" % [id, nickname])
 	peer_joined.emit(id, nickname)
 
 
 @rpc("authority", "call_remote", "reliable", 0)
-func welcome(id: int) -> void:
+func welcome(id: int, map_id: String = "testbed") -> void:
 	if multiplayer.is_server() or is_connected:
 		return
 	if id != multiplayer.get_unique_id():
 		return
 	_client_timeout.stop()
 	nicknames[id] = local_nickname
+	Game.map_id = map_id
 	is_connected = true
 	Log.i("NET CONNECTED id=%d" % id)
 	time_sync.start()
@@ -228,3 +229,7 @@ func _fail_connection(reason: String) -> void:
 	disconnect_all()
 	Log.i("NET FAILED reason=%s" % reason)
 	connection_failed.emit()
+
+
+func disconnect_with_error(reason: String) -> void:
+	_fail_connection(reason)

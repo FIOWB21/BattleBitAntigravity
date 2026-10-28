@@ -9,6 +9,9 @@ extends Control
 @onready var join_button: Button = %Join
 @onready var disconnect_button: Button = %Disconnect
 @onready var status: Label = %Status
+@onready var map_loader: MapLoader = $MapLoader
+@onready var _background: ColorRect = $Background
+@onready var _center: CenterContainer = $Center
 
 
 func _ready() -> void:
@@ -22,6 +25,7 @@ func _ready() -> void:
 	Net.disconnected.connect(_disconnected)
 	Net.peer_joined.connect(_peer_changed)
 	Net.peer_left.connect(_peer_left)
+	map_loader.map_loaded.connect(_world_loaded)
 	if Game.is_dedicated:
 		_start_dedicated()
 	else:
@@ -35,6 +39,10 @@ func _start_dedicated() -> void:
 		get_tree().quit(2)
 		return
 	Net.password = Game.server_password
+	if map_loader.load_map(Game.map_id) != OK:
+		printerr("SERVER MAP FAILED: ", Game.map_id)
+		get_tree().quit(1)
+		return
 	var result: Error = Net.start_server(Game.server_port, Game.max_clients, false)
 	if result != OK:
 		printerr("SERVER START FAILED: ", error_string(result))
@@ -63,8 +71,13 @@ func _join_from_arguments() -> void:
 
 func _host() -> void:
 	_set_credentials()
+	if map_loader.load_map(Game.map_id) != OK:
+		status.text = "Map failed: " + Game.map_id
+		return
 	var result: Error = Net.start_server(int(port.value), NetworkConfig.DEFAULT_MAX_CLIENTS)
 	if result != OK:
+		map_loader.unload_map()
+		_show_menu(true)
 		status.text = "Host failed: " + error_string(result)
 		return
 	_set_busy(true)
@@ -108,6 +121,7 @@ func _failed() -> void:
 func _disconnected() -> void:
 	_set_busy(false)
 	status.text = "Disconnected"
+	_show_menu(true)
 
 
 func _peer_changed(_id: int, _nickname: String) -> void:
@@ -117,3 +131,25 @@ func _peer_changed(_id: int, _nickname: String) -> void:
 
 func _peer_left(_id: int) -> void:
 	_peer_changed(0, "")
+
+
+func _world_loaded(_map_id: String) -> void:
+	_show_menu(false)
+
+
+func _show_menu(shown: bool) -> void:
+	_background.visible = shown
+	_center.visible = shown
+
+
+func _input(event: InputEvent) -> void:
+	if map_loader.current_map == null or not event.is_action_pressed(InputActions.PAUSE_MENU):
+		return
+	_show_menu(not _center.visible)
+	for actor: Player in map_loader.players.actors.values():
+		if actor.is_local_player:
+			if _center.visible:
+				actor.release_mouse()
+			else:
+				actor.capture_mouse()
+	get_viewport().set_input_as_handled()
