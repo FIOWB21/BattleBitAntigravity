@@ -29,13 +29,14 @@ func in_window(input_tick: int, server_tick: int) -> bool:
 		and input_tick <= server_tick + roundi(_config.input_max_future_seconds * _rate)
 
 
-func request(input_tick: int, seed: int, owner: int, server_tick: int) -> bool:
+func request(input_tick: int, seed: int, owner: int, server_tick: int, view_tick: int = 0) -> bool:
 	if not in_window(input_tick, server_tick) or seed != shot_seed(input_tick, owner):
 		return false
 	var frame: FireFrame = slot(input_tick)
 	if frame.requested or frame.consumed:
 		return false
 	frame.seed = seed
+	frame.view_tick = view_tick
 	frame.requested = true
 	return true
 

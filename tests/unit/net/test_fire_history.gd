@@ -75,3 +75,14 @@ func test_missing_input_expires_and_acknowledges_the_cosmetic_request() -> void:
 	assert_null(_history.take_ready(161))
 	assert_true(_history.slot(100).consumed)
 	assert_eq(_history.expired_tick, 100)
+
+
+func test_view_tick_survives_both_arrival_orders_and_duplicate_cannot_replace_it() -> void:
+	_history.slot(105).recorded = true
+	assert_true(_history.request(105, FireHistory.shot_seed(105, 7), 7, 100, 89))
+	assert_false(_history.request(105, FireHistory.shot_seed(105, 7), 7, 100, -10000))
+	assert_eq(_history.take_ready(100).view_tick, 89)
+	assert_true(_history.request(106, FireHistory.shot_seed(106, 7), 7, 100, -10000))
+	_history.slot(106).recorded = true
+	assert_eq(_history.take_ready(100).view_tick, -10000, "Clamped at actual server trace time")
+	assert_eq(_history.slot(106 + _history.frames.size()).view_tick, 0)

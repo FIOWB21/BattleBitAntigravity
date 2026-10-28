@@ -8,6 +8,7 @@ var loader: MapLoader
 var actors: Dictionary[int, Player] = {}
 var ready_peers: Dictionary[int, bool] = {}
 var snapshots: SnapshotStream
+var lag_compensator: LagCompensator
 var _slots: Dictionary[int, int] = {}
 var _spawner: MultiplayerSpawner
 var _container: Node3D
@@ -26,6 +27,9 @@ func _ready() -> void:
 	snapshots.name = "Snapshots"
 	snapshots.players = self
 	add_child(snapshots)
+	lag_compensator = LagCompensator.new()
+	lag_compensator.name = "LagCompensator"
+	add_child(lag_compensator)
 	Net.peer_joined.connect(_peer_joined)
 	Net.peer_left.connect(_peer_left)
 
@@ -83,12 +87,20 @@ func _spawn_player(payload: Variant) -> Node:
 		presence.set_visibility_for(peer_id, true)
 	actor.add_child(presence)
 	actors[id] = actor
-	actor.ready.connect(snapshots.track.bind(actor))
+	actor.ready.connect(_track_actor.bind(actor))
 	actor.tree_exiting.connect(_actor_removed.bind(id))
 	return actor
 
 
+func _track_actor(actor: Player) -> void:
+	snapshots.track(actor)
+	lag_compensator.track(actor)
+	actor.equipment.combat.lag_compensator = lag_compensator
+	actor.equipment.combat.interpolation_seconds = loader.current_data.snapshot_config.interpolation_seconds
+
+
 func _actor_removed(id: int) -> void:
+	lag_compensator.untrack(actors[id])
 	snapshots.untrack(actors[id])
 	actors.erase(id)
 	_slots.erase(id)
@@ -101,6 +113,7 @@ func _peer_left(id: int) -> void:
 
 
 func clear() -> void:
+	lag_compensator.clear()
 	snapshots.reset()
 	ready_peers.clear()
 	_slots.clear()

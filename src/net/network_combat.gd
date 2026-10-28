@@ -10,6 +10,8 @@ var history: FireHistory = FireHistory.new()
 var accepted_shots: int = 0
 var rejected_requests: int = 0
 var sent_requests: int = 0
+var lag_compensator: LagCompensator
+var interpolation_seconds: float = 0.0
 var _neutral: PlayerInput = PlayerInput.new()
 var _local_tick: int = 0
 var _recorded_tick: int = 0
@@ -51,18 +53,24 @@ func predict(inp: PlayerInput) -> void:
 func _predicted_fire(_tick: int) -> void:
 	sent_requests += 1
 	_pending_ticks[_local_tick % _pending_ticks.size()] = _local_tick
-	fire.rpc_id(Net.SERVER_ID, _local_tick, FireHistory.shot_seed(_local_tick, player.network_owner_id))
+	fire.rpc_id(Net.SERVER_ID, _local_tick, FireHistory.shot_seed(_local_tick, player.network_owner_id), view_tick())
+
+
+func view_tick() -> int:
+	var server_tick: float = float(Net.tick) if multiplayer.is_server() \
+		else Net.clock.estimated_server_tick(Time.get_ticks_usec())
+	return maxi(0, floori(server_tick - interpolation_seconds * Engine.physics_ticks_per_second))
 
 
 @rpc("any_peer", "call_remote", "reliable", 0)
-func fire(input_tick: int, seed: int) -> void:
+func fire(input_tick: int, seed: int, viewed_tick: int) -> void:
 	if not multiplayer.is_server():
 		return
 	var sender: int = multiplayer.get_remote_sender_id()
 	if sender != player.network_owner_id or not Net.nicknames.has(sender):
 		rejected_requests += 1
 		return
-	if not history.request(input_tick, seed, sender, Net.tick):
+	if not history.request(input_tick, seed, sender, Net.tick, viewed_tick):
 		rejected_requests += 1
 
 
@@ -71,8 +79,10 @@ func simulate(inp: PlayerInput, aim: Transform3D, blocked: bool) -> void:
 	var hitscan: WeaponHitscan = player.weapon_hitscan
 	if weapon == null or hitscan == null:
 		return
+	hitscan.lag_compensator = lag_compensator
 	# Listen-host uses exactly the same authoritative Weapon simulation once.
 	if player.network_owner_id == Net.SERVER_ID:
+		hitscan.view_tick = view_tick()
 		hitscan.simulate(inp, aim, blocked, player.stance,
 			Vector2(player.velocity.x, player.velocity.z).length(), player.motor.is_sprinting, player.ads.amount())
 		return
@@ -115,6 +125,7 @@ func _resolve(blocked: bool) -> void:
 		if blocked or not frame.allowed or frame.weapon != player.weapon:
 			rejected_requests += 1
 			continue
+		frame.hitscan.view_tick = frame.view_tick
 		if frame.hitscan.fire_requested(Net.tick, frame.seed, frame.aim, frame.spread):
 			accepted_shots += 1
 			fire_accepted.emit(frame.tick, Net.tick)

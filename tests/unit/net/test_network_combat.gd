@@ -84,7 +84,7 @@ func test_requests_without_consumed_input_do_not_create_shots() -> void:
 
 func test_unowned_rpc_and_client_entry_on_server_are_ignored() -> void:
 	Net.tick = 100
-	_combat.fire(105, FireHistory.shot_seed(105, 42))
+	_combat.fire(105, FireHistory.shot_seed(105, 42), 94)
 	assert_eq(_combat.rejected_requests, 1)
 	assert_null(_combat.history.take_ready(100))
 	_input.tick = 105

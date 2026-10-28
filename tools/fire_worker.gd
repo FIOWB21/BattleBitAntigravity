@@ -152,9 +152,9 @@ func _fire_phase() -> void:
 			_local.local_controller.history.latest_into(_cheat_input)
 			var tick: int = _cheat_input.tick
 			var seed: int = load("res://src/net/fire_history.gd").shot_seed(tick, _local.network_owner_id)
-			_local.equipment.combat.fire.rpc_id(1, tick, seed)
-			_local.equipment.combat.fire.rpc_id(1, tick, seed)
-			_local.equipment.combat.fire.rpc_id(1, tick + 10000, seed)
+			_local.equipment.combat.fire.rpc_id(1, tick, seed, _local.equipment.combat.view_tick())
+			_local.equipment.combat.fire.rpc_id(1, tick, seed, _local.equipment.combat.view_tick())
+			_local.equipment.combat.fire.rpc_id(1, tick + 10000, seed, 0)
 	Input.action_release("fire")
 
 

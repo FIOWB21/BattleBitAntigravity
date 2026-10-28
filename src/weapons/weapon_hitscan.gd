@@ -18,6 +18,8 @@ var _aim: Transform3D = Transform3D.IDENTITY
 var _spread_deg: float = 0.0
 var cosmetic_only: bool = false
 var shot_seed: int = -1
+var lag_compensator: LagCompensator
+var view_tick: int = 0
 var aim_transform: Transform3D:
 	get:
 		return _aim
@@ -87,13 +89,22 @@ func _on_fired(tick: int) -> void:
 	for pellet: int in range(maxi(data.pellets, 1)):
 		var direction: Vector3 = handling.spread_direction(_aim.basis, _spread_deg,
 			shot_seed if shot_seed >= 0 else tick, _attacker, pellet)
-		var hit: HitResult = HitscanQuery.cast(_aim.origin,
-			_aim.origin + direction * data.hitscan_range, _exclude,
-			get_world_3d().direct_space_state)
+		var hit: HitResult = _cast_at_view(direction, data.hitscan_range)
 		if multiplayer.is_server():
 			_apply_hit(data, hit)
 		shot_traced.emit(tick, pellet, direction, hit)
 	handling.apply_shot(tick, _attacker)
+
+
+func _cast_at_view(direction: Vector3, distance: float) -> HitResult:
+	var rewound: bool = false
+	if multiplayer.is_server() and lag_compensator != null:
+		rewound = lag_compensator.rewind(Net.tick, view_tick, _attacker)
+	var hit: HitResult = HitscanQuery.cast(_aim.origin, _aim.origin + direction * distance,
+		_exclude, get_world_3d().direct_space_state)
+	if rewound:
+		lag_compensator.restore()
+	return hit
 
 
 func _launch_projectile(tick: int, profile: ProjectileData) -> void:
