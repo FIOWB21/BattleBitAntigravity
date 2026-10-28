@@ -28,6 +28,8 @@ func physics_step(delta: float) -> void:
 	var inp: PlayerInput = input_queue.consume(Net.tick)
 	if inp != null:
 		simulate(inp, delta)
+		if player.equipment != null and player.equipment.combat != null:
+			player.equipment.combat.physics_step()
 		simulated_ticks += 1
 		input_simulated.emit(inp)
 

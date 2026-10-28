@@ -10,6 +10,7 @@ var projectiles: PlayerProjectiles
 var melee: MeleeAttack
 var melee_view: MeleeView
 var gadgets: PlayerGadgets
+var combat: NetworkCombat
 
 
 func setup(player: Player) -> void:
@@ -33,7 +34,8 @@ func setup(player: Player) -> void:
 		if hitscan == null:
 			hitscan = WeaponHitscan.new()
 			add_child(hitscan)
-		hitscan.setup(weapon, player.get_multiplayer_authority(), exclude)
+		var attacker: int = player.network_owner_id if player.network_owner_id != 0 else player.get_multiplayer_authority()
+		hitscan.setup(weapon, attacker, exclude)
 		hitscan.projectiles = projectiles.system
 		_hitscans[weapon] = hitscan
 		if effects != null:
@@ -42,6 +44,15 @@ func setup(player: Player) -> void:
 			player.ads_view.cache_weapon(weapon, player.is_local_player)
 	inventory.active_slot_changed.connect(_on_active_slot_changed)
 	_on_active_slot_changed(inventory.active_slot, inventory.active_weapon())
+	_setup_combat()
+
+
+func _setup_combat() -> void:
+	if _player.network_owner_id != 0:
+		combat = NetworkCombat.new()
+		combat.name = "NetworkCombat"
+		add_child(combat)
+		combat.setup(_player)
 
 
 func _setup_melee() -> void:

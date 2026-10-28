@@ -69,6 +69,7 @@ func _send_input(delta: float) -> void:
 	else:
 		history.latest_into(_input)
 		prediction.predict(player, _input, delta)
+		player.equipment.combat.predict(_input)
 		delay.submit(history.packet)
 
 

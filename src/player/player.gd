@@ -204,6 +204,9 @@ func _step_weapon(inp: PlayerInput) -> void:
 		blocked = blocked or (equipment != null and equipment.melee.busy)
 		if health_component is HealthComponent:
 			blocked = blocked or (health_component as HealthComponent).is_dead
+		if equipment != null and equipment.combat != null:
+			equipment.combat.simulate(inp, aim, blocked)
+			return
 		weapon_hitscan.simulate(inp, aim, blocked, stance,
 			Vector2(velocity.x, velocity.z).length(), motor.is_sprinting, ads.amount())
 

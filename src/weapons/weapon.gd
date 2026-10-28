@@ -62,6 +62,17 @@ func setup(weapon_data: WeaponData) -> void:
 func simulate(inp: PlayerInput, blocked: bool = false, sprinting: bool = false) -> void:
 	if not _has_authority() or inp.tick <= _last_tick:
 		return
+	_simulate(inp, blocked, sprinting)
+
+
+# Client replicas run the same timers for presentation only.
+func simulate_cosmetic(inp: PlayerInput, blocked: bool, sprinting: bool) -> void:
+	if not is_inside_tree() or multiplayer.is_server() or data == null or inp.tick <= _last_tick:
+		return
+	_simulate(inp, blocked, sprinting)
+
+
+func _simulate(inp: PlayerInput, blocked: bool, sprinting: bool) -> void:
 	_last_tick = inp.tick
 	var fire_pressed: bool = inp.pressed(PlayerInput.BTN_FIRE) and not _fire_held
 	var reload_pressed: bool = inp.pressed(PlayerInput.BTN_RELOAD) and not _reload_held
@@ -240,8 +251,34 @@ func _try_fire(fire_pressed: bool) -> void:
 		return
 	if fire_mode == WeaponData.FireMode.BURST:
 		_burst_remaining -= 1
+	_discharge()
+
+
+func fire_requested(tick: int) -> bool:
+	if not _has_authority() or tick != _last_tick or tick < next_fire_tick:
+		return false
+	if not _equipped or ammo_in_mag <= 0 or data.rpm <= 0.0:
+		return false
+	if state != State.IDLE and state != State.FIRING:
+		return false
+	_discharge()
+	return true
+
+
+func _discharge() -> void:
 	ammo_in_mag -= 1
 	next_fire_tick = _last_tick + _duration_ticks(data.cooldown())
 	state = State.FIRING
-	ammo_changed.emit(ammo_in_mag, reserve_ammo)
+	if multiplayer.is_server():
+		ammo_changed.emit(ammo_in_mag, reserve_ammo)
 	fired.emit(_last_tick)
+
+
+func sync_replica(state_value: State, tick: int, cooldown: int, reload_ticks: int, switch_ticks: int) -> void:
+	if not is_inside_tree() or multiplayer.is_server():
+		return
+	state = state_value
+	_equipped = state != State.BLOCKED and state != State.SWITCHING_IN
+	next_fire_tick = maxi(next_fire_tick, tick + cooldown)
+	reload_end_tick = tick + reload_ticks if state == State.RELOADING else -1
+	switch_end_tick = tick + switch_ticks if state == State.SWITCHING_IN or state == State.SWITCHING_OUT else -1
