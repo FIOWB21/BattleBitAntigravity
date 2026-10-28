@@ -123,6 +123,7 @@ func _measure(start: Vector3) -> void:
 		"snapshot_bytes": _stream.received_bytes - bytes_before, "udp_payload": payload,
 		"datagrams": datagrams, "ipv4_bytes_per_second": (payload + datagrams * IPV4_UDP_BYTES) / elapsed,
 		"local_unchanged": _local.position == start, "client_steps": _local.server_sim.simulated_ticks,
+		"predicted_ticks": _local.local_controller.prediction.predicted_ticks,
 		"ack": _stream.last_processed_input_tick, "self": _net.multiplayer.get_unique_id()}))
 
 

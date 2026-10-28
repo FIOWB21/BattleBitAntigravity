@@ -65,6 +65,10 @@ func step(inp: PlayerInput, delta: float) -> void:
 	_apply_capsule_and_head()
 
 
+func restore_dimensions() -> void:
+	_apply_capsule_and_head()
+
+
 func update_stance(target_stance: int, delta: float) -> void:
 	desired_stance = clampi(target_stance, PlayerStance.STAND, PlayerStance.PRONE)
 	if _config == null:

@@ -1,4 +1,4 @@
-# Low-rate clock probes. Simulation affects these probes only at this stage.
+# Low-rate clock probes; PacketDelay uses the same net_sim settings for gameplay.
 class_name NetTimeSync
 extends Node
 

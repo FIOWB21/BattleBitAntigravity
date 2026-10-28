@@ -25,6 +25,12 @@ func update_data(data: WeaponData) -> void:
 	_data = data
 
 
+func restore_prediction(value: float, aim_target: float, tick: int) -> void:
+	fraction = value
+	target = aim_target
+	_last_tick = tick
+
+
 func simulate(inp: PlayerInput, delta: float, allowed: bool = true) -> void:
 	if inp.tick <= _last_tick:
 		return

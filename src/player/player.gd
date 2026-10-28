@@ -28,6 +28,7 @@ var last_fall_damage: float = 0.0
 var motor: PlayerMotor = PlayerMotor.new()
 var input_reader: LocalInputReader = LocalInputReader.new()
 var ads: WeaponAds = WeaponAds.new()
+var movement: PlayerMovement = PlayerMovement.new()
 var affiliation: CombatAffiliation
 var _base_fov: float = 90.0
 var _mouse_captured: bool = false
@@ -58,6 +59,7 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	_setup_components()
+	movement.actor = self
 	affiliation = CombatAffiliation.new()
 	affiliation.actor = self
 	affiliation.health = health_component as HealthComponent
@@ -182,29 +184,11 @@ func step_simulation(inp: PlayerInput, delta: float) -> void:
 	if inventory != null:
 		inventory.simulate(inp, not (health_component is HealthComponent and health_component.is_dead)
 			and not (equipment != null and equipment.melee.busy))
-	rotation.y = inp.yaw
-	if stance_controller != null:
-		stance_controller.step(inp, delta)
-		stance = stance_controller.current_stance
-		lean = stance_controller.current_lean
-		if hitboxes != null:
-			hitboxes.update_for_dimensions(
-				stance_controller.current_capsule_height,
-				stance_controller.current_head_height,
-				stance_controller.current_lean_offset
-			)
-	_step_ads(inp, delta)
-	motor.simulate(self, inp, movement_config, stance, delta)
+	movement.step(inp, delta)
 	if motor.landed_this_tick:
 		last_fall_damage = motor.last_fall_damage
 		if last_fall_damage > 0.0:
 			apply_fall_damage(last_fall_damage)
-	if head != null:
-		head.rotation.x = clampf(
-			inp.pitch,
-			-LocalInputReader.MAX_PITCH_RAD,
-			LocalInputReader.MAX_PITCH_RAD
-		)
 	if equipment != null:
 		equipment.simulate_melee(inp)
 		if equipment.projectiles != null and not equipment.melee.busy:
@@ -224,8 +208,8 @@ func _step_weapon(inp: PlayerInput) -> void:
 			Vector2(velocity.x, velocity.z).length(), motor.is_sprinting, ads.amount())
 
 
-func _step_ads(inp: PlayerInput, delta: float) -> void:
-	var allowed: bool = not (health_component is HealthComponent and health_component.is_dead)
+func step_ads(inp: PlayerInput, delta: float, movement_allowed: bool = true) -> void:
+	var allowed: bool = movement_allowed and not (health_component is HealthComponent and health_component.is_dead)
 	allowed = allowed and not (equipment != null and (equipment.melee.busy or inp.melee))
 	if weapon != null:
 		allowed = allowed and weapon.state != Weapon.State.SWITCHING_IN and weapon.state != Weapon.State.SWITCHING_OUT
@@ -274,6 +258,7 @@ func update_camera_visuals(delta: float) -> void:
 	if is_inside_tree():
 		var body_xform: Transform3D = get_global_transform_interpolated()
 		var base_origin: Vector3 = body_xform * head.position
+		base_origin += local_controller.prediction.visual_offset
 		var look_euler: Vector3 = Vector3(
 			input_reader.pitch + eff_rot.x,
 			input_reader.yaw + eff_rot.y,

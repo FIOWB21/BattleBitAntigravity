@@ -71,13 +71,13 @@ func _client() -> void:
 func _send_custom_hello() -> void:
 	if _options.get("--mode", "") == "silent":
 		return
-	_net.rpc_id(1, "hello", int(_options.get("--version", "1")),
+	_net.rpc_id(1, "hello", int(_options.get("--version", str(_net.PROTOCOL_VERSION))),
 		_options.get("--nickname", "ClientOne"), _net.password)
 
 
 func _accepted() -> void:
 	print("WORKER CONNECTED")
-	_net.rpc_id(1, "hello", 1, _net.local_nickname, _net.password)
+	_net.rpc_id(1, "hello", _net.PROTOCOL_VERSION, _net.local_nickname, _net.password)
 	await create_timer(float(_options.get("--hold", "0.1"))).timeout
 	if not _finished:
 		_finished = true

@@ -1,4 +1,4 @@
-# Real production input RPCs and a same-input local replay, without state replication.
+# Real production input RPCs and an independent server replay; owner prediction is active.
 extends SceneTree
 
 const MOVE_TICKS: int = 45

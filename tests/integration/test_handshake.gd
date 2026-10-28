@@ -40,7 +40,7 @@ func test_real_processes_accept_client_and_reject_wrong_protocol() -> void:
 	await _wait_exit(good_pid)
 	assert_true(await _wait_for(_server_log, "WORKER LEFT"))
 	var bad: String = _directory.path_join("bad_version.log")
-	var bad_pid: int = _launch(bad, ["--mode=custom", "--version=2", "--nickname=OtherClient"])
+	var bad_pid: int = _launch(bad, ["--mode=custom", "--version=1", "--nickname=OtherClient"])
 	assert_true(await _wait_for(bad, "WORKER REJECTED reason=protocol_mismatch"))
 	await _wait_exit(bad_pid)
 	var server: String = _read(_server_log)

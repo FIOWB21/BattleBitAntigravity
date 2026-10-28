@@ -6,6 +6,8 @@ var player: Player
 var hud: HUD
 var enabled: bool = false
 var history: InputHistory = InputHistory.new()
+var prediction: Prediction = Prediction.new()
+var delay: PacketDelay
 var _input: PlayerInput = PlayerInput.new()
 var _sent_tick: int = 0
 
@@ -22,6 +24,12 @@ func setup(actor: Player) -> void:
 	actor.update_camera_visuals(0.0)
 	if actor.network_owner_id != 0:
 		history.configure(Net.config.input_history_count)
+		if not multiplayer.is_server():
+			prediction.configure(preload("res://src/net/default_prediction.tres"))
+			delay = PacketDelay.new()
+			delay.configure(Net.config.input_history_count * InputCodec.FRAME_BYTES)
+			delay.packet_delivered.connect(_transmit_input)
+			add_child(delay)
 		hud = preload("res://src/ui/hud/hud.tscn").instantiate() as HUD
 		add_child(hud)
 		hud.bind_player(actor)
@@ -39,11 +47,16 @@ func physics_step(delta: float) -> void:
 		player.input_reader.read_into(_input)
 		player.server_sim.simulate(_input, delta)
 	else:
-		_send_input()
+		if not multiplayer.is_server():
+			prediction.reconcile(player, delta)
+		_send_input(delta)
 	Game.debug["player_position"] = player.global_position
+	Game.debug["reconciliations"] = prediction.reconciliations
+	Game.debug["prediction_error"] = prediction.last_error
+	Game.debug["prediction_teleports"] = prediction.hard_corrections
 
 
-func _send_input() -> void:
+func _send_input(delta: float) -> void:
 	if not Net.is_connected or (not multiplayer.is_server() and not Net.clock.is_synchronized):
 		return
 	player.input_reader.read_into(_input)
@@ -54,9 +67,24 @@ func _send_input() -> void:
 	if multiplayer.is_server():
 		player.server_sim.receive_local(history.packet)
 	else:
-		player.server_sim.submit_input.rpc_id(Net.SERVER_ID, history.packet)
+		history.latest_into(_input)
+		prediction.predict(player, _input, delta)
+		delay.submit(history.packet)
+
+
+func _transmit_input(packet: PackedByteArray, _extra: PackedByteArray) -> void:
+	if Net.is_connected and is_instance_valid(player):
+		player.server_sim.submit_input.rpc_id(Net.SERVER_ID, packet)
 
 
 func present(delta: float) -> void:
 	if enabled:
+		prediction.advance_visual(delta)
 		player.update_camera_visuals(delta)
+
+
+func _exit_tree() -> void:
+	if player != null and player.is_local_player:
+		Game.debug["reconciliations"] = 0
+		Game.debug["prediction_error"] = 0.0
+		Game.debug["prediction_teleports"] = 0

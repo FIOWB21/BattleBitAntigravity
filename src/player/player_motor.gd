@@ -23,6 +23,15 @@ var _stepped_last_tick: bool = false
 var _last_floor_y: float = 0.0
 var _floor_y_initialized: bool = false
 var _step_collision: KinematicCollision3D = KinematicCollision3D.new()
+var _restored_floor: int = -1
+
+
+func restore_floor(grounded: bool) -> void:
+	_restored_floor = int(grounded)
+
+
+func stepped_last_tick() -> bool:
+	return _stepped_last_tick
 
 
 func simulate(
@@ -42,7 +51,8 @@ func simulate(
 
 
 func _sync_floor_and_coyote(body: CharacterBody3D, cfg: MovementConfig, delta: float) -> bool:
-	var raw_on_floor: bool = body.is_on_floor()
+	var raw_on_floor: bool = body.is_on_floor() if _restored_floor < 0 else _restored_floor == 1
+	_restored_floor = -1
 	var was_on_floor: bool = raw_on_floor or _stepped_last_tick
 	if raw_on_floor or not _floor_y_initialized:
 		_last_floor_y = body.global_position.y if body.is_inside_tree() else body.position.y

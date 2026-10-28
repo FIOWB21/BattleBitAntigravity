@@ -38,6 +38,9 @@ func reset_debug() -> void:
 		"god": false,
 		"noclip": false,
 		"player_position": Vector3.ZERO,
+		"reconciliations": 0,
+		"prediction_error": 0.0,
+		"prediction_teleports": 0,
 		"max_fps": 0,
 	}
 

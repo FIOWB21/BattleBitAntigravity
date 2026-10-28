@@ -18,11 +18,18 @@ var _packet: PackedByteArray = PackedByteArray()
 var _state: PlayerSnapshot = PlayerSnapshot.new()
 var _seen: Dictionary[int, bool] = {}
 var _last_sent_tick: int = -1
+var _owner_state: PredState = PredState.new()
+var _owner_packet: PackedByteArray = PackedByteArray()
+var delay: PacketDelay
 
 
 func _ready() -> void:
 	process_physics_priority = 100
 	players.loader.map_loaded.connect(_map_loaded)
+	_owner_packet.resize(PredState.WIRE_BYTES)
+	delay = PacketDelay.new()
+	delay.packet_delivered.connect(_accept_delayed)
+	add_child(delay)
 
 
 func _map_loaded(_map_id: String) -> void:
@@ -34,6 +41,7 @@ func track(actor: Player) -> void:
 	_actors.append(actor)
 	_packet.resize(SnapshotCodec.packet_size(_actors.size()))
 	actor.remote_view.configure(_config)
+	delay.configure(_packet.size(), PredState.WIRE_BYTES)
 	for slot: int in range(1, Loadout.SLOT_COUNT + 1):
 		var weapon: Weapon = actor.inventory.weapon_at(slot)
 		if weapon != null:
@@ -47,6 +55,7 @@ func untrack(actor: Player) -> void:
 		if weapon != null:
 			_weapon_ids.erase(weapon)
 	_packet.resize(SnapshotCodec.packet_size(_actors.size()))
+	delay.configure(_packet.size(), PredState.WIRE_BYTES)
 
 
 func reset() -> void:
@@ -58,6 +67,8 @@ func reset() -> void:
 	received_bytes = 0
 	_last_sent_tick = -1
 	_seen.clear()
+	if delay != null:
+		delay.clear()
 
 
 func _physics_process(_delta: float) -> void:
@@ -79,7 +90,9 @@ func _physics_process(_delta: float) -> void:
 		if recipient.network_owner_id == Net.SERVER_ID or not players.ready_peers.has(recipient.network_owner_id):
 			continue
 		_packet.encode_u32(6, recipient.server_sim.input_queue.last_input_tick)
-		receive_snapshot.rpc_id(recipient.network_owner_id, _packet)
+		_owner_state.capture(recipient)
+		_owner_state.encode_into(_owner_packet)
+		receive_snapshot.rpc_id(recipient.network_owner_id, _packet, _owner_packet)
 		sent_packets += 1
 	snapshot_sent.emit(Net.tick, _actors.size())
 
@@ -106,14 +119,20 @@ func _capture(actor: Player) -> void:
 
 
 @rpc("authority", "call_remote", "unreliable_ordered", 2)
-func receive_snapshot(packet: PackedByteArray) -> void:
+func receive_snapshot(packet: PackedByteArray, owner_packet: PackedByteArray = PackedByteArray()) -> void:
 	if multiplayer.is_server() or multiplayer.get_remote_sender_id() != Net.SERVER_ID:
 		return
-	accept_packet(packet)
+	delay.submit(packet, owner_packet)
 
 
-func accept_packet(packet: PackedByteArray) -> bool:
+func _accept_delayed(packet: PackedByteArray, owner_packet: PackedByteArray) -> void:
+	accept_packet(packet, owner_packet)
+
+
+func accept_packet(packet: PackedByteArray, owner_packet: PackedByteArray = PackedByteArray()) -> bool:
 	if _config == null or not SnapshotCodec.valid_packet(packet, NetworkConfig.MAX_CLIENTS + 1):
+		return false
+	if not owner_packet.is_empty() and not _owner_state.decode_from(owner_packet):
 		return false
 	var tick: int = packet.decode_u32(0)
 	if tick <= last_received_tick or not _validate_records(packet):
@@ -128,6 +147,8 @@ func accept_packet(packet: PackedByteArray) -> bool:
 		var actor: Player = players.actors.get(_state.peer_id)
 		if actor != null and not actor.is_local_player:
 			actor.remote_view.push_snapshot(_state)
+		elif actor != null and not multiplayer.is_server() and not owner_packet.is_empty():
+			actor.local_controller.prediction.receive(_owner_state, last_processed_input_tick, tick)
 	snapshot_received.emit(tick, last_processed_input_tick)
 	return true
 

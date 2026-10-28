@@ -30,3 +30,4 @@
 | `src/fx/default_projectile_fx.tres`, `src/weapons/projectiles/*.tres` | Собственные параметры представления и временные профили четырёх снарядов | Проект BattlebitAntigravity | Собственные ресурсы, внешних файлов нет | 2026-10-27 |
 | Метки `tools/projectile_acceptance.gd` | Собственные зелёные сферические примитивы для проверочного снимка траектории | Проект BattlebitAntigravity | Собственные процедурные ассеты, внешних файлов нет | 2026-10-27 |
 | Нож `src/weapons/melee_view.gd`, `src/weapons/data/knife.tres` | Собственные `BoxMesh`, материалы и процедурная анимация замаха/удара/возврата; параметры в `MeleeData` | Проект BattlebitAntigravity | Собственные процедурные ассеты, внешних файлов нет | 2026-10-27 |
+| [default_prediction.tres](src/net/default_prediction.tres) | Собственные параметры истории, точности, сглаживания и телепортации владельца | Проект BattlebitAntigravity | Собственный ресурс, внешних файлов нет | 2026-10-28 |

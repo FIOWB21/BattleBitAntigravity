@@ -12,18 +12,18 @@ func test_nickname_length_and_alphabet() -> void:
 
 func test_rejection_reason_and_case_insensitive_uniqueness() -> void:
 	var names: Dictionary[int, String] = {1: "Host", 2: "Игрок"}
-	assert_eq(_reason(1, "New_1", "secret", names), "")
-	assert_eq(_reason(2, "New_1", "secret", names), "protocol_mismatch")
-	assert_eq(_reason(1, "!", "secret", names), "invalid_nickname")
-	assert_eq(_reason(1, "HOST", "secret", names), "nickname_in_use")
-	assert_eq(_reason(1, "игрок", "secret", names), "nickname_in_use")
-	assert_eq(_reason(1, "New_1", "bad", names), "wrong_password")
+	assert_eq(_reason(NetworkConfig.PROTOCOL_VERSION, "New_1", "secret", names), "")
+	assert_eq(_reason(1, "New_1", "secret", names), "protocol_mismatch")
+	assert_eq(_reason(NetworkConfig.PROTOCOL_VERSION, "!", "secret", names), "invalid_nickname")
+	assert_eq(_reason(NetworkConfig.PROTOCOL_VERSION, "HOST", "secret", names), "nickname_in_use")
+	assert_eq(_reason(NetworkConfig.PROTOCOL_VERSION, "игрок", "secret", names), "nickname_in_use")
+	assert_eq(_reason(NetworkConfig.PROTOCOL_VERSION, "New_1", "bad", names), "wrong_password")
 	assert_eq(names.size(), 2, "Validation never mutates admission state")
 
 
 func test_empty_password_and_configured_nickname_limits() -> void:
 	var names: Dictionary[int, String] = {}
-	assert_eq(HandshakeRules.rejection_reason(1, "Player", "", "", names, _config), "")
+	assert_eq(HandshakeRules.rejection_reason(NetworkConfig.PROTOCOL_VERSION, "Player", "", "", names, _config), "")
 	var custom: NetworkConfig = _config.duplicate() as NetworkConfig
 	custom.nickname_min_length = 3
 	custom.nickname_max_length = 4

@@ -93,7 +93,8 @@ func _assert_client(path: String, total: int, states: Dictionary[String, Diction
 		return
 	var measurement: Dictionary = measures[0]
 	assert_eq(int(measurement["players"]), total)
-	assert_true(bool(measurement["local_unchanged"]))
+	assert_false(bool(measurement["local_unchanged"]))
+	assert_gt(int(measurement["predicted_ticks"]), 100)
 	assert_eq(int(measurement["client_steps"]), 0)
 	assert_gt(int(measurement["ack"]), 0)
 	var rate: float = float(measurement["snapshots"]) / float(measurement["seconds"])

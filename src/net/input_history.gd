@@ -22,3 +22,9 @@ func push(inp: PlayerInput) -> bool:
 	_last_tick = inp.tick
 	_cursor = (_cursor + InputCodec.FRAME_BYTES) % packet.size()
 	return true
+
+
+func latest_into(inp: PlayerInput) -> bool:
+	if packet.is_empty() or _last_tick == 0:
+		return false
+	return InputCodec.decode_into(packet, posmod(_cursor - InputCodec.FRAME_BYTES, packet.size()), inp)

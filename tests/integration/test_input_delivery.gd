@@ -58,7 +58,7 @@ func _exercise(role: String) -> void:
 		assert_lt(float(replay[0]["max_error"]), 0.00001)
 	assert_has(_read(client), "INPUT ATTACK future diagonal other_owner")
 	assert_has(_read(client), '"simulated":0')
-	assert_has(_read(client), '"unchanged":true')
+	assert_has(_read(client), '"unchanged":false')
 	for path: String in [server, client]:
 		assert_has(_read(path), "INPUT CLEANUP actors=0")
 		for forbidden: String in ["SCRIPT ERROR", "ERROR:", "WARNING:", "timeout"]:
