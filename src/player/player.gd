@@ -166,6 +166,7 @@ func handle_input_event(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	local_controller.physics_step(delta)
+	server_sim.physics_step(delta)
 
 
 func _process(delta: float) -> void:

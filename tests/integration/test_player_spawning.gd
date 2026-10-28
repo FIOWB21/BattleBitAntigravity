@@ -147,10 +147,14 @@ func _assert_same_positions(paths: PackedStringArray, count: int) -> void:
 		var sample: Dictionary = _find_count(path, count)
 		var poses: Dictionary = {}
 		for actor: Dictionary in sample.get("actors", []):
-			poses[int(actor["id"])] = actor["position"]
+			var position: Vector3 = str_to_var(String(actor["position"])) as Vector3
+			poses[int(actor["id"])] = Vector2(position.x, position.z)
+			# Server gravity now settles Y; clients retain the spawn height until snapshots.
+			assert_gte(position.y, -0.001)
+			assert_lte(position.y, 0.101)
 		if expected.is_empty():
 			expected = poses
-		assert_eq(poses, expected, "Identical spawn poses on all machines")
+		assert_eq(poses, expected, "Identical horizontal spawn positions on all machines")
 
 
 func _wait_count(path: String, count: int, after_ms: int = 0) -> Dictionary:

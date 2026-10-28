@@ -19,6 +19,11 @@ const CHANNEL_COUNT: int = 4
 @export_range(0.01, 1.0) var clock_smoothing: float = 0.2
 @export_range(1, 2) var jitter_buffer_ticks: int = 2
 @export_range(0.01, 0.5) var tick_slew_fraction: float = 0.25
+@export_range(4, 8) var input_history_count: int = 6
+@export_range(8, 256) var input_queue_capacity: int = 128
+@export_range(0, 5) var input_repeat_ticks: int = 5
+@export_range(0.1, 1.0) var input_max_future_seconds: float = 1.0
+@export_range(0.1, 2.0) var input_max_age_seconds: float = 1.0
 
 
 static func valid_port(port: int) -> bool:

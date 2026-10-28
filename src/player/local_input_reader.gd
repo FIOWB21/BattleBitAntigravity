@@ -67,6 +67,11 @@ func handle_input_event(event: InputEvent) -> void:
 
 func read_input() -> PlayerInput:
 	var inp: PlayerInput = PlayerInput.new()
+	read_into(inp)
+	return inp
+
+
+func read_into(inp: PlayerInput) -> void:
 	tick += 1
 	inp.tick = tick
 	inp.move = Input.get_vector(
@@ -89,7 +94,6 @@ func read_input() -> PlayerInput:
 	_last_weapon = false
 	_throw_grenade = false
 	_melee = false
-	return inp
 
 
 func _read_buttons() -> int:
