@@ -9,6 +9,7 @@ var interpolator: RemoteInterpolator = RemoteInterpolator.new()
 var sampled: PlayerSnapshot = PlayerSnapshot.new()
 var weapon_id: int = 0
 var flags: int = 0
+var weapon_view: WorldWeaponView
 var _actor: Player
 var _shape: CapsuleMesh
 var _aim: MeshInstance3D
@@ -42,7 +43,15 @@ func setup(actor: Player) -> void:
 	_aim.mesh = marker
 	_aim.material_override = material
 	add_child(_aim)
+	_setup_weapon(actor)
 	set_process(not actor.is_local_player and not Game.is_dedicated)
+
+
+func _setup_weapon(actor: Player) -> void:
+	if not actor.is_local_player and not Game.is_dedicated:
+		weapon_view = WorldWeaponView.new()
+		add_child(weapon_view)
+		weapon_view.setup(actor)
 
 
 func configure(config: SnapshotConfig) -> void:
@@ -59,9 +68,11 @@ func reset_for_spawn(pose: Transform3D, tick: int) -> void:
 	interpolator.clear()
 	global_transform = pose
 	_stance = -1
+	if weapon_view != null:
+		weapon_view.reset()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not visible or not Net.is_connected:
 		return
 	var server_tick: float = float(Net.tick) + Engine.get_physics_interpolation_fraction()
@@ -70,6 +81,8 @@ func _process(_delta: float) -> void:
 			return
 		server_tick = Net.clock.estimated_server_tick(Time.get_ticks_usec())
 	present_at(server_tick)
+	if weapon_view != null:
+		weapon_view.advance(delta)
 
 
 func present_at(server_tick: float) -> bool:
@@ -88,4 +101,10 @@ func present_at(server_tick: float) -> bool:
 		capsule.position.y = height * 0.5
 	_aim.position = Vector3(0.0, _actor.movement_config.head_height_for(stance), -_shape.radius)
 	_aim.rotation.x = sampled.pitch
+	if weapon_view != null:
+		weapon_view.apply_snapshot(sampled, _actor.movement_config.head_height_for(stance))
 	return true
+
+
+func accepts_shot(tick: int) -> bool:
+	return tick > _spawn_tick and not _actor.is_local_player

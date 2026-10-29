@@ -11,6 +11,7 @@ var snapshots: SnapshotStream
 var lag_compensator: LagCompensator
 var respawns: RespawnService
 var combat_events: CombatEvents
+var weapon_presentation: WeaponPresentation
 var _slots: Dictionary[int, int] = {}
 var _spawner: MultiplayerSpawner
 var _container: Node3D
@@ -40,6 +41,10 @@ func _ready() -> void:
 	combat_events.name = "CombatEvents"
 	combat_events.players = self
 	add_child(combat_events)
+	weapon_presentation = WeaponPresentation.new()
+	weapon_presentation.name = "WeaponPresentation"
+	weapon_presentation.players = self
+	add_child(weapon_presentation)
 	respawns.player_respawned.connect(combat_events.respawned)
 	Net.peer_joined.connect(_peer_joined)
 	Net.peer_left.connect(_peer_left)
@@ -112,6 +117,7 @@ func _track_actor(actor: Player) -> void:
 	actor.equipment.combat.interpolation_seconds = loader.current_data.snapshot_config.interpolation_seconds
 	respawns.track(actor)
 	combat_events.track(actor)
+	weapon_presentation.track(actor)
 
 
 func respawn_pose(id: int) -> Transform3D:
@@ -121,6 +127,7 @@ func respawn_pose(id: int) -> Transform3D:
 
 
 func _actor_removed(id: int) -> void:
+	weapon_presentation.untrack(actors[id])
 	combat_events.untrack(actors[id])
 	respawns.untrack(actors[id])
 	lag_compensator.untrack(actors[id])
@@ -136,6 +143,7 @@ func _peer_left(id: int) -> void:
 
 
 func clear() -> void:
+	weapon_presentation.reset()
 	lag_compensator.clear()
 	snapshots.reset()
 	ready_peers.clear()

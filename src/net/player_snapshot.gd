@@ -7,7 +7,8 @@ const SPRINTING: int = 1 << 3
 const AIMING: int = 1 << 4
 const DEAD: int = 1 << 5
 const DOWNED: int = 1 << 6
-const FLAG_MASK: int = (1 << 7) - 1
+const RELOADING: int = 1 << 7
+const FLAG_MASK: int = (1 << 8) - 1
 
 var tick: int = 0
 var peer_id: int = 0

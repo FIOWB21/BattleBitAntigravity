@@ -38,7 +38,7 @@ func setup(player: Player) -> void:
 		hitscan.setup(weapon, attacker, exclude)
 		hitscan.projectiles = projectiles.system
 		_hitscans[weapon] = hitscan
-		if effects != null:
+		if effects != null and (player.network_owner_id == 0 or player.is_local_player):
 			effects.bind_weapon(weapon, hitscan)
 		if player.ads_view != null:
 			player.ads_view.cache_weapon(weapon, player.is_local_player)
@@ -83,7 +83,7 @@ func simulate_melee(inp: PlayerInput) -> void:
 
 
 func _setup_effects() -> void:
-	if Game.is_dedicated:
+	if Game.is_dedicated or (_player.network_owner_id != 0 and not _player.is_local_player):
 		return
 	effects = ShotEffects.new()
 	effects.name = "ShotEffects"

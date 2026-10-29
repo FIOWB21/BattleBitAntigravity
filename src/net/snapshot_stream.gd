@@ -111,6 +111,8 @@ func _capture(actor: Player) -> void:
 		_state.flags |= PlayerSnapshot.SPRINTING
 	if actor.ads.target > 0.0:
 		_state.flags |= PlayerSnapshot.AIMING
+	if actor.weapon != null and actor.weapon.state == Weapon.State.RELOADING:
+		_state.flags |= PlayerSnapshot.RELOADING
 	if (actor.health_component as HealthComponent).is_dead:
 		_state.flags |= PlayerSnapshot.DEAD
 	if (actor.health_component as HealthComponent).is_downed:
