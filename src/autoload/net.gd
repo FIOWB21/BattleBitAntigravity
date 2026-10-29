@@ -21,15 +21,19 @@ var last_error: String = ""
 var is_connected: bool = false
 var clock: NetClock = NetClock.new()
 var time_sync: NetTimeSync = NetTimeSync.new()
+var session: NetworkSession = NetworkSession.new()
+var lifecycle: PeerLifecycle = PeerLifecycle.new()
 
 var _peer: ENetMultiplayerPeer
-var _pending: Dictionary[int, Timer] = {}
-var _closing: Dictionary[int, Timer] = {}
-var _revoked: Dictionary[int, bool] = {}
 var _client_timeout: Timer
 
 
 func _ready() -> void:
+	lifecycle.name = "PeerLifecycle"
+	lifecycle.hello_expired.connect(_kick.bind("hello_timeout"))
+	lifecycle.close_expired.connect(_finish_kick)
+	lifecycle.peer_timed_out.connect(_on_peer_timeout)
+	add_child(lifecycle)
 	time_sync.name = "TimeSync"
 	time_sync.setup(self, clock)
 	time_sync.ping_updated.connect(_on_ping_updated)
@@ -41,6 +45,8 @@ func _ready() -> void:
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
 	_client_timeout = Timer.new()
 	_client_timeout.one_shot = true
+	_client_timeout.process_mode = Node.PROCESS_MODE_ALWAYS
+	_client_timeout.ignore_time_scale = true
 	_client_timeout.timeout.connect(_on_connection_failed)
 	add_child(_client_timeout)
 
@@ -70,12 +76,15 @@ func start_server(port: int, max_clients: int, listen: bool = true) -> Error:
 		return result
 	_peer = candidate
 	multiplayer.multiplayer_peer = _peer
+	session.configure(config.blocked_ips)
+	lifecycle.configure(config)
 	tick = 0
 	last_error = ""
 	is_connected = true
 	Game.is_server = true
 	if listen:
 		nicknames[SERVER_ID] = local_nickname
+		session.admit(SERVER_ID, local_nickname)
 		peer_joined.emit(SERVER_ID, local_nickname)
 	return OK
 
@@ -97,6 +106,7 @@ func join(address: String, port: int) -> Error:
 	last_error = ""
 	is_connected = false
 	Game.is_server = false
+	lifecycle.configure(config)
 	_client_timeout.start(config.handshake_timeout_seconds)
 	return OK
 
@@ -104,46 +114,43 @@ func join(address: String, port: int) -> Error:
 func disconnect_all() -> void:
 	time_sync.stop()
 	_client_timeout.stop()
-	for timer: Timer in _pending.values():
-		timer.stop()
-		timer.queue_free()
-	for timer: Timer in _closing.values():
-		timer.stop()
-		timer.queue_free()
-	_pending.clear()
-	_closing.clear()
+	lifecycle.clear()
 	if _peer != null:
 		_peer.close()
 		_peer = null
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	var departed: Array[int] = nicknames.keys()
-	departed.append_array(_revoked.keys())
-	_revoked.clear()
 	nicknames.clear()
 	is_connected = false
 	tick = 0
 	Game.is_server = Game.is_dedicated
 	for id: int in departed:
 		peer_left.emit(id)
+	session.clear()
 	disconnected.emit()
 
 
 func _on_peer_connected(id: int) -> void:
+	# On clients, relayed player IDs have no direct ENetPacketPeer.
+	if not multiplayer.is_server() and id != SERVER_ID:
+		return
+	PeerLifecycle.configure_transport(_peer.get_peer(id), config)
 	if not multiplayer.is_server():
 		return
-	var timer: Timer = Timer.new()
-	timer.one_shot = true
-	timer.timeout.connect(_kick.bind(id, "hello_timeout"))
-	add_child(timer)
-	_pending[id] = timer
-	timer.start(config.handshake_timeout_seconds)
+	lifecycle.watch(id, config.handshake_timeout_seconds)
+	if session.is_blocked(peer_ip(id)):
+		_kick(id, "ip_banned")
 
 
 func _on_peer_disconnected(id: int) -> void:
-	_clear_timer(_pending, id)
-	_clear_timer(_closing, id)
-	if nicknames.erase(id) or _revoked.erase(id):
+	lifecycle.forget(id)
+	_revoke(id)
+
+
+func _revoke(id: int) -> void:
+	if nicknames.erase(id):
 		peer_left.emit(id)
+	session.forget(id)
 
 
 func _on_transport_connected() -> void:
@@ -155,15 +162,17 @@ func hello(version: int, nickname: String, supplied_password: String = "") -> vo
 	if _peer == null or not multiplayer.is_server():
 		return
 	var id: int = multiplayer.get_remote_sender_id()
-	if not _pending.has(id) or _closing.has(id):
+	if not lifecycle.pending.has(id) or lifecycle.closing.has(id):
 		return
 	var reason: String = HandshakeRules.rejection_reason(
 		version, nickname, supplied_password, password, nicknames, config)
 	if not reason.is_empty():
 		_kick(id, reason)
 		return
-	_clear_timer(_pending, id)
+	lifecycle.accepted(id)
 	nicknames[id] = nickname
+	session.admit(id, nickname)
+	lifecycle.track(id, Time.get_ticks_usec())
 	welcome.rpc_id(id, id, Game.map_id)
 	Log.i("NET ACCEPT id=%d nickname=%s" % [id, nickname])
 	peer_joined.emit(id, nickname)
@@ -179,6 +188,7 @@ func welcome(id: int, map_id: String = "testbed") -> void:
 	nicknames[id] = local_nickname
 	Game.map_id = map_id
 	is_connected = true
+	lifecycle.track(SERVER_ID, Time.get_ticks_usec())
 	Log.i("NET CONNECTED id=%d" % id)
 	time_sync.start()
 	connected_to_server.emit()
@@ -191,30 +201,20 @@ func kick(reason: String) -> void:
 
 
 func _kick(id: int, reason: String) -> void:
-	if _peer == null or _closing.has(id):
+	if _peer == null or lifecycle.closing.has(id):
 		return
-	_clear_timer(_pending, id)
-	kick.rpc_id(id, reason)
+	lifecycle.close(id, config.kick_grace_seconds)
+	if time_sync.can_send(id):
+		kick.rpc_id(id, reason)
 	Log.i("NET REJECT id=%d reason=%s" % [id, reason])
-	var timer: Timer = Timer.new()
-	timer.one_shot = true
-	timer.timeout.connect(_finish_kick.bind(id))
-	add_child(timer)
-	_closing[id] = timer
-	timer.start(config.kick_grace_seconds)
+	_revoke(id)
 
 
 func _finish_kick(id: int) -> void:
 	if _peer != null and multiplayer.get_peers().has(id):
-		_peer.disconnect_peer(id)
+		# Remove high-level replication/cache recipients before closing ENet channels.
+		(multiplayer as SceneMultiplayer).disconnect_peer(id)
 	_on_peer_disconnected(id)
-
-
-func _clear_timer(timers: Dictionary[int, Timer], id: int) -> void:
-	if timers.has(id):
-		timers[id].stop()
-		timers[id].queue_free()
-		timers.erase(id)
 
 
 func _on_connection_failed() -> void:
@@ -240,10 +240,35 @@ func disconnect_with_error(reason: String) -> void:
 
 func remove_peer(id: int, reason: String) -> bool:
 	if not multiplayer.is_server() or _peer == null or id <= SERVER_ID \
-			or not nicknames.has(id) or _closing.has(id):
+			or not nicknames.has(id) or lifecycle.closing.has(id):
 		return false
 	_kick(id, reason)
-	# Stop accepting gameplay/chat immediately, before the graceful close completes.
-	nicknames.erase(id)
-	_revoked[id] = true
 	return true
+
+
+func peer_ip(id: int) -> String:
+	if _peer == null or not multiplayer.get_peers().has(id) \
+			or (not multiplayer.is_server() and id != SERVER_ID):
+		return ""
+	return _peer.get_peer(id).get_remote_address()
+
+
+func ban_ip(address: String) -> bool:
+	if _peer == null or not multiplayer.is_server() or not session.ban_ip(address):
+		return false
+	for id: int in multiplayer.get_peers():
+		if session.is_blocked(peer_ip(id)):
+			_kick(id, "ip_banned")
+	return true
+
+
+func note_packet(id: int) -> void:
+	lifecycle.received(id, Time.get_ticks_usec())
+
+
+func _on_peer_timeout(id: int) -> void:
+	if multiplayer.is_server():
+		Log.i("NET TIMEOUT id=%d" % id)
+		_finish_kick(id)
+	else:
+		_fail_connection("server_timeout")

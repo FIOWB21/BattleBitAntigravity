@@ -44,4 +44,5 @@ func submit_input(packet: PackedByteArray) -> void:
 	var sender: int = multiplayer.get_remote_sender_id()
 	if sender != player.network_owner_id or not Net.nicknames.has(sender):
 		return
+	Net.note_packet(sender)
 	input_queue.receive(packet, Net.tick)

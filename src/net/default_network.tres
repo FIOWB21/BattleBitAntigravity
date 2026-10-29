@@ -4,6 +4,10 @@
 
 [resource]
 script = ExtResource("1")
+client_timeout_seconds = 10.0
+timeout_factor = 32
+activity_poll_seconds = 0.1
+blocked_ips = PackedStringArray()
 ping_interval_seconds = 0.5
 ping_timeout_seconds = 2.0
 rtt_smoothing = 0.2

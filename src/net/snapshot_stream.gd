@@ -125,6 +125,7 @@ func _capture(actor: Player) -> void:
 func receive_snapshot(packet: PackedByteArray, owner_packet: PackedByteArray = PackedByteArray()) -> void:
 	if multiplayer.is_server() or multiplayer.get_remote_sender_id() != Net.SERVER_ID:
 		return
+	Net.note_packet(Net.SERVER_ID)
 	accept_packet(packet, owner_packet)
 
 

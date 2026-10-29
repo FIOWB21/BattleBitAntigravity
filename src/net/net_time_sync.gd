@@ -97,6 +97,7 @@ func set_simulation(rtt_ms: int, loss: float, jitter_ms: int, duplicates: float,
 	var sender: int = multiplayer.get_remote_sender_id()
 	if not multiplayer.is_server() or not _net.nicknames.has(sender):
 		return
+	_net.note_packet(sender)
 	var cfg: NetSimConfig = NetSimConfig.new()
 	cfg.rtt_ms = rtt_ms
 	cfg.loss_percent = loss
@@ -141,6 +142,7 @@ func ping(client_time: int) -> void:
 		return
 	var sender: int = multiplayer.get_remote_sender_id()
 	if _net.nicknames.has(sender) and can_send(sender):
+		_net.note_packet(sender)
 		_packet.encode_s64(0, client_time)
 		_packet.encode_s64(8, _net.tick)
 		outbound.submit(_packet, PackedByteArray(), sender)
@@ -160,6 +162,7 @@ func pong(client_time: int, server_tick: int) -> void:
 		return
 	if not _pending.has(client_time) or server_tick < 0:
 		return
+	_net.note_packet(SERVER_ID)
 	if _clock.record_pong(client_time, Time.get_ticks_usec(), server_tick):
 		ping_updated.emit(_clock.rtt_seconds * NetClock.MS_PER_SECOND)
 	_pending.erase(client_time)

@@ -96,6 +96,7 @@ func change_map(map_id: String) -> void:
 func map_changed(map_id: String) -> void:
 	if multiplayer.is_server():
 		return
+	Net.note_packet(Net.SERVER_ID)
 	if not _replace_geometry(map_id):
 		Net.disconnect_with_error.call_deferred("map_load_failed")
 		return

@@ -35,6 +35,7 @@ func untrack(actor: Player) -> void:
 func actor_ready(id: int) -> void:
 	var sender: int = multiplayer.get_remote_sender_id()
 	if multiplayer.is_server() and players.ready_peers.has(sender) and players.actors.has(id):
+		Net.note_packet(sender)
 		_send_state(players.actors[id], sender)
 
 
@@ -69,6 +70,7 @@ func life_sync(id: int, current: float, maximum: float, state: int, bleedout: fl
 			or server_tick < maxi(_state_ticks.get(id, -1), _spawn_ticks.get(id, -1)):
 		return
 	var actor: Player = players.actors[id]
+	Net.note_packet(Net.SERVER_ID)
 	var appeared: bool = spawn_tick > _spawn_ticks.get(id, -1)
 	if appeared:
 		_apply_spawn(actor, pose, spawn_tick)
@@ -103,12 +105,14 @@ func _damage(source: int, zone: int, actor: Player) -> void:
 @rpc("authority", "call_remote", "reliable", 0)
 func hit_confirm(zone: int, killed: bool) -> void:
 	if not multiplayer.is_server():
+		Net.note_packet(Net.SERVER_ID)
 		Events.hit_confirmed.emit(zone, killed)
 
 
 @rpc("authority", "call_remote", "reliable", 0)
 func damage_indicator(direction: Vector3) -> void:
 	if not multiplayer.is_server():
+		Net.note_packet(Net.SERVER_ID)
 		Events.damage_indicated.emit(direction)
 
 
@@ -126,6 +130,7 @@ func _death(killer: int, actor: Player) -> void:
 @rpc("authority", "call_remote", "reliable", 0)
 func player_died(victim: int, killer: int, weapon: StringName, headshot: bool) -> void:
 	if not multiplayer.is_server():
+		Net.note_packet(Net.SERVER_ID)
 		_publish_death(victim, killer, weapon, headshot)
 
 
@@ -150,6 +155,7 @@ func respawned(actor: Player, tick: int) -> void:
 @rpc("authority", "call_remote", "reliable", 0)
 func player_spawned(id: int, pose: Transform3D, tick: int, maximum: float, protection: int) -> void:
 	if not multiplayer.is_server() and players.actors.has(id) and tick > _spawn_ticks.get(id, -1):
+		Net.note_packet(Net.SERVER_ID)
 		var actor: Player = players.actors[id]
 		_apply_spawn(actor, pose, tick)
 		(actor.health_component as HealthComponent).protection_until_tick = protection

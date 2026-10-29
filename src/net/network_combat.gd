@@ -71,6 +71,7 @@ func fire(input_tick: int, seed: int, viewed_tick: int) -> void:
 	if sender != player.network_owner_id or not Net.nicknames.has(sender):
 		rejected_requests += 1
 		return
+	Net.note_packet(sender)
 	if input_tick <= _spawn_input_tick or not history.request(input_tick, seed, sender, Net.tick, viewed_tick):
 		rejected_requests += 1
 
@@ -151,6 +152,7 @@ func ammo_sync(server_tick: int, slot: int, magazine: int, reserve: int,
 		state: int, phase: int, cooldown: int, reload_ticks: int, switch_ticks: int, resolved_fire_tick: int) -> void:
 	if multiplayer.is_server() or not player.is_local_player or server_tick <= _sync_tick:
 		return
+	Net.note_packet(Net.SERVER_ID)
 	var weapon: Weapon = player.inventory.weapon_at(slot)
 	_sync_tick = server_tick
 	if player.inventory.active_slot != slot:

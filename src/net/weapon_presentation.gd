@@ -93,6 +93,7 @@ func _transmit_shot(packet: PackedByteArray, _extra: PackedByteArray, peer_id: i
 func remote_shot(peer_id: int, tick: int, id: int) -> void:
 	if multiplayer.is_server() or multiplayer.get_remote_sender_id() != Net.SERVER_ID:
 		return
+	Net.note_packet(Net.SERVER_ID)
 	present_shot(peer_id, tick, id)
 
 

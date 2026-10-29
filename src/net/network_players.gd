@@ -62,6 +62,7 @@ func map_ready(map_id: String) -> void:
 	var id: int = multiplayer.get_remote_sender_id()
 	if id <= Net.SERVER_ID or not Net.nicknames.has(id) or map_id != String(loader.current_data.id):
 		return
+	Net.note_packet(id)
 	_admit(id)
 
 
@@ -77,7 +78,8 @@ func _admit(id: int) -> void:
 	_slots[id] = slot
 	var pose: Transform3D = loader.spawn_pose
 	pose.origin += pose.basis * loader.current_data.spawn_offset(slot)
-	_spawner.spawn({"peer_id": id, "nickname": Net.nicknames[id], "pose": global_transform.affine_inverse() * pose})
+	_spawner.spawn({"peer_id": id, "nickname": Net.nicknames[id],
+		"team_id": Net.session.team_for(Net.nicknames[id]), "pose": global_transform.affine_inverse() * pose})
 
 
 func _spawn_player(payload: Variant) -> Node:
@@ -92,6 +94,7 @@ func _spawn_player(payload: Variant) -> Node:
 	if not multiplayer.is_server():
 		Net.nicknames[id] = String(data.get("nickname", str(id)))
 	actor.network_owner_id = id
+	actor.team_id = int(data.get("team_id", actor.team_id))
 	actor.is_local_player = id == multiplayer.get_unique_id() and not Game.is_dedicated
 	actor.transform = data["pose"] as Transform3D
 	actor.set_multiplayer_authority(Net.SERVER_ID)
@@ -139,6 +142,8 @@ func _actor_removed(id: int) -> void:
 func _peer_left(id: int) -> void:
 	ready_peers.erase(id)
 	if multiplayer.is_server() and actors.has(id):
+		Net.session.remember_team(id, actors[id].team_id)
+		actors[id].process_mode = Node.PROCESS_MODE_DISABLED
 		actors[id].queue_free()
 
 

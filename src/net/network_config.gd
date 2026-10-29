@@ -1,7 +1,7 @@
 class_name NetworkConfig
 extends Resource
 
-const PROTOCOL_VERSION: int = 8
+const PROTOCOL_VERSION: int = 9
 const DEFAULT_PORT: int = 7777
 const DEFAULT_MAX_CLIENTS: int = 32
 const MAX_PORT: int = 65535
@@ -13,6 +13,10 @@ const CHANNEL_COUNT: int = 4
 @export var nickname_pattern: String = "^[A-Za-zА-Яа-яЁё0-9_-]+$"
 @export_range(0.1, 60.0) var handshake_timeout_seconds: float = 5.0
 @export_range(0.1, 2.0) var kick_grace_seconds: float = 0.2
+@export_range(1.0, 60.0) var client_timeout_seconds: float = 10.0
+@export_range(1, 64) var timeout_factor: int = 32
+@export_range(0.01, 1.0) var activity_poll_seconds: float = 0.1
+@export var blocked_ips: PackedStringArray = []
 @export_range(0.1, 5.0) var ping_interval_seconds: float = 0.5
 @export_range(0.1, 10.0) var ping_timeout_seconds: float = 2.0
 @export_range(0.01, 1.0) var rtt_smoothing: float = 0.2

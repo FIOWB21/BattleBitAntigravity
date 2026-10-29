@@ -36,6 +36,7 @@ func _accept(sender: int, raw: String, team_only: bool) -> void:
 	if not multiplayer.is_server() or not Net.nicknames.has(sender) \
 			or not loader.players.ready_peers.has(sender) or not loader.players.actors.has(sender):
 		return
+	Net.note_packet(sender)
 	if not policy.allow(sender, Time.get_ticks_usec(), config):
 		return
 	if raw.length() > config.max_request_length:
@@ -74,6 +75,7 @@ func _deliver(recipient: int, sender: int, nickname: String, text: String, team_
 @rpc("authority", "call_remote", "reliable", 0)
 func deliver(sender: int, nickname: String, text: String, team_only: bool) -> void:
 	if not multiplayer.is_server():
+		Net.note_packet(Net.SERVER_ID)
 		message_received.emit(sender, nickname, text, team_only)
 
 
@@ -90,24 +92,40 @@ func _command(sender: int, raw: String) -> void:
 	match command:
 		"/kick":
 			_kick(sender, argument)
+		"/ban":
+			_ban(sender, argument)
+		"/unban":
+			_notice(sender, "IP removed." if Net.session.unban_ip(argument) else "Unknown IP.")
+		"/blacklist":
+			_notice(sender, "Blocked IPs: " + ", ".join(Net.session.blacklist()))
 		"/map":
 			_map(sender, argument)
 		"/say":
 			_say(sender, argument)
 		_:
-			_notice(sender, "Commands: /kick <peer_id|nickname>, /map <map_id>, /say <text>")
+			_notice(sender, "Commands: /kick, /ban <peer_id|nickname|IP>, /unban <IP>, /blacklist, /map, /say")
 
 
 func _kick(sender: int, argument: String) -> void:
-	var target: int = argument.to_int() if argument.is_valid_int() else 0
-	if target == 0:
-		for id: int in Net.nicknames:
-			if Net.nicknames[id] == argument:
-				target = id
-	if not Net.remove_peer(target, "admin_kick"):
+	if not Net.remove_peer(_target(argument), "admin_kick"):
 		_notice(sender, "Unknown peer or protected server.")
 		return
 	_notice(sender, "Peer disconnected.")
+
+
+func _target(argument: String) -> int:
+	var target: int = argument.to_int() if argument.is_valid_int() else 0
+	if target == 0:
+		for id: int in Net.nicknames:
+			if Net.nicknames[id].to_lower() == argument.to_lower():
+				target = id
+	return target
+
+
+func _ban(sender: int, argument: String) -> void:
+	var target: int = _target(argument)
+	var address: String = Net.peer_ip(target) if target > Net.SERVER_ID else argument
+	_notice(sender, "IP banned for this session." if Net.ban_ip(address) else "Unknown peer or invalid IP.")
 
 
 func _map(sender: int, argument: String) -> void:
@@ -138,6 +156,7 @@ func _notice(recipient: int, text: String) -> void:
 @rpc("authority", "call_remote", "reliable", 0)
 func notice(text: String) -> void:
 	if not multiplayer.is_server():
+		Net.note_packet(Net.SERVER_ID)
 		notice_received.emit(text)
 
 
