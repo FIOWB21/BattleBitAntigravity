@@ -1,11 +1,11 @@
 extends GutTest
 
-var _delay: PacketDelay
+var _delay: NetSim
 var _received: Array[PackedByteArray] = []
 
 
 func before_each() -> void:
-	_delay = PacketDelay.new()
+	_delay = NetSim.new()
 	_delay.configure(2, 1)
 	_delay.random.seed = 460
 	_delay.packet_delivered.connect(_record)
@@ -43,7 +43,7 @@ func test_loss_overflow_and_clear_cannot_deliver_stale_packets() -> void:
 	assert_false(_delay.submit(PackedByteArray([1, 2]), PackedByteArray([3])))
 	assert_eq(_delay.dropped, 1)
 	Net.time_sync.configure_simulation(120, 0.0)
-	for index: int in range(PacketDelay.CAPACITY):
+	for index: int in range(NetSim.CAPACITY):
 		assert_true(_delay.submit(PackedByteArray([index, 2]), PackedByteArray([3])))
 	assert_false(_delay.submit(PackedByteArray([1, 2]), PackedByteArray([3])))
 	assert_eq(_delay.dropped, 2)
@@ -62,7 +62,7 @@ func test_two_percent_loss_is_applied_to_game_packets() -> void:
 	assert_eq(_delay.delivered + _delay.dropped, 1000)
 
 
-func _record(packet: PackedByteArray, extra: PackedByteArray) -> void:
+func _record(packet: PackedByteArray, extra: PackedByteArray, _peer_id: int) -> void:
 	var copy: PackedByteArray = packet.duplicate()
 	copy.append_array(extra)
 	_received.append(copy)

@@ -113,18 +113,33 @@ func _cmd_fps(args: PackedStringArray) -> String:
 
 
 func _cmd_net_sim(args: PackedStringArray) -> String:
-	if args.size() != 2 or not args[0].is_valid_int() or not args[1].is_valid_float():
-		return "Usage: net_sim <ping_ms> <loss_%>"
+	if args.size() < 2 or args.size() > 5 or not args[0].is_valid_int() or not args[1].is_valid_float():
+		return "Usage: net_sim <ping_ms> <loss_%> [jitter_ms] [duplicate_%] [reorder_%]"
 	var ping_ms: int = args[0].to_int()
 	var loss_pct: float = args[1].to_float()
-	if ping_ms < MIN_PING_MS or not is_finite(loss_pct) or loss_pct < MIN_LOSS_PCT or loss_pct > MAX_LOSS_PCT:
-		return "Error: ping_ms >= 0 and 0 <= loss_% <= 100"
-	Net.time_sync.configure_simulation(ping_ms, loss_pct)
+	var cfg: NetSimConfig = NetSimConfig.new()
+	cfg.rtt_ms = ping_ms
+	cfg.loss_percent = loss_pct
+	if args.size() > 2:
+		if not args[2].is_valid_int():
+			return "Error: jitter_ms must be an integer"
+		cfg.jitter_ms = args[2].to_int()
+	for index: int in range(3, args.size()):
+		if not args[index].is_valid_float():
+			return "Error: percentages must be finite numbers"
+		if index == 3:
+			cfg.duplicate_percent = args[index].to_float()
+		else:
+			cfg.reorder_percent = args[index].to_float()
+	if not cfg.is_valid():
+		return "Error: delays must be 0..2000 ms; percentages must be 0..100"
+	Net.time_sync.configure_simulation(ping_ms, loss_pct, cfg.jitter_ms, cfg.duplicate_percent, cfg.reorder_percent)
 	Game.debug["simulated_ping_ms"] = ping_ms
 	Game.debug["loss_percent"] = loss_pct
 	Game.debug["loss_pct"] = loss_pct
 	Game.debug["loss"] = loss_pct
-	return "net_sim: ping=%d ms, loss=%.1f%%" % [ping_ms, loss_pct]
+	return "net_sim: ping=%d ms, loss=%.1f%%, jitter=%d ms, duplicate=%.1f%%, reorder=%.1f%%" % [
+		ping_ms, loss_pct, cfg.jitter_ms, cfg.duplicate_percent, cfg.reorder_percent]
 
 
 func _cmd_god(args: PackedStringArray) -> String:

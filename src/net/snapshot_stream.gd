@@ -20,15 +20,15 @@ var _seen: Dictionary[int, bool] = {}
 var _last_sent_tick: int = -1
 var _owner_state: PredState = PredState.new()
 var _owner_packet: PackedByteArray = PackedByteArray()
-var delay: PacketDelay
+var delay: NetSim
 
 
 func _ready() -> void:
 	process_physics_priority = 100
 	players.loader.map_loaded.connect(_map_loaded)
 	_owner_packet.resize(PredState.WIRE_BYTES)
-	delay = PacketDelay.new()
-	delay.packet_delivered.connect(_accept_delayed)
+	delay = NetSim.new()
+	delay.packet_delivered.connect(_transmit_snapshot)
 	add_child(delay)
 
 
@@ -49,6 +49,7 @@ func track(actor: Player) -> void:
 
 
 func untrack(actor: Player) -> void:
+	delay.discard_peer(actor.network_owner_id)
 	_actors.erase(actor)
 	for slot: int in range(1, Loadout.SLOT_COUNT + 1):
 		var weapon: Weapon = actor.inventory.weapon_at(slot)
@@ -92,7 +93,7 @@ func _physics_process(_delta: float) -> void:
 		_packet.encode_u32(6, recipient.server_sim.input_queue.last_input_tick)
 		_owner_state.capture(recipient)
 		_owner_state.encode_into(_owner_packet)
-		receive_snapshot.rpc_id(recipient.network_owner_id, _packet, _owner_packet)
+		delay.submit(_packet, _owner_packet, recipient.network_owner_id)
 		sent_packets += 1
 	snapshot_sent.emit(Net.tick, _actors.size())
 
@@ -124,11 +125,12 @@ func _capture(actor: Player) -> void:
 func receive_snapshot(packet: PackedByteArray, owner_packet: PackedByteArray = PackedByteArray()) -> void:
 	if multiplayer.is_server() or multiplayer.get_remote_sender_id() != Net.SERVER_ID:
 		return
-	delay.submit(packet, owner_packet)
-
-
-func _accept_delayed(packet: PackedByteArray, owner_packet: PackedByteArray) -> void:
 	accept_packet(packet, owner_packet)
+
+
+func _transmit_snapshot(packet: PackedByteArray, owner_packet: PackedByteArray, peer_id: int) -> void:
+	if Net.is_connected and players.ready_peers.has(peer_id) and Net.time_sync.can_send(peer_id):
+		receive_snapshot.rpc_id(peer_id, packet, owner_packet)
 
 
 func accept_packet(packet: PackedByteArray, owner_packet: PackedByteArray = PackedByteArray()) -> bool:

@@ -8,6 +8,8 @@ var hard_corrections: int = 0
 var history_misses: int = 0
 var replayed_inputs: int = 0
 var last_error: float = 0.0
+var compared_snapshots: int = 0
+var total_error: float = 0.0
 var visual_offset: Vector3 = Vector3.ZERO
 var predicted_ticks: int = 0
 var _inputs: Array[PlayerInput] = []
@@ -44,6 +46,8 @@ func configure(cfg: PredictionConfig) -> void:
 	replayed_inputs = 0
 	predicted_ticks = 0
 	last_error = 0.0
+	compared_snapshots = 0
+	total_error = 0.0
 	visual_offset = Vector3.ZERO
 	_remaining = 0.0
 	_spawn_first_input = -1
@@ -93,6 +97,9 @@ func reconcile(actor: Player, delta: float) -> Vector3:
 	var before_head: Vector3 = actor.head.global_position
 	last_error = before.distance_to(_server.position()) if mine == null \
 		else mine.position().distance_to(_server.position())
+	if mine != null and _last_input > 0:
+		compared_snapshots += 1
+		total_error += last_error
 	if mismatch:
 		if history_lost:
 			history_misses += 1

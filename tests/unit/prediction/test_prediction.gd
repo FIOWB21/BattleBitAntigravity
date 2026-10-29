@@ -52,6 +52,8 @@ func test_ideal_network_delayed_ack_has_zero_reconciliations_for_full_route() ->
 	assert_eq(_prediction.reconciliations, 0)
 	assert_lt(_client.position.distance_to(_server.position), 0.00001)
 	assert_eq(_prediction.history_misses, 0)
+	assert_eq(_prediction.compared_snapshots, 84)
+	assert_almost_eq(_prediction.total_error, 0.0, 0.00001)
 
 
 func test_first_ack_zero_bootstraps_without_discarding_already_predicted_input() -> void:
@@ -63,6 +65,7 @@ func test_first_ack_zero_bootstraps_without_discarding_already_predicted_input()
 	assert_eq(_prediction.history_misses, 0)
 	assert_eq(_prediction.hard_corrections, 0)
 	assert_eq(_prediction.replayed_inputs, 5)
+	assert_eq(_prediction.compared_snapshots, 0, "Bootstrap without matching history is excluded")
 	assert_eq(_prediction.reconciliations, 0)
 	assert_lt(_client.position.distance_to(_server.position), 0.00002)
 	_prediction.receive(_states[5], 5, 4)
@@ -82,6 +85,8 @@ func test_changed_server_trajectory_replays_unacknowledged_inputs_and_stance() -
 	assert_almost_eq(_client.stance_controller.current_capsule_height,
 		_server.stance_controller.current_capsule_height, 0.00001)
 	assert_eq(_prediction.replayed_inputs, 32)
+	assert_eq(_prediction.compared_snapshots, 1)
+	assert_almost_eq(_prediction.total_error, 0.5, 0.00002)
 	assert_eq(_prediction.reconciliations, 1)
 	assert_eq(_prediction.hard_corrections, 0)
 	assert_almost_eq(_prediction.visual_offset.x, -0.5, 0.00002)

@@ -7,7 +7,7 @@ var hud: HUD
 var enabled: bool = false
 var history: InputHistory = InputHistory.new()
 var prediction: Prediction = Prediction.new()
-var delay: PacketDelay
+var delay: NetSim
 var _input: PlayerInput = PlayerInput.new()
 var _sent_tick: int = 0
 var kill_target: Player
@@ -27,7 +27,7 @@ func setup(actor: Player) -> void:
 		history.configure(Net.config.input_history_count)
 		if not multiplayer.is_server():
 			prediction.configure(preload("res://src/net/default_prediction.tres"))
-			delay = PacketDelay.new()
+			delay = NetSim.new()
 			delay.configure(Net.config.input_history_count * InputCodec.FRAME_BYTES)
 			delay.packet_delivered.connect(_transmit_input)
 			add_child(delay)
@@ -76,8 +76,8 @@ func _send_input(delta: float) -> void:
 		delay.submit(history.packet)
 
 
-func _transmit_input(packet: PackedByteArray, _extra: PackedByteArray) -> void:
-	if Net.is_connected and is_instance_valid(player):
+func _transmit_input(packet: PackedByteArray, _extra: PackedByteArray, _peer_id: int) -> void:
+	if Net.is_connected and is_instance_valid(player) and Net.time_sync.can_send(Net.SERVER_ID):
 		player.server_sim.submit_input.rpc_id(Net.SERVER_ID, packet)
 
 

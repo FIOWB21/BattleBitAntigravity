@@ -1,4 +1,4 @@
-# Low-rate clock probes; PacketDelay uses the same net_sim settings for gameplay.
+# Clock probes use the outgoing simulator; received packets are immediate.
 class_name NetTimeSync
 extends Node
 
@@ -6,40 +6,48 @@ signal ping_updated(measured_ms: float)
 
 const SERVER_ID: int = 1
 const NO_PROBE: int = -1
-const PERCENT: float = 100.0
+const PERCENT: float = NetSimConfig.PERCENT
+const PROBE_BYTES: int = 16
 
-var simulated_rtt_ms: int = 0
-var simulated_loss_percent: float = 0.0
+var profile: NetSimConfig = preload("res://src/net/default_net_sim.tres").duplicate() as NetSimConfig
+var simulated_rtt_ms: int:
+	get: return profile.rtt_ms
+var simulated_loss_percent: float:
+	get: return profile.loss_percent
 var probe_count: int = 0
-
+var outbound: NetSim
 var _net: Node
 var _clock: NetClock
 var _interval: Timer
-var _outbound: Timer
-var _inbound: Timer
 var _pending: Dictionary[int, int] = {}
-var _outbound_due: Dictionary[int, int] = {}
-var _inbound_due: Dictionary[int, int] = {}
+var _profiles: Dictionary[int, NetSimConfig] = {}
+var _packet: PackedByteArray = PackedByteArray()
 var _active: bool = false
-var _random: RandomNumberGenerator = RandomNumberGenerator.new()
+var _server_override: bool = false
 
 
 func setup(net: Node, clock: NetClock) -> void:
 	_net = net
 	_clock = clock
+	_net.peer_left.connect(_peer_left)
 
 
 func _ready() -> void:
-	_interval = _make_timer(_send_probe, false)
-	_outbound = _make_timer(_transmit_pings)
-	_inbound = _make_timer(_accept_pong)
-	_random.randomize()
+	_interval = Timer.new()
+	_interval.timeout.connect(_send_probe)
+	add_child(_interval)
+	outbound = NetSim.new()
+	outbound.configure(PROBE_BYTES)
+	outbound.packet_delivered.connect(_transmit)
+	add_child(outbound)
+	_packet.resize(PROBE_BYTES)
 
 
 func start() -> void:
 	stop()
 	_clock.configure(_net.config, Engine.physics_ticks_per_second)
 	_active = true
+	_advertise()
 	_interval.start(_net.config.ping_interval_seconds)
 	_send_probe()
 
@@ -47,28 +55,62 @@ func start() -> void:
 func stop() -> void:
 	_active = false
 	_pending.clear()
-	_outbound_due.clear()
-	_inbound_due.clear()
+	_profiles.clear()
+	_server_override = false
 	probe_count = 0
 	if _interval != null:
 		_interval.stop()
-		_outbound.stop()
-		_inbound.stop()
+		outbound.clear()
 	_clock.reset()
 	ping_updated.emit(0.0)
 
 
-func configure_simulation(rtt_ms: int, loss_percent: float) -> void:
-	simulated_rtt_ms = maxi(rtt_ms, 0)
-	simulated_loss_percent = clampf(loss_percent, 0.0, PERCENT)
+func configure_simulation(rtt_ms: int, loss_percent: float, jitter_ms: int = 0,
+		duplicate_percent: float = 0.0, reorder_percent: float = 0.0) -> void:
+	var candidate: NetSimConfig = NetSimConfig.new()
+	candidate.rtt_ms = rtt_ms
+	candidate.loss_percent = loss_percent
+	candidate.jitter_ms = jitter_ms
+	candidate.duplicate_percent = duplicate_percent
+	candidate.reorder_percent = reorder_percent
+	if not candidate.is_valid():
+		return
+	profile = candidate
+	_server_override = _net.is_connected and multiplayer.is_server()
+	_advertise()
 
 
-func _make_timer(callback: Callable, one_shot: bool = true) -> Timer:
-	var timer: Timer = Timer.new()
-	timer.one_shot = one_shot
-	timer.timeout.connect(callback)
-	add_child(timer)
-	return timer
+func profile_for(peer_id: int) -> NetSimConfig:
+	if multiplayer.is_server() and not _server_override:
+		return _profiles.get(peer_id, profile)
+	return profile
+
+
+func _advertise() -> void:
+	if _net.is_connected and not multiplayer.is_server() and can_send(SERVER_ID):
+		set_simulation.rpc_id(SERVER_ID, profile.rtt_ms, profile.loss_percent,
+			profile.jitter_ms, profile.duplicate_percent, profile.reorder_percent)
+
+
+@rpc("any_peer", "call_remote", "reliable", 0)
+func set_simulation(rtt_ms: int, loss: float, jitter_ms: int, duplicates: float, reorder: float) -> void:
+	var sender: int = multiplayer.get_remote_sender_id()
+	if not multiplayer.is_server() or not _net.nicknames.has(sender):
+		return
+	var cfg: NetSimConfig = NetSimConfig.new()
+	cfg.rtt_ms = rtt_ms
+	cfg.loss_percent = loss
+	cfg.jitter_ms = jitter_ms
+	cfg.duplicate_percent = duplicates
+	cfg.reorder_percent = reorder
+	if cfg.is_valid():
+		_profiles[sender] = cfg
+
+
+func _peer_left(peer_id: int) -> void:
+	_profiles.erase(peer_id)
+	if outbound != null:
+		outbound.discard_peer(peer_id)
 
 
 func _send_probe() -> void:
@@ -78,26 +120,19 @@ func _send_probe() -> void:
 	_expire_probes(now)
 	_pending[now] = NO_PROBE
 	probe_count += 1
-	if _dropped():
-		return
-	if simulated_rtt_ms > 0:
-		_outbound_due[now] = now + _one_way_delay_usec()
-		_schedule(_outbound, _outbound_due)
-	else:
-		if _can_send(SERVER_ID):
-			ping.rpc_id(SERVER_ID, now)
+	_packet.encode_s64(0, now)
+	_packet.encode_s64(8, 0)
+	outbound.submit(_packet)
 
 
-func _transmit_pings() -> void:
-	if not _active or not _net.is_connected or _outbound_due.is_empty():
+func _transmit(packet: PackedByteArray, _extra: PackedByteArray, peer_id: int) -> void:
+	if not _net.is_connected or not can_send(peer_id):
 		return
-	var now: int = maxi(Time.get_ticks_usec(), int(_outbound_due.values().min()))
-	for token: int in _outbound_due.keys():
-		if _outbound_due[token] <= now:
-			if _pending.has(token) and _can_send(SERVER_ID):
-				ping.rpc_id(SERVER_ID, token)
-			_outbound_due.erase(token)
-	_schedule(_outbound, _outbound_due)
+	if multiplayer.is_server():
+		if _net.nicknames.has(peer_id):
+			pong.rpc_id(peer_id, packet.decode_s64(0), packet.decode_s64(8))
+	elif _active and _pending.has(packet.decode_s64(0)):
+		ping.rpc_id(peer_id, packet.decode_s64(0))
 
 
 @rpc("any_peer", "call_remote", "unreliable", 0)
@@ -105,11 +140,13 @@ func ping(client_time: int) -> void:
 	if not multiplayer.is_server() or not _net.is_connected:
 		return
 	var sender: int = multiplayer.get_remote_sender_id()
-	if _net.nicknames.has(sender) and _can_send(sender):
-		pong.rpc_id(sender, client_time, _net.tick)
+	if _net.nicknames.has(sender) and can_send(sender):
+		_packet.encode_s64(0, client_time)
+		_packet.encode_s64(8, _net.tick)
+		outbound.submit(_packet, PackedByteArray(), sender)
 
 
-func _can_send(peer_id: int) -> bool:
+func can_send(peer_id: int) -> bool:
 	var transport: ENetMultiplayerPeer = multiplayer.multiplayer_peer as ENetMultiplayerPeer
 	if transport == null or not multiplayer.get_peers().has(peer_id):
 		return false
@@ -121,57 +158,14 @@ func _can_send(peer_id: int) -> bool:
 func pong(client_time: int, server_tick: int) -> void:
 	if not _active or not _net.is_connected or multiplayer.is_server():
 		return
-	if not _pending.has(client_time) or _pending[client_time] != NO_PROBE or server_tick < 0:
+	if not _pending.has(client_time) or server_tick < 0:
 		return
-	if _dropped():
-		return
-	_pending[client_time] = server_tick
-	if simulated_rtt_ms > 0:
-		_inbound_due[client_time] = Time.get_ticks_usec() + _one_way_delay_usec()
-		_schedule(_inbound, _inbound_due)
-	else:
-		_record_pong(client_time)
-
-
-func _accept_pong() -> void:
-	if not _active or _inbound_due.is_empty():
-		return
-	var now: int = maxi(Time.get_ticks_usec(), int(_inbound_due.values().min()))
-	for token: int in _inbound_due.keys():
-		if _inbound_due[token] <= now:
-			_record_pong(token)
-			_inbound_due.erase(token)
-	_schedule(_inbound, _inbound_due)
-
-
-func _record_pong(token: int) -> void:
-	if not _pending.has(token):
-		return
-	if _clock.record_pong(token, Time.get_ticks_usec(), _pending[token]):
+	if _clock.record_pong(client_time, Time.get_ticks_usec(), server_tick):
 		ping_updated.emit(_clock.rtt_seconds * NetClock.MS_PER_SECOND)
-	_pending.erase(token)
+	_pending.erase(client_time)
 
 
 func _expire_probes(now_usec: int) -> void:
 	for token: int in _pending.keys():
 		if float(now_usec - token) / NetClock.USEC_PER_SECOND >= _net.config.ping_timeout_seconds:
 			_pending.erase(token)
-			_outbound_due.erase(token)
-			_inbound_due.erase(token)
-
-
-func _schedule(timer: Timer, deadlines: Dictionary[int, int]) -> void:
-	if deadlines.is_empty():
-		timer.stop()
-		return
-	var earliest: int = deadlines.values().min()
-	var seconds: float = float(earliest - Time.get_ticks_usec()) / NetClock.USEC_PER_SECOND
-	timer.start(maxf(seconds, 1.0 / NetClock.USEC_PER_SECOND))
-
-
-func _one_way_delay_usec() -> int:
-	return roundi(float(simulated_rtt_ms) / NetClock.MS_PER_SECOND * 0.5 * NetClock.USEC_PER_SECOND)
-
-
-func _dropped() -> bool:
-	return _random.randf() * PERCENT < simulated_loss_percent

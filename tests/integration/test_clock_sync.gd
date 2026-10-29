@@ -90,7 +90,7 @@ func _assert_client(path: String, expected_ping: float) -> void:
 	if not resets.is_empty():
 		assert_eq(int(resets[0]["tick"]), 0)
 		assert_eq(int(resets[0]["samples"]), 0)
-		assert_eq(int(resets[0]["nodes"]), 3, "Clock timers are reused")
+		assert_eq(int(resets[0]["nodes"]), 2, "Probe timer and outgoing simulator are reused")
 		assert_almost_eq(float(resets[0]["ping"]), 0.0, 0.0001)
 	print("CLOCK ACCEPT ping=%.2fms lead=%.2f actual_lead=%.2f samples=%d" %
 		[float(last["ping"]), float(last["lead"]), float(last["tick"]) - actual_server, int(last["samples"])])
