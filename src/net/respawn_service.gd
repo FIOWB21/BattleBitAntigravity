@@ -65,3 +65,13 @@ func _spawn(actor: Player, tick: int) -> void:
 	spawn_ticks[actor.network_owner_id] = tick
 	spawning = false
 	player_respawned.emit(actor, tick)
+
+
+func restart_for_map(tick: int) -> void:
+	if not multiplayer.is_server():
+		return
+	deadlines.clear()
+	for actor: Player in _actors:
+		spawning = true
+		actor.health_component.reset()
+		_spawn(actor, tick)

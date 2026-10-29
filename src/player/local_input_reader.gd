@@ -14,6 +14,7 @@ var tick: int = 0
 var yaw: float = 0.0
 var pitch: float = 0.0
 var aim_sensitivity_scale: float = 1.0
+var blocked: bool = false
 var _weapon_slot: int = 0
 var _weapon_cycle: int = 0
 var _last_weapon: bool = false
@@ -45,6 +46,8 @@ func apply_mouse_delta(
 
 
 func handle_input_event(event: InputEvent) -> void:
+	if blocked:
+		return
 	if event is InputEventMouseMotion:
 		var motion: InputEventMouseMotion = event as InputEventMouseMotion
 		apply_mouse_delta(motion.relative)
@@ -80,15 +83,26 @@ func read_into(inp: PlayerInput) -> void:
 		InputActions.MOVE_BACK,
 		InputActions.MOVE_FORWARD
 	)
+	if blocked:
+		inp.move = Vector2.ZERO
 	pitch = clampf(pitch, -MAX_PITCH_RAD, MAX_PITCH_RAD)
 	inp.yaw = yaw
 	inp.pitch = pitch
-	inp.buttons = _read_buttons()
+	inp.buttons = 0 if blocked else _read_buttons()
 	inp.weapon_slot = _weapon_slot
 	inp.weapon_cycle = signi(_weapon_cycle)
 	inp.last_weapon = _last_weapon
 	inp.throw_grenade = _throw_grenade
 	inp.melee = _melee
+	_weapon_slot = 0
+	_weapon_cycle = 0
+	_last_weapon = false
+	_throw_grenade = false
+	_melee = false
+
+
+func set_blocked(value: bool) -> void:
+	blocked = value
 	_weapon_slot = 0
 	_weapon_cycle = 0
 	_last_weapon = false

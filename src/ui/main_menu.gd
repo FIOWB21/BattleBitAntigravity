@@ -12,6 +12,7 @@ extends Control
 @onready var map_loader: MapLoader = $MapLoader
 @onready var _background: ColorRect = $Background
 @onready var _center: CenterContainer = $Center
+var chat_panel: ChatPanel
 
 
 func _ready() -> void:
@@ -26,6 +27,10 @@ func _ready() -> void:
 	Net.peer_joined.connect(_peer_changed)
 	Net.peer_left.connect(_peer_left)
 	map_loader.map_loaded.connect(_world_loaded)
+	if not Game.is_dedicated:
+		chat_panel = ChatPanel.new()
+		chat_panel.chat = map_loader.chat
+		add_child(chat_panel)
 	if Game.is_dedicated:
 		_start_dedicated()
 	else:
@@ -143,6 +148,8 @@ func _show_menu(shown: bool) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if chat_panel != null and chat_panel.editing:
+		return
 	if map_loader.current_map == null or not event.is_action_pressed(InputActions.PAUSE_MENU):
 		return
 	_show_menu(not _center.visible)

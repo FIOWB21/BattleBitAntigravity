@@ -25,6 +25,7 @@ var time_sync: NetTimeSync = NetTimeSync.new()
 var _peer: ENetMultiplayerPeer
 var _pending: Dictionary[int, Timer] = {}
 var _closing: Dictionary[int, Timer] = {}
+var _revoked: Dictionary[int, bool] = {}
 var _client_timeout: Timer
 
 
@@ -116,6 +117,8 @@ func disconnect_all() -> void:
 		_peer = null
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	var departed: Array[int] = nicknames.keys()
+	departed.append_array(_revoked.keys())
+	_revoked.clear()
 	nicknames.clear()
 	is_connected = false
 	tick = 0
@@ -139,7 +142,7 @@ func _on_peer_connected(id: int) -> void:
 func _on_peer_disconnected(id: int) -> void:
 	_clear_timer(_pending, id)
 	_clear_timer(_closing, id)
-	if nicknames.erase(id):
+	if nicknames.erase(id) or _revoked.erase(id):
 		peer_left.emit(id)
 
 
@@ -233,3 +236,14 @@ func _fail_connection(reason: String) -> void:
 
 func disconnect_with_error(reason: String) -> void:
 	_fail_connection(reason)
+
+
+func remove_peer(id: int, reason: String) -> bool:
+	if not multiplayer.is_server() or _peer == null or id <= SERVER_ID \
+			or not nicknames.has(id) or _closing.has(id):
+		return false
+	_kick(id, reason)
+	# Stop accepting gameplay/chat immediately, before the graceful close completes.
+	nicknames.erase(id)
+	_revoked[id] = true
+	return true

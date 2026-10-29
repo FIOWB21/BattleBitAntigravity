@@ -38,3 +38,15 @@ func test_parser_resets_state_and_does_not_leak_password_in_errors() -> void:
 	Game.parse_server_arguments(PackedStringArray())
 	assert_eq(Game.server_password, "")
 	assert_eq(Game.server_port, 7777)
+
+
+func test_admin_password_parsing_reset_and_redacted_errors() -> void:
+	assert_true(Game.parse_server_arguments(PackedStringArray(["--admin-password=a=b c"])).is_empty())
+	assert_eq(Game.admin_password, "a=b c")
+	var errors: Array[String] = Game.parse_server_arguments(PackedStringArray([
+		"--admin-password=secret", "--admin-password=hidden"]))
+	assert_eq(errors.size(), 1)
+	assert_false(str(errors).contains("secret"))
+	assert_false(str(errors).contains("hidden"))
+	Game.parse_server_arguments(PackedStringArray())
+	assert_eq(Game.admin_password, "")

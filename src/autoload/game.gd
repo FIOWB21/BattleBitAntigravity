@@ -17,6 +17,7 @@ var server_port: int = NetworkConfig.DEFAULT_PORT
 var max_clients: int = NetworkConfig.DEFAULT_MAX_CLIENTS
 var map_id: String = "testbed"
 var server_password: String = ""
+var admin_password: String = ""
 var argument_errors: Array[String] = []
 
 
@@ -27,6 +28,10 @@ func _init() -> void:
 	detect_runtime_flags(args, OS.has_feature(DEDICATED_FEATURE))
 	if is_dedicated:
 		argument_errors = parse_server_arguments(OS.get_cmdline_user_args())
+	else:
+		for arg: String in OS.get_cmdline_user_args():
+			if arg.begins_with("--admin-password="):
+				admin_password = arg.trim_prefix("--admin-password=")
 
 
 func reset_debug() -> void:
@@ -56,6 +61,7 @@ func parse_server_arguments(args: PackedStringArray) -> Array[String]:
 	max_clients = NetworkConfig.DEFAULT_MAX_CLIENTS
 	map_id = "testbed"
 	server_password = ""
+	admin_password = ""
 	var errors: Array[String] = []
 	var seen: Dictionary[String, bool] = {}
 	for arg: String in args:
@@ -90,6 +96,8 @@ func _apply_server_option(key: String, value: String) -> bool:
 			map_id = value
 		"--password":
 			server_password = value
+		"--admin-password":
+			admin_password = value
 		_:
 			return false
 	return true
