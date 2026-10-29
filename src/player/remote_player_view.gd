@@ -13,6 +13,7 @@ var _actor: Player
 var _shape: CapsuleMesh
 var _aim: MeshInstance3D
 var _stance: int = -1
+var _spawn_tick: int = -1
 
 
 func setup(actor: Player) -> void:
@@ -49,8 +50,15 @@ func configure(config: SnapshotConfig) -> void:
 
 
 func push_snapshot(state: PlayerSnapshot) -> void:
-	if not _actor.is_local_player:
+	if not _actor.is_local_player and state.tick > _spawn_tick:
 		interpolator.push(state)
+
+
+func reset_for_spawn(pose: Transform3D, tick: int) -> void:
+	_spawn_tick = tick
+	interpolator.clear()
+	global_transform = pose
+	_stance = -1
 
 
 func _process(_delta: float) -> void:

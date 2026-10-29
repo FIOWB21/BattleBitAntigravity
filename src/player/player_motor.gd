@@ -30,6 +30,23 @@ func restore_floor(grounded: bool) -> void:
 	_restored_floor = int(grounded)
 
 
+func reset_for_spawn(config: MovementConfig) -> void:
+	stamina = config.max_stamina
+	coyote_timer = 0.0
+	is_sprinting = false
+	movement_multiplier = 1.0
+	aim_held = false
+	last_fall_damage = 0.0
+	landed_this_tick = false
+	_stamina_initialized = true
+	_stamina_regen_timer = 0.0
+	_jumped_since_grounded = false
+	_jumped_this_tick = false
+	_stepped_last_tick = false
+	_floor_y_initialized = false
+	_restored_floor = 0
+
+
 func stepped_last_tick() -> bool:
 	return _stepped_last_tick
 

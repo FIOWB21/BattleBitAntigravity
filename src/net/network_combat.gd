@@ -19,6 +19,7 @@ var _sync_tick: int = -1
 var _sync_interval: int
 var _resolved_fire_tick: int = 0
 var _pending_ticks: PackedInt64Array = PackedInt64Array()
+var _spawn_input_tick: int = 0
 
 
 func setup(actor: Player) -> void:
@@ -70,7 +71,7 @@ func fire(input_tick: int, seed: int, viewed_tick: int) -> void:
 	if sender != player.network_owner_id or not Net.nicknames.has(sender):
 		rejected_requests += 1
 		return
-	if not history.request(input_tick, seed, sender, Net.tick, viewed_tick):
+	if input_tick <= _spawn_input_tick or not history.request(input_tick, seed, sender, Net.tick, viewed_tick):
 		rejected_requests += 1
 
 
@@ -173,3 +174,11 @@ func _pending_count(resolved_fire_tick: int) -> int:
 		elif _pending_ticks[index] > 0:
 			pending += 1
 	return pending
+
+
+func reset_for_spawn(tick: int) -> void:
+	_spawn_input_tick = tick
+	_resolved_fire_tick = maxi(_resolved_fire_tick, tick)
+	_pending_ticks.fill(0)
+	for frame: FireFrame in history.frames:
+		frame.reset(-1)

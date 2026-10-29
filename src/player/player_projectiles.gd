@@ -47,8 +47,9 @@ func simulate(inp: PlayerInput) -> void:
 	var pitch: float = clampf(inp.pitch, -LocalInputReader.MAX_PITCH_RAD, LocalInputReader.MAX_PITCH_RAD)
 	var direction: Vector3 = -Basis.from_euler(Vector3(pitch, inp.yaw, 0.0)).z
 	var velocity: Vector3 = direction * profile.speed + Vector3.UP * profile.upward_speed
+	var attacker: int = _player.network_owner_id if _player.network_owner_id != 0 else _player.get_multiplayer_authority()
 	var projectile: Projectile = system.launch(profile, _player.head.global_position,
-		velocity, _player.get_multiplayer_authority(), _exclude)
+		velocity, attacker, _exclude)
 	if projectile != null:
 		grenades -= 1
 		grenades_changed.emit(grenades, stock.capacity)
@@ -65,3 +66,11 @@ func add_grenades(amount: int) -> int:
 		grenades += added
 		grenades_changed.emit(grenades, stock.capacity)
 	return added
+
+
+func reset_for_spawn() -> void:
+	if not multiplayer.is_server():
+		return
+	grenades = stock.initial_count
+	_next_tick = 0
+	grenades_changed.emit(grenades, stock.capacity)

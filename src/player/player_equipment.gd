@@ -62,7 +62,8 @@ func _setup_melee() -> void:
 	var exclude: Array[RID] = _player.get_hitscan_exclude_rids().duplicate()
 	if not exclude.has(_player.get_rid()):
 		exclude.append(_player.get_rid())
-	melee.setup(_player.get_multiplayer_authority(), exclude)
+	var attacker: int = _player.network_owner_id if _player.network_owner_id != 0 else _player.get_multiplayer_authority()
+	melee.setup(attacker, exclude)
 	if _player.is_local_player and not Game.is_dedicated:
 		melee_view = MeleeView.new()
 		melee_view.name = "MeleeView"

@@ -54,6 +54,25 @@ func active_weapon() -> Weapon:
 	return weapon_at(active_slot)
 
 
+func reset_for_spawn() -> void:
+	if not multiplayer.is_server():
+		return
+	phase = Phase.READY
+	end_tick = -1
+	_pending_slot = Loadout.Slot.NONE
+	_last_tick = -1
+	last_weapon_slot = Loadout.Slot.NONE
+	active_slot = next_slot(Loadout.Slot.NONE, 1)
+	for weapon: Weapon in _weapons:
+		if weapon != null:
+			weapon.setup(weapon.data)
+			weapon.holster()
+	var active: Weapon = active_weapon()
+	if active != null:
+		active.equip_initial()
+	active_slot_changed.emit(active_slot, active)
+
+
 func next_slot(from_slot: int, direction: int) -> int:
 	if loadout == null or direction == 0:
 		return from_slot

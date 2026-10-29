@@ -10,6 +10,7 @@ var prediction: Prediction = Prediction.new()
 var delay: PacketDelay
 var _input: PlayerInput = PlayerInput.new()
 var _sent_tick: int = 0
+var kill_target: Player
 
 
 func setup(actor: Player) -> void:
@@ -61,6 +62,8 @@ func _send_input(delta: float) -> void:
 		return
 	player.input_reader.read_into(_input)
 	_input.tick = maxi(_sent_tick + 1, Net.tick)
+	if player.life.state != PlayerLife.State.ALIVE:
+		InputCodec.copy_into(player.life.filter_input(_input), _input)
 	if not history.push(_input):
 		return
 	_sent_tick = _input.tick
@@ -82,6 +85,13 @@ func present(delta: float) -> void:
 	if enabled:
 		prediction.advance_visual(delta)
 		player.update_camera_visuals(delta)
+		if player.life.state >= PlayerLife.State.DEAD and is_instance_valid(kill_target) and kill_target != player:
+			var target: Vector3 = kill_target.remote_view.global_position if not kill_target.is_local_player else kill_target.global_position
+			target += Vector3.UP * kill_target.movement_config.stand_head_height
+			var direction: Vector3 = target - player.camera.global_position
+			if direction.length_squared() > 0.001:
+				var up: Vector3 = Vector3.FORWARD if absf(direction.normalized().dot(Vector3.UP)) > 0.99 else Vector3.UP
+				player.camera.look_at(target, up)
 
 
 func _exit_tree() -> void:

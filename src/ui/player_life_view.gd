@@ -7,6 +7,8 @@ var spawn_panel: PanelContainer
 var spawn_button: Button
 var beacon_button: Button
 var progress_bar: ProgressBar
+var _title: Label
+var _hint: Label
 var _life: PlayerLife
 
 
@@ -46,10 +48,12 @@ func _build_spawn_panel(root: Control) -> void:
 	var column: VBoxContainer = VBoxContainer.new()
 	spawn_panel.add_child(column)
 	var title: Label = Label.new()
+	_title = title
 	title.text = "SPAWN SELECT"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(title)
 	var hint: Label = Label.new()
+	_hint = hint
 	hint.text = "Choose deployment location"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(hint)
@@ -74,8 +78,14 @@ func _on_state_changed(state: PlayerLife.State) -> void:
 	spawn_panel.visible = state == PlayerLife.State.SPAWN_SELECT
 	status_label.visible = state == PlayerLife.State.DOWNED
 	if spawn_panel.visible:
-		beacon_button.text = "Squad beacon"
-		spawn_button.grab_focus()
+		spawn_button.visible = not _life.network_respawn_managed
+		beacon_button.visible = not _life.network_respawn_managed
+		if _life.network_respawn_managed:
+			_title.text = "RESPAWNING"
+			_hint.text = "Server deployment after %.1f s" % _life.rules.respawn_delay
+		else:
+			beacon_button.text = "Squad beacon"
+			spawn_button.grab_focus()
 
 
 func _on_bleedout_changed(seconds: float) -> void:

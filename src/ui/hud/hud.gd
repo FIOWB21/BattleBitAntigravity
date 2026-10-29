@@ -15,6 +15,7 @@ var health_label: Label = null
 var stance_label: Label = null
 var ammo_label: Label = null
 var crosshair_dot: ColorRect = null
+var combat: CombatHUD
 
 var _bound_health: HealthComponent = null
 var _bound_stance: StanceController = null
@@ -38,6 +39,10 @@ func _exit_tree() -> void:
 func bind_player(player: Node) -> void:
 	if player == null:
 		return
+	if player is Player and (player as Player).network_owner_id != 0 and combat == null:
+		combat = CombatHUD.new()
+		add_child(combat)
+		combat.setup((player as Player).camera)
 	_unbind_inventory()
 	var hc: HealthComponent = player.get_node_or_null("HealthComponent") as HealthComponent
 	if hc != null:

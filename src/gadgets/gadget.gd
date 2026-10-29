@@ -105,3 +105,12 @@ func _has_authority() -> bool:
 
 func _duration_ticks(seconds: float) -> int:
 	return maxi(1, ceili(seconds * ticks_per_second))
+
+
+func reset_for_spawn() -> void:
+	if not _has_authority() or not _configured:
+		return
+	charges = data.max_charges
+	next_use_tick = 0
+	reload_end_tick = -1
+	charges_changed.emit(charges)

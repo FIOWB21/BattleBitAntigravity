@@ -8,6 +8,8 @@ extends Resource
 @export var revive_health_fraction: float = 0.3
 @export var revive_distance: float = 2.0
 @export var revive_perk: StringName = &"revive"
+@export var respawn_delay: float = 3.0
+@export var spawn_protection: float = 2.0
 
 
 func is_valid() -> bool:
@@ -16,4 +18,6 @@ func is_valid() -> bool:
 		and is_finite(revive_health_fraction) and revive_health_fraction > 0.0 \
 		and revive_health_fraction <= 1.0 \
 		and is_finite(revive_distance) and revive_distance > 0.0 \
-		and not revive_perk.is_empty()
+		and not revive_perk.is_empty() \
+		and is_finite(respawn_delay) and respawn_delay > 0.0 \
+		and is_finite(spawn_protection) and spawn_protection >= 0.0

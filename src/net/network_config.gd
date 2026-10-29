@@ -1,7 +1,7 @@
 class_name NetworkConfig
 extends Resource
 
-const PROTOCOL_VERSION: int = 4
+const PROTOCOL_VERSION: int = 5
 const DEFAULT_PORT: int = 7777
 const DEFAULT_MAX_CLIENTS: int = 32
 const MAX_PORT: int = 65535

@@ -76,5 +76,5 @@ func _strike(aim: Transform3D, attacker_position: Vector3) -> void:
 	var damage: float = maxf(health.current, data.damage) if backstab else maxf(data.damage, 0.0)
 	if damage <= 0.0:
 		return
-	health.apply_damage(damage, _attacker, zone.zone)
+	health.apply_damage(damage, _attacker, zone.zone, data.id, aim.origin)
 	hit_landed.emit(health, damage, backstab)

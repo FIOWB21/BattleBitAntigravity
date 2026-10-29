@@ -42,7 +42,7 @@ func apply(profile: ProjectileData, point: Vector3, attacker: int) -> void:
 		var amount: float = profile.damage_at(point.distance_to(target),
 			has_line_of_sight(point, target, profile.occlusion_mask))
 		if amount > 0.0:
-			health.apply_damage(amount, attacker, HitboxZone.NONE)
+			health.apply_damage(amount, attacker, HitboxZone.NONE, profile.id, point)
 			damage_applied.emit(health, amount, attacker)
 
 

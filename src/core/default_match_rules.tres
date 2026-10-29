@@ -10,3 +10,5 @@ revive_time = 3.0
 revive_health_fraction = 0.3
 revive_distance = 2.0
 revive_perk = &"revive"
+respawn_delay = 3.0
+spawn_protection = 2.0

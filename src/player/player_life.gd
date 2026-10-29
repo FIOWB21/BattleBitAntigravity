@@ -17,6 +17,7 @@ var bleedout_remaining: float = 0.0
 var reviver: ReviveInteractor
 var interaction: ReviveInteractor
 var view: PlayerLifeView
+var network_respawn_managed: bool = false
 var _player: Player
 var _health: HealthComponent
 var _killer: int = 0
@@ -90,8 +91,10 @@ func select_beacon_spawn() -> bool:
 	return false
 
 
-func spawn_at(pose: Transform3D) -> bool:
+func spawn_at(pose: Transform3D, service_spawn: bool = false) -> bool:
 	if not _has_authority() or state != State.SPAWN_SELECT:
+		return false
+	if network_respawn_managed and not service_spawn:
 		return false
 	if not pose.is_finite():
 		return false
@@ -105,6 +108,21 @@ func spawn_at(pose: Transform3D) -> bool:
 	if _player.is_local_player:
 		_player.capture_mouse()
 	return true
+
+
+func sync_replica(value: State, health: float, maximum: float, bleedout: float) -> void:
+	if not is_inside_tree() or multiplayer.is_server():
+		return
+	_health.max_health = maximum
+	_health.current = health
+	_health.is_dead = value != State.ALIVE
+	_health.is_downed = value == State.DOWNED
+	bleedout_remaining = bleedout
+	_player.movement.blocked = value != State.ALIVE
+	_health.health_changed.emit(health, maximum)
+	if state != value:
+		_set_state(value)
+	bleedout_changed.emit(bleedout)
 
 
 func _on_incapacitated(killer_id: int) -> void:

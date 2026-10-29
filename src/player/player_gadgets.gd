@@ -23,7 +23,7 @@ var launcher_view: LauncherStockView
 func setup(player: Player) -> void:
 	_player = player
 	_ctx.spawn_parent = player.get_parent() as Node3D
-	_ctx.source_id = player.get_multiplayer_authority()
+	_ctx.source_id = player.network_owner_id if player.network_owner_id != 0 else player.get_multiplayer_authority()
 	_ctx.owner_id = player.get_instance_id()
 	_setup_spots(player)
 	launcher = GadgetLauncher.new()
@@ -159,3 +159,12 @@ func _can_act() -> bool:
 	return not (_player.health_component as HealthComponent).is_dead \
 		and not _player.equipment.melee.busy and not _player.motor.is_sprinting \
 		and _player.inventory.phase == Inventory.Phase.READY
+
+
+func reset_for_spawn() -> void:
+	if not multiplayer.is_server():
+		return
+	_fire_held = false
+	_aim_held = false
+	for gadget: Gadget in _gadgets.values():
+		gadget.reset_for_spawn()

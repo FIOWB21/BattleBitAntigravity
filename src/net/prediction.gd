@@ -22,6 +22,7 @@ var _pending: bool = false
 var _server: PredState = PredState.new()
 var _acknowledged: PredState = PredState.new()
 var _remaining: float = 0.0
+var _spawn_first_input: int = -1
 
 
 func configure(cfg: PredictionConfig) -> void:
@@ -45,11 +46,14 @@ func configure(cfg: PredictionConfig) -> void:
 	last_error = 0.0
 	visual_offset = Vector3.ZERO
 	_remaining = 0.0
+	_spawn_first_input = -1
 
 
 func predict(actor: Player, inp: PlayerInput, delta: float) -> bool:
 	if inp.tick <= _last_input or _inputs.is_empty():
 		return false
+	if _spawn_first_input == 0:
+		_spawn_first_input = inp.tick
 	if _count == _inputs.size():
 		_start = (_start + 1) % _inputs.size()
 		_count -= 1
@@ -67,6 +71,9 @@ func receive(server: PredState, ack_tick: int, snapshot_tick: int) -> bool:
 	if snapshot_tick <= _last_snapshot or ack_tick < _last_ack \
 			or (_last_input > 0 and ack_tick > _last_input):
 		return false
+	if _spawn_first_input == 0 or (_spawn_first_input > 0 and ack_tick < _spawn_first_input):
+		return false
+	_spawn_first_input = -1
 	_server.copy_from(server)
 	_pending_ack = ack_tick
 	_last_snapshot = snapshot_tick
@@ -110,6 +117,18 @@ func advance_visual(delta: float) -> void:
 	var next: float = maxf(0.0, _remaining - maxf(delta, 0.0))
 	visual_offset *= next / _remaining if _remaining > 0.0 else 0.0
 	_remaining = next
+
+
+func reset_for_spawn(server_tick: int) -> void:
+	_start = 0
+	_count = 0
+	_last_input = 0
+	_last_ack = -1
+	_last_snapshot = server_tick
+	_pending = false
+	visual_offset = Vector3.ZERO
+	_remaining = 0.0
+	_spawn_first_input = 0
 
 
 func _find_state(tick: int) -> PredState:

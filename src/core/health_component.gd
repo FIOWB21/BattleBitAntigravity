@@ -7,6 +7,7 @@ signal damaged(amount: float, source_id: int, zone: int)
 signal died(killer_id: int)
 signal finished_off(killer_id: int)
 signal restored()
+signal damage_resolved(source_id: int, zone: int)
 
 const DEFAULT_REGEN_RATE: float = 10.0
 
@@ -35,6 +36,10 @@ var current: float = 0.0
 var is_dead: bool = false
 var is_downed: bool = false
 var _time_since_damage: float = 0.0
+var protection_until_tick: int = -1
+var last_weapon: StringName = &""
+var last_origin: Vector3 = Vector3.INF
+var last_zone: int = HitboxZone.NONE
 
 
 func _init() -> void:
@@ -52,13 +57,20 @@ func _physics_process(delta: float) -> void:
 	step_regen(delta)
 
 
-func apply_damage(amount: float, source_id: int = 0, zone: int = 0) -> void:
+func apply_damage(amount: float, source_id: int = 0, zone: int = HitboxZone.NONE,
+		weapon_id: StringName = &"", origin: Vector3 = Vector3.INF) -> void:
 	if not _can_mutate() or not is_finite(amount) or amount <= 0.0:
 		return
+	if not can_receive_damage():
+		return
+	last_weapon = weapon_id
+	last_origin = origin
+	last_zone = zone
 	if is_dead:
 		if is_downed:
 			is_downed = false
 			finished_off.emit(source_id)
+			damage_resolved.emit(source_id, zone)
 		return
 	_time_since_damage = 0.0
 	current = maxf(current - amount, 0.0)
@@ -67,9 +79,10 @@ func apply_damage(amount: float, source_id: int = 0, zone: int = 0) -> void:
 	if current <= 0.0:
 		is_dead = true
 		died.emit(source_id)
+	damage_resolved.emit(source_id, zone)
 
 
-func take_damage(amount: float, source_id: int = 0, zone: int = 0) -> void:
+func take_damage(amount: float, source_id: int = 0, zone: int = HitboxZone.NONE) -> void:
 	apply_damage(amount, source_id, zone)
 
 
@@ -104,7 +117,7 @@ func restore_fraction(fraction: float) -> bool:
 
 
 func can_receive_damage() -> bool:
-	return not is_dead or is_downed
+	return (not is_dead or is_downed) and Net.tick >= protection_until_tick
 
 
 func _can_mutate() -> bool:

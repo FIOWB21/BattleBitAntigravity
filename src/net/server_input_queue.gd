@@ -88,3 +88,15 @@ func consume(server_tick: int) -> PlayerInput:
 func _in_window(input_tick: int, server_tick: int) -> bool:
 	return input_tick >= server_tick - roundi(_config.input_max_age_seconds * _tick_rate) \
 		and input_tick <= server_tick + roundi(_config.input_max_future_seconds * _tick_rate)
+
+
+func reset_for_spawn(tick: int, yaw: float) -> void:
+	last_input_tick = maxi(last_input_tick, tick)
+	for slot: PlayerInput in _slots:
+		slot.tick = 0
+	pending_count = 0
+	repeated_ticks = _config.input_repeat_ticks + 1
+	_last.move = Vector2.ZERO
+	_last.buttons = 0
+	_last.yaw = yaw
+	_last.pitch = 0.0

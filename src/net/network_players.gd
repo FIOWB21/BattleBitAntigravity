@@ -9,6 +9,8 @@ var actors: Dictionary[int, Player] = {}
 var ready_peers: Dictionary[int, bool] = {}
 var snapshots: SnapshotStream
 var lag_compensator: LagCompensator
+var respawns: RespawnService
+var combat_events: CombatEvents
 var _slots: Dictionary[int, int] = {}
 var _spawner: MultiplayerSpawner
 var _container: Node3D
@@ -30,6 +32,15 @@ func _ready() -> void:
 	lag_compensator = LagCompensator.new()
 	lag_compensator.name = "LagCompensator"
 	add_child(lag_compensator)
+	respawns = RespawnService.new()
+	respawns.name = "Respawns"
+	respawns.players = self
+	add_child(respawns)
+	combat_events = CombatEvents.new()
+	combat_events.name = "CombatEvents"
+	combat_events.players = self
+	add_child(combat_events)
+	respawns.player_respawned.connect(combat_events.respawned)
 	Net.peer_joined.connect(_peer_joined)
 	Net.peer_left.connect(_peer_left)
 
@@ -61,7 +72,7 @@ func _admit(id: int) -> void:
 	_slots[id] = slot
 	var pose: Transform3D = loader.spawn_pose
 	pose.origin += pose.basis * loader.current_data.spawn_offset(slot)
-	_spawner.spawn({"peer_id": id, "pose": global_transform.affine_inverse() * pose})
+	_spawner.spawn({"peer_id": id, "nickname": Net.nicknames[id], "pose": global_transform.affine_inverse() * pose})
 
 
 func _spawn_player(payload: Variant) -> Node:
@@ -73,6 +84,8 @@ func _spawn_player(payload: Variant) -> Node:
 		return null
 	var actor: Player = PLAYER_SCENE.instantiate() as Player
 	actor.name = str(id)
+	if not multiplayer.is_server():
+		Net.nicknames[id] = String(data.get("nickname", str(id)))
 	actor.network_owner_id = id
 	actor.is_local_player = id == multiplayer.get_unique_id() and not Game.is_dedicated
 	actor.transform = data["pose"] as Transform3D
@@ -97,9 +110,19 @@ func _track_actor(actor: Player) -> void:
 	lag_compensator.track(actor)
 	actor.equipment.combat.lag_compensator = lag_compensator
 	actor.equipment.combat.interpolation_seconds = loader.current_data.snapshot_config.interpolation_seconds
+	respawns.track(actor)
+	combat_events.track(actor)
+
+
+func respawn_pose(id: int) -> Transform3D:
+	var pose: Transform3D = loader.spawn_pose
+	pose.origin += pose.basis * loader.current_data.spawn_offset(_slots[id])
+	return pose
 
 
 func _actor_removed(id: int) -> void:
+	combat_events.untrack(actors[id])
+	respawns.untrack(actors[id])
 	lag_compensator.untrack(actors[id])
 	snapshots.untrack(actors[id])
 	actors.erase(id)

@@ -37,6 +37,14 @@ func clear() -> void:
 	last_rewind_tick = -1
 
 
+func reset_player(actor: Player) -> void:
+	for entry: LagTrack in tracks:
+		if entry.actor == actor:
+			entry.restore()
+			for pose: LagPose in entry.frames:
+				pose.tick = -1
+
+
 func record(tick: int) -> void:
 	if not multiplayer.is_server() or active or tick < 0 or tick <= _recorded_tick:
 		return

@@ -131,7 +131,7 @@ func _apply_hit(data: WeaponData, hit: HitResult) -> void:
 	event.point = hit.point
 	if event.damage <= 0.0:
 		return
-	hit.health_component.apply_damage(event.damage, event.attacker, event.zone)
+	hit.health_component.apply_damage(event.damage, event.attacker, event.zone, event.weapon, _aim.origin)
 	damage_applied.emit(event)
 
 

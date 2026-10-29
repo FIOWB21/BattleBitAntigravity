@@ -41,7 +41,7 @@ func apply(config: ChargeConfig, point: Vector3, attacker: int) -> void:
 		if _vehicles.has(health):
 			amount *= config.vehicle_multiplier
 		if amount > 0.0:
-			health.apply_damage(amount, attacker, HitboxZone.NONE)
+			health.apply_damage(amount, attacker, HitboxZone.NONE, config.blast.id, point)
 			damage_applied.emit(health, amount, attacker)
 
 
